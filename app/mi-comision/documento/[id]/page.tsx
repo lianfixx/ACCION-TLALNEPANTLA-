@@ -1,0 +1,10 @@
+import {itemDocumentLinks} from '@/lib/workspace-documents';
+import {redirect,notFound} from 'next/navigation';
+import {workspaceActor,accessibleItem} from '@/lib/workspace';
+import {commissionName} from '@/lib/commissions';
+import {workKinds,workFields,workStatuses} from '@/lib/workspace-shared';
+import {printReadIsCurrent} from '@/lib/workspace-print-read';
+import PrintButton from './PrintButton';
+export const dynamic='force-dynamic';
+export const metadata={title:'Documento de comisión',robots:{index:false,follow:false,noarchive:true}};
+export default async function Page({params}:{params:Promise<{id:string}>}){const a=await workspaceActor();if(!a)redirect('/ingresar?returnTo=%2Fmi-comision');const i=await accessibleItem((await params).id,a);if(!i)notFound();const d=JSON.parse(i.details_json);const files=await itemDocumentLinks(i.id);if(!await printReadIsCurrent(a,i.id,files.map(file=>file.id)))notFound();return <main className="commission-print" id="main-content"><PrintButton/><p>Acción Política Juvenil Tlalnepantla</p><h1>{i.title}</h1><p>{commissionName(i.commission)} · {workKinds[i.kind]} · {workStatuses[i.status]}</p>{i.kind==='event'&&<p>{i.venue||'Espacio por confirmar'} · {i.starts_at===null||i.ends_at===null?'Fecha por confirmar':new Date(i.starts_at).toLocaleString('es-MX',{timeZone:'America/Mexico_City'})+' a '+new Date(i.ends_at).toLocaleString('es-MX',{timeZone:'America/Mexico_City'})}. {i.space_confirmed?'Espacio confirmado.':'Espacio pendiente de confirmación.'}</p>}{workFields[i.kind].map(f=><section key={f.key}><h2>{f.label}</h2><p>{d[f.key]||'Sin información adicional'}</p></section>)}{files.length>0&&<section><h2>Documentos adjuntos</h2><ul>{files.map(f=><li key={f.id}><a href={`/api/espacio/documentos/${f.id}`}>{f.name}</a></li>)}</ul></section>}<small>Versión guardada el {new Date(i.updated_at).toLocaleString('es-MX',{timeZone:'America/Mexico_City'})}. Disponible hasta {new Date(i.retention_until).toLocaleDateString('es-MX',{timeZone:'America/Mexico_City'})}.</small></main>}

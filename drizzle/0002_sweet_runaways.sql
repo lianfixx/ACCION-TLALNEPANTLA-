@@ -1,0 +1,15 @@
+ALTER TABLE `audit_logs` ADD `metadata_json` text;--> statement-breakpoint
+CREATE INDEX `audit_entity_created_idx` ON `audit_logs` (`entity_type`,`entity_id`,`created_at`);--> statement-breakpoint
+ALTER TABLE `contact_requests` ADD `assigned_to` text;--> statement-breakpoint
+ALTER TABLE `contact_requests` ADD `updated_at` integer;--> statement-breakpoint
+ALTER TABLE `contact_requests` ADD `closed_at` integer;--> statement-breakpoint
+ALTER TABLE `contact_requests` ADD `handled_by` text;--> statement-breakpoint
+CREATE INDEX `contact_retention_idx` ON `contact_requests` (`retention_until`);--> statement-breakpoint
+ALTER TABLE `user_roles` ADD `updated_at` integer;--> statement-breakpoint
+ALTER TABLE `user_roles` ADD `updated_by` text;--> statement-breakpoint
+ALTER TABLE `user_roles` ADD `revoked_at` integer;--> statement-breakpoint
+ALTER TABLE `user_roles` ADD `revoked_by` text;--> statement-breakpoint
+CREATE INDEX `comments_status_created_idx` ON `comments` (`status`,`created_at`);--> statement-breakpoint
+CREATE INDEX `comments_retention_idx` ON `comments` (`retention_until`);--> statement-breakpoint
+CREATE INDEX `posts_cover_media_idx` ON `posts` (`cover_media_id`);--> statement-breakpoint
+CREATE UNIQUE INDEX `rate_limits_scope_identity_window_unique` ON `rate_limits` (`scope`,`identity_hash`,`window_started_at`);

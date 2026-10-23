@@ -1,0 +1,1 @@
+ALTER TABLE `commission_affiliations` ADD `verified_document_id` text;

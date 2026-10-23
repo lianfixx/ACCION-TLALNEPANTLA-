@@ -1,0 +1,1 @@
+ALTER TABLE `membership_applications` ADD `profile_json` text DEFAULT '{}' NOT NULL;
