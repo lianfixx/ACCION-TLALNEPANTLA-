@@ -1,6 +1,7 @@
 import {randomBytes,createHash} from "node:crypto";
 import { DatabaseSync } from "node:sqlite";
 import { readFileSync, readdirSync } from "node:fs";
+import assert from 'node:assert/strict';
 
 export async function createWorkerFixture(overrides = {}) {
   const db = new DatabaseSync(":memory:");
@@ -43,8 +44,30 @@ export async function createWorkerFixture(overrides = {}) {
       }
     },
   };
+  // Mock only external providers. Application routes, hashes, sessions and SQL remain real.
+  const providerKey = crypto.randomUUID();
+  const mail = [];
+  fixture.mail = mail;
+  fixture.captchaVerdict = {success:true,action:'signup',hostname:'example.test'};
+  fixture.emailFailure = false;
+  const priorFetch = globalThis.fetch;
+  globalThis.fetch = async (url,options) => {
+    if(String(url)==='https://api.resend.com/emails' && new Headers(options?.headers).get('authorization')===`Bearer ${providerKey}`) {
+      if(fixture.emailFailure) return new Response('',{status:503});
+      mail.push(JSON.parse(options.body));
+      return Response.json({id:crypto.randomUUID()});
+    }
+    if(String(url)==='https://challenges.cloudflare.com/turnstile/v0/siteverify' && options?.body instanceof FormData && options.body.get('secret')===providerKey) {
+      if(fixture.captchaFailure) throw new Error('isolated provider outage');
+      return Response.json(fixture.captchaVerdict);
+    }
+    return priorFetch(url,options);
+  };
+  // Vinext captures fetch at module initialization; install the stub before import.
   const { default: worker } = await import("../../dist/server/index.js");
-  const env = { DB: binding, ADMIN_EMAILS: "owner@example.test", ASSETS: { fetch: () => new Response("", { status: 404 }) }, ...overrides };
+  const env = { DB: binding, ADMIN_EMAILS: "owner@example.test", ASSETS: { fetch: () => new Response("", { status: 404 }) },
+    RESEND_API_KEY:providerKey,REGISTRATION_EMAIL_FROM:'no-reply@example.test',REGISTRATION_PUBLIC_ORIGIN:'https://example.test',
+    REGISTRATION_TURNSTILE_SITE_KEY:'isolated-site-key',REGISTRATION_TURNSTILE_SECRET_KEY:providerKey,REGISTRATION_TURNSTILE_HOSTNAME:'example.test', ...overrides };
   const ctx = { waitUntil() {}, passThroughOnException() {} };
   const tokens=new Map();
   fixture.seedAccount=(email)=>{
@@ -63,7 +86,20 @@ export async function createWorkerFixture(overrides = {}) {
     ...(method === "GET" ? {} : { body: JSON.stringify(body) }),
   }), env, ctx);
   fixture.callRaw = (path,body,actor="owner@example.test",headers={},method="POST") => worker.fetch(new Request(`https://example.test${path}`,{method,headers:{origin:"https://example.test",...(actor?{cookie:fixture.seedAccount(actor)}:{}),...headers},body}),env,ctx);
-  fixture.close = () => db.close();
+  fixture.confirmEmail = async email => {
+    const sent=mail.findLast(message=>message.to.includes(email));
+    assert.ok(sent,'confirmation must be delivered to the mock provider');
+    const token=sent.text.match(/#codigo=([a-f0-9]{64})/)?.[1];assert.ok(token);
+    const confirmed=await fixture.call('/api/confirmar-correo','POST',{action:'confirm',token},null);
+    assert.equal(confirmed.status,200,await confirmed.clone().text());
+    return confirmed;
+  };
+  fixture.confirmAndLogin = async payload => {
+    await fixture.confirmEmail(payload.email);
+    const login=await fixture.call('/api/admin/access/login','POST',{username:payload.username,password:payload.password},null);
+    assert.equal(login.status,200,await login.clone().text());return login;
+  };
+  fixture.close = () => { globalThis.fetch=priorFetch; db.close(); };
   fixture.scheduled = async scheduledTime => {
     const pending=[];
     await worker.scheduled({scheduledTime,cron:'17 10 * * *'},env,{...ctx,waitUntil(promise){pending.push(promise);}});

@@ -210,6 +210,8 @@ export const membershipEvents = sqliteTable("membership_events", {
 }, table => [index("membership_events_application_idx").on(table.applicationId, table.createdAt)]);
 
 export const staffAccounts = sqliteTable("staff_accounts", {
+  emailVerificationRequired: integer("email_verification_required", { mode: "boolean" }).notNull().default(false),
+  emailVerifiedAt: integer("email_verified_at"),
   registrationNotice: text("registration_notice"),
   registrationConsentAt: integer("registration_consent_at"),
   selfRegistered: integer("self_registered", { mode: "boolean" }).notNull().default(false),
@@ -234,6 +236,15 @@ export const staffSessions = sqliteTable("staff_sessions", {
   lastSeenAt: integer("last_seen_at").notNull(),
   expiresAt: integer("expires_at").notNull(),
 }, table => [index("staff_sessions_account_idx").on(table.accountId), index("staff_sessions_expiry_idx").on(table.expiresAt)]);
+
+export const staffEmailVerifications = sqliteTable("staff_email_verifications", {
+  accountId: text("account_id").primaryKey().references(() => staffAccounts.id, { onDelete: "cascade" }),
+  tokenHash: text("token_hash").notNull(),
+  email: text("email").notNull(),
+  credentialVersion: integer("credential_version").notNull(),
+  returnTo: text("return_to").notNull(),
+  expiresAt: integer("expires_at").notNull(),
+}, table => [uniqueIndex("staff_email_verification_token_unique").on(table.tokenHash)]);
 
 export const commissionMembers = sqliteTable("commission_members", {
  id: text("id").primaryKey(), accountId: text("account_id").notNull().references(()=>staffAccounts.id),
