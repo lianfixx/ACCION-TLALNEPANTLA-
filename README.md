@@ -13,7 +13,7 @@ El nombre, la marca PAN azul, los textos simplificados y «En marcha» sustituye
 
 ## Administración
 
-`/admin/ingresar` y `/ingresar` utilizan usuario y contraseña. El propietario activa su primera cuenta mediante un enlace privado de un solo uso y crea las demás desde `/admin/cuenta`. Una cuenta de participación consulta únicamente su solicitud; los permisos de administrador, editor y moderador se conceden por separado. El propietario confirma su contraseña al crear, restablecer, revocar o cambiar permisos. Las sesiones anteriores quedan invalidadas al restablecer credenciales o modificar permisos. No existe registro abierto ni acceso por un proveedor de identidad externo. Consulta [la operación de cuentas](docs/cuentas-propias.md). Los ajustes legales y las redes propias se guardan en D1 desde Configuración. No se guardan secretos en esos campos.
+`/admin/ingresar` y `/ingresar` utilizan usuario y contraseña. El propietario activa su primera cuenta mediante un enlace privado de un solo uso y administra las cuentas del equipo desde `/admin/cuenta`. Cuando la recepción interna está habilitada, `/crear-cuenta` permite a personas mayores de edad abrir una cuenta de participación para enviar su solicitud y consultar el seguimiento; no concede permisos administrativos ni verifica por sí misma el correo declarado. Los permisos de administrador, editor y moderador se conceden por separado. El propietario confirma su contraseña al crear, restablecer, revocar o cambiar permisos. Las sesiones anteriores quedan invalidadas al restablecer credenciales o modificar permisos. No existe acceso por un proveedor de identidad externo. Consulta [la operación de las comisiones](docs/comisiones-operacion.md) y [la operación de cuentas](docs/cuentas-propias.md). Los ajustes legales y las redes propias se guardan en D1 desde Configuración. No se guardan secretos en esos campos.
 
 Agenda, publicaciones, medios, opiniones, solicitudes, roles y auditoría ofrecen búsqueda, filtros y paginación. El resumen calcula conteos globales. Las solicitudes tienen responsable, estado, notas, borradores de respuesta e historial. Los borradores no envían mensajes. Los formularios con versión rechazan sobrescrituras de otra sesión.
 
@@ -38,8 +38,12 @@ Node >=22.13.0; Linux con `flock`, `curl` y GNU `timeout`. El lockfile fija las 
 
 Las pruebas de integración usan SQLite en memoria e identidades sintéticas dentro del proceso de prueba. No hay rutas de prueba autenticadas ni registros ficticios en producción. Una prueba local no acredita un inicio de sesión real ni una carga real en R2 de producción.
 
-## Movimiento
+## Movimiento e identidad visual
 
-Motion controla las transformaciones CSS de la portada y la navegación. Three.js 0.186.0 se importa dinámicamente cerca del diagrama: tres anillos, cámara ortográfica, transmisión y entorno de reflejos. El renderizado se detiene cuando la escena no cambia o no se ve; la densidad de píxeles se limita. El HTML permanece completo si WebGL falla o las preferencias requieren menos movimiento/transparencia. No se promete una frecuencia de 120 Hz.
+La portada vigente utiliza la imagen aprobada del cacomixtle mediante `HeroMascot`, con una entrada breve sin bucle y desactivada cuando se solicita movimiento reducido. No requiere WebGL ni sustituye el logotipo institucional. La implementación tridimensional anterior se conserva únicamente como antecedente técnico y no se importa desde la portada actual. Consulta [la identidad del cacomixtle](docs/mascota-cacomixtle.md).
 
-El navegador disponible tiene WebGL deshabilitado, por lo que la alternativa HTML está comprobada y el aspecto del renderizado WebGL queda por validar en un dispositivo compatible.
+Las reglas adaptables y de accesibilidad están implementadas, pero una compilación o una inspección estática no sustituyen la prueba interactiva en teléfonos y tabletas reales.
+
+## Skill integral
+
+La memoria operativa para producir y auditar eventos, formatos, flyers, presentaciones, sitio, podcast, datos y formularios está en [`skills/accion-tlalnepantla/`](skills/accion-tlalnepantla/). La skill conserva la identidad vigente, separa antecedentes históricos y exige distinguir propuesta, autorización, confirmación, publicación y resultado comprobado.

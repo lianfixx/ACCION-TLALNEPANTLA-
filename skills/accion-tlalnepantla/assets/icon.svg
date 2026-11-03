@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">Acción Tlalnepantla</title>
+  <desc id="desc">Símbolo azul de conversación, comunidad y acción</desc>
+  <defs>
+    <linearGradient id="g" x1="80" y1="64" x2="432" y2="448" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#2167B1"/>
+      <stop offset="1" stop-color="#102950"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="url(#g)"/>
+  <path d="M112 132h288v190c0 28-22 50-50 50H241l-83 62 18-62h-14c-28 0-50-22-50-50V132Z" fill="#fff" opacity=".97"/>
+  <circle cx="202" cy="250" r="34" fill="#2167B1"/>
+  <circle cx="310" cy="250" r="34" fill="#2167B1"/>
+  <path d="M182 320c20-20 44-30 74-30s54 10 74 30" fill="none" stroke="#2167B1" stroke-width="22" stroke-linecap="round"/>
+</svg>

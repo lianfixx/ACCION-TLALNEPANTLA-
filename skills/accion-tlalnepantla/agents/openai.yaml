@@ -1,0 +1,10 @@
+interface:
+  display_name: "Acción Tlalnepantla"
+  short_description: "Eventos, comunicación y plataforma de APJ"
+  icon_small: "./assets/icon.svg"
+  icon_large: "./assets/icon.svg"
+  brand_color: "#174A8B"
+  default_prompt: "Usa $accion-tlalnepantla para desarrollar este encargo de Acción Política Juvenil Tlalnepantla con contexto, fuentes y verificación."
+
+policy:
+  allow_implicit_invocation: true
