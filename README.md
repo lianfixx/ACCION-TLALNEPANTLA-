@@ -46,4 +46,4 @@ Las reglas adaptables y de accesibilidad están implementadas, pero una compilac
 
 ## Skill integral
 
-La memoria operativa para producir y auditar eventos, formatos, flyers, presentaciones, sitio, podcast, datos y formularios está en [`skills/accion-tlalnepantla/`](skills/accion-tlalnepantla/). La skill conserva la identidad vigente, separa antecedentes históricos y exige distinguir propuesta, autorización, confirmación, publicación y resultado comprobado.
+La memoria operativa para producir y auditar eventos, formatos, flyers, presentaciones, sitio, podcast, datos y formularios está en [`.agents/skills/accion-tlalnepantla/`](.agents/skills/accion-tlalnepantla/). La skill conserva la identidad vigente, separa antecedentes históricos y exige distinguir propuesta, autorización, confirmación, publicación y resultado comprobado.
