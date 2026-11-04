@@ -2,8 +2,8 @@
 name: accion-tlalnepantla
 description: Planear, redactar, diseñar, desarrollar y auditar materiales de Acción Política Juvenil Tlalnepantla, incluidos eventos, formatos, invitaciones, flyers, presentaciones, sitio y código, podcast Voces 360, investigación, datos y formularios. Usar cuando el encargo se refiera a APJ, Acción Tlalnepantla, sus comisiones o sus proyectos; no para campañas partidistas genéricas ni otros clientes.
 metadata:
-  version: "1.0.0"
-  last-audited: "2026-11-03"
+  version: "1.1.0"
+  last-audited: "2026-11-04"
   language: "es-MX"
 ---
 
@@ -64,3 +64,17 @@ No generes todos esos elementos por defecto. Confirma el alcance o entrega prime
 ## Cierre
 
 Entrega el artefacto y una nota breve de control con: versión, fecha de corte, fuentes empleadas, supuestos, datos por confirmar, comprobaciones realizadas y acciones externas que permanecen pendientes.
+
+## Terminado y trabajo en Claude Code
+
+Terminado, según el modo:
+- Toda pieza: artefacto revisado en su formato final con las comprobaciones mínimas de su tipo en [estado-fuentes.md](references/estado-fuentes.md) y nota de control del Cierre.
+- Flyers y variantes para redes: cada tamaño revisado como imagen, también en miniatura.
+- Sitio: `npm run typecheck`, `npm run lint` y `npm test` (build, validación del artefacto y pruebas) pasan; si hubo despliegue autorizado, consta su estado terminal y la URL publicada se revisó en navegador, en móvil y escritorio.
+- Nada se reporta como publicado, enviado o confirmado sin haberlo comprobado.
+
+Entrevista inicial obligatoria al arrancar un evento nuevo o un paquete integral: una pregunta a la vez sobre propósito, audiencia, fecha y sede, qué no puede fallar y qué está confirmado o solo propuesto; después, el plan con el núcleo que desbloquea lo demás. En los demás encargos rige el paso 4 de «Comenzar por la evidencia».
+
+Máxima profundidad (`ultrathink`): verificar nombres, cargos y normatividad en fuentes oficiales, y revisar en piezas políticas toda atribución de respaldo o postura.
+
+Para frenos activos, reparto en paralelo, `/goal`, `/loop` y navegador, leer [Claude Code](references/claude-code.md).
