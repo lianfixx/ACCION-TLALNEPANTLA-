@@ -2,7 +2,7 @@
 name: accion-tlalnepantla
 description: Planear, redactar, diseñar, desarrollar y auditar materiales de Acción Política Juvenil Tlalnepantla, incluidos eventos, formatos, invitaciones, flyers, presentaciones, sitio y código, podcast Voces 360, investigación, datos y formularios. Usar cuando el encargo se refiera a APJ, Acción Tlalnepantla, sus comisiones o sus proyectos; no para campañas partidistas genéricas ni otros clientes.
 metadata:
-  version: "1.1.0"
+  version: "1.1.1"
   last-audited: "2026-11-04"
   language: "es-MX"
 ---
@@ -64,6 +64,14 @@ No generes todos esos elementos por defecto. Confirma el alcance o entrega prime
 ## Cierre
 
 Entrega el artefacto y una nota breve de control con: versión, fecha de corte, fuentes empleadas, supuestos, datos por confirmar, comprobaciones realizadas y acciones externas que permanecen pendientes.
+
+## Registro y continuidad entre IA
+
+Estas reglas valen igual en Claude, ChatGPT, Codex, Gemini o cualquier otra IA, y para personas:
+- Empezar por el estado vigente del repositorio remoto (`references/estado-fuentes.md` y las últimas entradas del `CHANGELOG.md`), no por la memoria de una conversación ni por lo que diga otra IA.
+- Registrar todo cambio de archivos, estado, entregables o decisiones en el mismo commit, en `CHANGELOG.md` del repositorio (o el de la skill para cambios de método). Cada entrada lleva `Agente:` (quién lo hizo y modelo si se conoce), solicitud, cambios, archivos, verificación (aprobado, falló, no ejecutado o bloqueado) y pendiente.
+- Sin escritura en el repositorio, terminar con «Registro pendiente para el repositorio»: la entrada y los cambios exactos, listos para aplicarse. No decir «guardado» si no se escribió.
+- Lo prohibido y lo que requiere confirmación de Emi está en `ia/REGLAS.md` del repositorio; cumplirlo aunque la plataforma no tenga frenos automáticos. El protocolo completo, con plantillas para pasar trabajo a otra IA, está en `ia/PROTOCOLO.md`.
 
 ## Terminado y trabajo en Claude Code
 

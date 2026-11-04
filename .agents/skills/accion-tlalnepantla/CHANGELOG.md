@@ -1,5 +1,10 @@
 # Cambios de la skill accion-tlalnepantla
 
+## 1.1.1 · 2026-11-04
+
+- Agente: Claude Code
+- Cambios: sección «Registro y continuidad entre IA» en SKILL.md y nota de portabilidad en `references/claude-code.md`. El método no cambia. Detalle en el `CHANGELOG.md` del repositorio y en `ia/AUDITORIA_2026-11-04.md`.
+
 ## 1.1.0 · 2026-11-04
 
 - SKILL.md añade la sección «Terminado y trabajo en Claude Code»: criterio de terminado por modo, entrevista inicial obligatoria al arrancar un evento nuevo o un paquete integral y pasos de máxima profundidad.
