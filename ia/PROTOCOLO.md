@@ -1,4 +1,4 @@
-# Protocolo común entre IA · 1.0.0
+# Protocolo común entre IA · 1.1.0
 
 Fecha: 4 de noviembre de 2026, México. Copia idéntica en cada repositorio de `lianfixx`
 (`ia/PROTOCOLO.md`). Generaliza el protocolo de Mes (`skills/mes-continuidad`, 1.0.0, de
@@ -66,6 +66,10 @@ Formato de entrada en `CHANGELOG.md` (lo más reciente arriba; Markdown simple):
 
 ## 4. Antes, durante y al terminar
 
+**Al empezar:** ejecutar `python3 ia/verificar.py inicio` si hay terminal (en Claude Code corre solo
+al abrir la sesión). Resume rama, último commit y su IA, reglas, registro vigente y si los hooks de git
+están activos; si no lo están, los activa en Claude Code y en las demás IA indica `sh ia/instalar.sh`.
+
 **Antes de escribir:** traer lo último (`git pull` o releer el archivo remoto), revisar
 `git status` y quién trabajó al final. Comprobar las capacidades reales (lectura, escritura,
 conectores) y no suponerlas. Si otra IA trabaja en lo mismo, coordinarse o trabajar en secuencia:
@@ -121,6 +125,9 @@ archivo, conservar la autoría, correr pruebas propias aparte de las heredadas y
 force-push.
 
 ## 9. Mantener este protocolo
+
+Versiones: 1.0.0 (4/11/2026), versión inicial; 1.1.0 (4/11/2026), arranque común con `verificar.py inicio`
+y hook `SessionStart` en Claude Code.
 
 La copia es idéntica en todos los repositorios; cambiarla en todos y subir la versión. Si las copias
 difieren, prevalece la versión más alta y se registra la discrepancia. Un protocolo propio más

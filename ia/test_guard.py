@@ -348,6 +348,19 @@ class GitAndCI(Base):
         self.assertEqual(self.bash("git commit -m y"), "deny")
         self.assertEqual(call({"tool_name": "Bash", "tool_input": {"command": "git commit -m y"}}, self.root, nested=True), "none")
 
+    def test_inicio_resume_y_activa_hooks(self):
+        out = self.verificar("inicio")
+        self.assertEqual(out.returncode, 0)
+        self.assertIn("ia/REGLAS.md", out.stdout)
+        self.assertIn("Agente:", out.stdout)
+        self.assertIn("NO activos", out.stdout)
+        (self.root / "ia" / "githooks").mkdir(exist_ok=True)
+        (self.root / "ia" / "githooks" / "pre-commit").write_text("#!/bin/sh\n", encoding="utf-8")
+        (self.root / "ia" / "instalar.sh").write_text("git config core.hooksPath ia/githooks\n", encoding="utf-8")
+        hook = json.loads(self.verificar("inicio", "--hook").stdout)
+        self.assertEqual(hook["hookSpecificOutput"]["hookEventName"], "SessionStart")
+        self.assertIn("Hooks de git: activos", hook["hookSpecificOutput"]["additionalContext"])
+
     def test_hooks_installed_avoid_double_run(self):
         self.policy([{"type": "before_git", "git": "commit", "run": "exit 3", "reason": "Pruebas."}])
         self.assertEqual(self.bash("git commit -m y"), "deny")

@@ -6,6 +6,7 @@ Uso:
   python3 ia/verificar.py prepush            # hook de git pre-push (lee las refs por stdin)
   python3 ia/verificar.py ci --base A --head B   # GitHub Actions: registro, secretos, skill, reglas
   python3 ia/verificar.py reglas [--check]   # regenera (o comprueba) ia/REGLAS.md desde la política
+  python3 ia/verificar.py inicio [--hook]    # resumen de arranque para cualquier IA (estado, reglas, registro)
 
 Código de salida 1 si algo queda bloqueado. Las decisiones «ask» se muestran como aviso:
 en git no hay a quién preguntar, así que la confirmación con Emi debe constar antes.
@@ -13,6 +14,7 @@ en git no hay a quién preguntar, así que la confirmación con Emi debe constar
 from __future__ import annotations
 
 import argparse
+import json
 import subprocess
 import sys
 from pathlib import Path
@@ -93,9 +95,75 @@ def reglas_md(policy: dict) -> str:
     return "\n".join(lines) + "\n"
 
 
+def _git(root: Path, *args: str) -> str:
+    p = subprocess.run(["git", "-c", "core.quotePath=false", *args], cwd=root, capture_output=True, text=True,
+                       encoding="utf-8", errors="replace")
+    return p.stdout.strip() if p.returncode == 0 else ""
+
+
+def legible(pattern: str) -> str:
+    """Convierte la regex de un registro en una ruta legible (`^temas/[^/]+/CAMBIOS\\.md$` → `temas/<tema>/CAMBIOS.md`)."""
+    import re
+    t = pattern.strip("^$").replace("\\.", ".").replace("(^|/)", "")
+    t = re.sub(r"\[\^/\]\+", "<…>", t)
+    return t.rstrip("/") + ("/…" if pattern.endswith("/") else "")
+
+
+def ultimas_entradas(root: Path, policy: dict, n: int = 3) -> list[str]:
+    """Títulos de las entradas más recientes de los registros del proyecto."""
+    import re
+    out = []
+    for log in (policy.get("registro") or {}).get("logs", []):
+        pat = log["path"].strip("^$").replace("\\.", ".")
+        if any(c in pat for c in "[(*+?|") or not (root / pat).is_file():
+            continue
+        heads = [l.strip("# ").strip() for l in (root / pat).read_text(encoding="utf-8", errors="replace").splitlines()
+                 if re.match(r"^#{2,3} ", l)]
+        out += [f"{pat}: {h}" for h in heads[:n]]
+    return out[: n * 2]
+
+
+def inicio(root: Path, policy: dict, hook: bool) -> int:
+    """Resumen de arranque: lo mismo para Claude (hook SessionStart), Codex, Gemini o una persona."""
+    instalados = _git(root, "config", "--get", "core.hooksPath").rstrip("/") == "ia/githooks"
+    if hook and not instalados and (root / "ia" / "githooks" / "pre-commit").exists() and _git(root, "rev-parse", "--git-dir"):
+        subprocess.run(["sh", "ia/instalar.sh"], cwd=root, capture_output=True)
+        instalados = _git(root, "config", "--get", "core.hooksPath").rstrip("/") == "ia/githooks"
+    rama = _git(root, "branch", "--show-current") or "(sin rama)"
+    ultimo = _git(root, "log", "-1", "--format=%h · %ad · %an · %s", "--date=format:%Y-%m-%d %H:%M")
+    actor = _git(root, "log", "-1", "--format=%(trailers:key=IA-Actor,valueonly,separator=%x2C )") or \
+        _git(root, "log", "-1", "--format=%(trailers:key=Mes-Actor,valueonly,separator=%x2C )")
+    pendientes = _git(root, "status", "--porcelain")
+    skill = policy.get("skill")
+    logs = ", ".join(f"`{legible(l['path'])}`" for l in (policy.get("registro") or {}).get("logs", []))
+    lineas = [
+        f"Protocolo común entre IA activo en {policy.get('repo', root.name)} (ia/PROTOCOLO.md).",
+        "Antes de trabajar: leer AGENTS.md, ia/REGLAS.md e ia/PROTOCOLO.md"
+        + (f", y la skill `{skill['name']}` ({skill['dir']}/SKILL.md)." if skill else "."),
+        "Fuente de verdad: el repositorio remoto, no la memoria. Hacer `git pull` antes de escribir.",
+        f"Todo cambio se registra en el mismo commit en {logs}, con la línea `Agente:` (quién lo hizo).",
+        "Sin escritura en el repositorio: terminar con «Registro pendiente para el repositorio».",
+        f"Rama: {rama}. Último commit: {ultimo or 'no disponible'}" + (f" (IA: {actor})." if actor else "."),
+        "Hooks de git: " + ("activos." if instalados else "NO activos; ejecutar `sh ia/instalar.sh`."),
+    ]
+    if pendientes:
+        lineas.append(f"Hay {len(pendientes.splitlines())} archivos con cambios sin commit: revisar de quién son antes de seguir.")
+    entradas = ultimas_entradas(root, policy)
+    if entradas:
+        lineas.append("Últimas entradas del registro: " + " | ".join(entradas))
+    texto = "\n".join(lineas)
+    if hook:
+        print(json.dumps({"hookSpecificOutput": {"hookEventName": "SessionStart", "additionalContext": texto}},
+                         ensure_ascii=False))
+    else:
+        print(texto)
+    return 0
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("modo", choices=["precommit", "prepush", "ci", "reglas"])
+    ap.add_argument("modo", choices=["precommit", "prepush", "ci", "reglas", "inicio"])
+    ap.add_argument("--hook", action="store_true", help="inicio: salida JSON para el hook SessionStart de Claude Code")
     ap.add_argument("--base")
     ap.add_argument("--head", default="HEAD")
     ap.add_argument("--check", action="store_true")
@@ -116,6 +184,9 @@ def main() -> int:
         target.write_text(text, encoding="utf-8")
         print("ia/REGLAS.md actualizado")
         return 0
+
+    if a.modo == "inicio":
+        return inicio(root, policy, a.hook)
 
     if a.modo == "precommit":
         changes = guard.Changes(root, "commit", "git commit")
