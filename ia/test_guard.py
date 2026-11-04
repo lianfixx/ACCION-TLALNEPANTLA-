@@ -357,7 +357,10 @@ class GitAndCI(Base):
         (self.root / "ia" / "githooks").mkdir(exist_ok=True)
         (self.root / "ia" / "githooks" / "pre-commit").write_text("#!/bin/sh\n", encoding="utf-8")
         (self.root / "ia" / "instalar.sh").write_text("git config core.hooksPath ia/githooks\n", encoding="utf-8")
-        hook = json.loads(self.verificar("inicio", "--hook").stdout)
+        texto = self.verificar("inicio").stdout  # Codex, Gemini o ChatGPT con terminal
+        self.assertIn("activados ahora", texto)
+        self.assertEqual(self.sh("git config --get core.hooksPath").stdout.strip(), "ia/githooks")
+        hook = json.loads(self.verificar("inicio", "--hook").stdout)  # Claude Code
         self.assertEqual(hook["hookSpecificOutput"]["hookEventName"], "SessionStart")
         self.assertIn("Hooks de git: activos", hook["hookSpecificOutput"]["additionalContext"])
 

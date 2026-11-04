@@ -126,9 +126,11 @@ def ultimas_entradas(root: Path, policy: dict, n: int = 3) -> list[str]:
 def inicio(root: Path, policy: dict, hook: bool) -> int:
     """Resumen de arranque: lo mismo para Claude (hook SessionStart), Codex, Gemini o una persona."""
     instalados = _git(root, "config", "--get", "core.hooksPath").rstrip("/") == "ia/githooks"
-    if hook and not instalados and (root / "ia" / "githooks" / "pre-commit").exists() and _git(root, "rev-parse", "--git-dir"):
+    recien = False
+    # Cualquier IA que siga AGENTS.md (Claude, Codex, ChatGPT con terminal, Gemini CLI) activa aquí los hooks de git.
+    if not instalados and (root / "ia" / "githooks" / "pre-commit").exists() and _git(root, "rev-parse", "--git-dir"):
         subprocess.run(["sh", "ia/instalar.sh"], cwd=root, capture_output=True)
-        instalados = _git(root, "config", "--get", "core.hooksPath").rstrip("/") == "ia/githooks"
+        instalados = recien = _git(root, "config", "--get", "core.hooksPath").rstrip("/") == "ia/githooks"
     rama = _git(root, "branch", "--show-current") or "(sin rama)"
     ultimo = _git(root, "log", "-1", "--format=%h · %ad · %an · %s", "--date=format:%Y-%m-%d %H:%M")
     actor = _git(root, "log", "-1", "--format=%(trailers:key=IA-Actor,valueonly,separator=%x2C )") or \
@@ -144,7 +146,8 @@ def inicio(root: Path, policy: dict, hook: bool) -> int:
         f"Todo cambio se registra en el mismo commit en {logs}, con la línea `Agente:` (quién lo hizo).",
         "Sin escritura en el repositorio: terminar con «Registro pendiente para el repositorio».",
         f"Rama: {rama}. Último commit: {ultimo or 'no disponible'}" + (f" (IA: {actor})." if actor else "."),
-        "Hooks de git: " + ("activos." if instalados else "NO activos; ejecutar `sh ia/instalar.sh`."),
+        "Hooks de git: " + ("activados ahora en esta copia." if recien else "activos." if instalados
+                            else "NO activos; ejecutar `sh ia/instalar.sh`."),
     ]
     if pendientes:
         lineas.append(f"Hay {len(pendientes.splitlines())} archivos con cambios sin commit: revisar de quién son antes de seguir.")
