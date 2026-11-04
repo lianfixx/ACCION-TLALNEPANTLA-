@@ -1,6 +1,6 @@
 ---
 name: accion-tlalnepantla
-description: Planear, redactar, diseñar, desarrollar y auditar materiales de Acción Política Juvenil Tlalnepantla, incluidos eventos, formatos, invitaciones, flyers, presentaciones, sitio y código, podcast Voces 360, investigación, datos y formularios. Usar cuando el encargo se refiera a APJ, Acción Tlalnepantla, sus comisiones o sus proyectos; no para campañas partidistas genéricas ni otros clientes.
+description: "Planear, redactar, diseñar, desarrollar y auditar materiales de Acción Política Juvenil Tlalnepantla, incluidos eventos, formatos, invitaciones, flyers, presentaciones, sitio y código, podcast Voces 360, investigación, datos y formularios. Usar cuando el encargo se refiera a APJ, Acción Tlalnepantla, sus comisiones o sus proyectos; no para campañas partidistas genéricas ni otros clientes."
 ---
 
 # Entrada de accion-tlalnepantla

@@ -15,6 +15,7 @@ from pathlib import Path
 
 ALLOWED = {"name", "description", "license", "compatibility", "metadata", "allowed-tools"}
 NAME = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
+RAW: dict[str, str] = {}  # valores tal como aparecen en la primera línea de cada campo
 LINK = re.compile(r"\]\(([^)#\s]+)(?:#[^)]*)?\)")
 
 
@@ -26,6 +27,7 @@ def frontmatter(text: str) -> tuple[dict[str, str], str]:
         raise ValueError("el frontmatter no se cierra con ---")
     block, body = text[4:end], text[end + 4:]
     fields: dict[str, str] = {}
+    RAW.clear()
     current = None
     for line in block.splitlines():
         if not line.strip():
@@ -34,6 +36,7 @@ def frontmatter(text: str) -> tuple[dict[str, str], str]:
             key, _, value = line.partition(":")
             current = key.strip()
             fields[current] = value.strip()
+            RAW[current] = value.strip()
         elif current:
             fields[current] = (fields[current] + " " + line.strip()).strip()
     return fields, body
@@ -55,6 +58,9 @@ def check(folder: Path) -> list[str]:
         fields, body = frontmatter(skill.read_text(encoding="utf-8"))
     except ValueError as exc:
         return [f"{skill}: {exc}"]
+    for key, raw in RAW.items():
+        if raw and not raw.startswith((">", "|", '"', "'", "[", "{")) and (": " in raw or " #" in raw or raw.endswith(":")):
+            errors.append(f"{skill}: el valor de «{key}» rompe el YAML (contiene «: » o « #»); ponlo entre comillas o usa >-")
     extra = set(fields) - ALLOWED
     if extra:
         errors.append(f"{skill}: campos no admitidos por claude.ai: {', '.join(sorted(extra))}")

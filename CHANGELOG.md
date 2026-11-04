@@ -2,6 +2,15 @@
 
 Lo más reciente arriba. Formato y reglas: `ia/PROTOCOLO.md`, sección 3. Cada entrada lleva la línea `Agente:`.
 
+## 2026-11-04 · corrección: puentes de skill con YAML válido
+
+- Agente: Claude Code (sesión en la nube)
+- Solicitud: autocorrección de Claude Code al revisar la skill matriz-castorena (4/11/2026).
+- Cambios: los puentes `.claude/skills/` y `.agents/skills/` copiaban la descripción sin comillas; si contenía «: » el YAML quedaba inválido (afectaba a tareas-maestria y meta-ads-client-onboarding). Ahora va entre comillas, `ia/check_skill.py` rechaza valores que rompan el YAML y el control previo al commit revisa también los puentes.
+- Archivos: `ia/check_skill.py`, `ia/politica.json`, `ia/REGLAS.md`, puentes de skill (si existen) y este registro.
+- Verificación: `python3 ia/test_guard.py` → aprobado; `python3 ia/verificar.py inicio` → aprobado.
+- Pendiente: ninguno.
+
 ## 2026-11-04 · corrección: flag de push mal formado
 
 - Agente: Claude Code (sesión en la nube)
