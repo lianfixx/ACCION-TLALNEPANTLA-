@@ -2,6 +2,15 @@
 
 Lo más reciente arriba. Formato y reglas: `ia/PROTOCOLO.md`, sección 3. Cada entrada lleva la línea `Agente:`.
 
+## 2026-11-04 · corrección: flag de push mal formado
+
+- Agente: Claude Code (sesión en la nube)
+- Solicitud: autocorrección de Claude Code al revisar su propio comando (4/11/2026).
+- Cambios: la regla que prohíbe forzar el push no atrapaba flags cortos mal formados que contienen `f` o `d` (por ejemplo `-f-never`); el patrón ahora es `-(?!-)\S*[fd]\S*`. Se añadió el caso a las pruebas. Ese push concreto (rama de mes.) fue de avance lineal y no borró historial.
+- Archivos: `ia/politica.json`, `ia/REGLAS.md`, `ia/INSTRUCCIONES_PROYECTO.md` y este registro.
+- Verificación: `python3 ia/test_guard.py` → aprobado; `python3 ia/verificar.py inicio` → aprobado.
+- Pendiente: ninguno.
+
 ## 2026-11-04 · frenos de git también para Codex, ChatGPT y Gemini
 
 - Agente: Claude Code (sesión en la nube)

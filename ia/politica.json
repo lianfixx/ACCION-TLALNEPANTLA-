@@ -41,7 +41,7 @@
         "--mirror",
         "--delete",
         "--prune",
-        "-[a-zA-Z]*[fd][a-zA-Z]*",
+        "-(?!-)\\S*[fd]\\S*",
         "\\+.+",
         ":.*"
       ],
@@ -155,6 +155,14 @@
       "tool": "Bash",
       "input": {
         "command": "echo listo\ngit push -f"
+      },
+      "expect": "deny"
+    },
+    {
+      "name": "flag corto mal formado con f",
+      "tool": "Bash",
+      "input": {
+        "command": "git push -q -f-never origin rama"
       },
       "expect": "deny"
     },
