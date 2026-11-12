@@ -2,6 +2,15 @@
 
 Lo más reciente arriba. Formato y reglas: `ia/PROTOCOLO.md`, sección 3. Cada entrada lleva la línea `Agente:`.
 
+## 2026-11-12 · migración: dominio propio, R2 activo y cuenta de Sites por confirmar
+
+- Agente: Claude Code (sesión en la nube)
+- Solicitud: Emi, 12/11/2026: continuar la migración paso por paso.
+- Cambios: Emi activó R2 e inició sesión de ChatGPT en su Box. Con su autorización se revisó su Gmail: el dominio está registrado en su cuenta de Alibaba Cloud y su DNS también, así que la migración del dominio no depende de Sites. La cuenta de ChatGPT abierta en el Box es gratuita y no muestra Sites; hay otra cuenta de OpenAI con su Gmail. Plan actualizado sin datos de cuentas.
+- Archivos: `docs/migracion-cloudflare.md` y este registro.
+- Verificación: API de R2 → responde (activo); correo de registro del dominio y de DNS → leídos; ChatGPT en el Box → sesión abierta, sin sección Sites.
+- Pendiente: confirmar qué cuenta de ChatGPT publica el sitio; inventario y respaldo de Sites.
+
 ## 2026-11-12 · migración: acceso a Cloudflare e inventario de solo lectura
 
 - Agente: Claude Code (sesión en la nube)

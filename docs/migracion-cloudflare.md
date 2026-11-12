@@ -25,9 +25,9 @@ Variables y secretos que lee el Worker (`lib/runtime-env.ts`). Solo se anotan lo
 
 - Acceso: `cf` autenticado con un token de API de Emi guardado como secreto del entorno de la sesión (no en el repositorio). El token no tiene fecha de vencimiento; conviene ponerle una.
 - La cuenta de Emi tiene Workers y bases D1 de otros proyectos. No se tocan ni se comparten con APJ.
-- R2 no está activado en la cuenta. Activarlo es un paso que Emi aprueba (puede implicar costo).
-- El dominio `acciontlalnepantla.site` no está en la cuenta. Sus servidores DNS son de Alibaba Cloud DNS y responden con direcciones de la red de Cloudflare que usa Sites. Hay que identificar quién controla el registro del dominio antes del paso 7.
-- Inventario de Sites: pendiente de que Emi inicie sesión en ChatGPT.
+- El dominio `acciontlalnepantla.site` no está en la cuenta de Cloudflare. **Lo registró Emi en su propia cuenta de Alibaba Cloud** (registro del 19-oct-2026, vence el 19-oct-2027), y su DNS también vive ahí, con los registros que lo conectan con Sites (`A` hacia la red de Cloudflare, verificación de OpenAI y nombre personalizado). Para el paso 7 basta con cambiar esos registros o delegar el DNS a Cloudflare; no depende de Sites. Renovar el dominio antes de octubre de 2027.
+- R2 quedó activado por Emi el 12-nov-2026 (plan con uso gratuito mensual).
+- Inventario de Sites: la cuenta de ChatGPT con «Continuar con Apple» es gratuita y no muestra Sites. Hay otra cuenta de OpenAI con el Gmail de Emi; por confirmar cuál publica el sitio.
 
 ## Pasos
 
