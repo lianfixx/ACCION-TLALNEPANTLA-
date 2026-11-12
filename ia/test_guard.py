@@ -220,6 +220,23 @@ class GenericRules(Base):
         hits = g.scan_secrets(diff, False)
         self.assertEqual(len(hits), 2, hits)
 
+    def test_heuristicas_omitidas_solo_en_rutas_indicadas(self):
+        sys.path.insert(0, str(self.root / "ia"))
+        import importlib, guard as g
+        importlib.reload(g)
+        clave = "DB_" + "PASSWORD"
+        real = "ghp_" + "a" * 30
+        tarjeta = "4539" + "5787" + "6362" + "1486"
+        llamada = "const tok" + "en = randomSecret(), hash = 1;"
+        diff = (f'+++ b/tests/x.mjs\n@@ -0,0 +1,3 @@\n+{clave}="{"abcdefgh" * 2}"\n+{real}\n+{tarjeta}\n'
+                f'+++ b/lib/x.ts\n@@ -0,0 +1,3 @@\n+{clave}="{"abcdefgh" * 2}"\n+{tarjeta}\n+{llamada}\n')
+        hits = g.scan_secrets(diff, True, [r"^tests/"])
+        self.assertEqual(sorted(hits), sorted([
+            "tests/x.mjs:2 (token de GitHub)",
+            "lib/x.ts:1 (asignación de secreto)",
+            "lib/x.ts:2 (posible número de tarjeta)",
+        ]), hits)
+
     def test_responder_a_todos_y_borrador(self):
         self.policy([{"type": "recipients", "tool": "mcp__.*Gmail.*", "allow": ["yo@x.mx"], "reason": "Solo a mí."}])
         send = lambda name, i: call({"tool_name": name, "tool_input": i}, self.root)

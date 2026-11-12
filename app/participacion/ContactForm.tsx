@@ -18,7 +18,7 @@ const labels: Record<ContactKind, ContactDefinition> = {
 
 declare global {
   interface Window {
-    turnstile?: { reset: () => void };
+    turnstile?: { reset: (widgetId?: string) => void };
   }
 }
 

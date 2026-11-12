@@ -100,7 +100,7 @@ function secureResponse(request: Request, response: Response, contentSecurityPol
   secured.headers.set("Cross-Origin-Opener-Policy", "same-origin");
   secured.headers.set("Cross-Origin-Resource-Policy", "same-origin");
   const path = new URL(request.url).pathname;
-  if (request.headers.get("cookie")?.includes("__Host-apjt_session=") || path.startsWith("/mi-comision") || path.startsWith("/api/espacio") || path === "/crear-cuenta" || path === "/api/registro-cuenta" || path === "/ingresar" || path === "/cuenta" || path.startsWith("/participacion") || path.startsWith("/admin") || path.startsWith("/api/admin") || path.startsWith("/api/incorporaciones")) {
+  if (request.headers.get("cookie")?.includes("__Host-apjt_session=") || path.startsWith("/mi-comision") || path.startsWith("/api/espacio") || path === "/crear-cuenta" || path === "/confirmar-correo" || path === "/api/confirmar-correo" || path === "/api/registro-cuenta" || path === "/ingresar" || path === "/cuenta" || path.startsWith("/participacion") || path.startsWith("/admin") || path.startsWith("/api/admin") || path.startsWith("/api/incorporaciones")) {
     secured.headers.set("Cache-Control", "private, no-store");
     secured.headers.set("Referrer-Policy", "no-referrer");
     const vary = new Set((secured.headers.get("Vary") ?? "").split(",").map(value=>value.trim()).filter(Boolean));

@@ -2,6 +2,33 @@
 
 Lo más reciente arriba. Formato y reglas: `ia/PROTOCOLO.md`, sección 3. Cada entrada lleva la línea `Agente:`.
 
+## 2026-11-12 · freno de secretos: menos falsos positivos
+
+- Agente: Claude Code (sesión en la nube)
+- Solicitud: Emi, 12/11/2026: autorizó ajustar el freno después de que bloqueara la integración del 23-oct con 13 falsos positivos (marca de tiempo de migración leída como tarjeta, variables `token`/`password` y valores sintéticos `example.test`).
+- Cambios: la heurística «asignación de secreto» ya no cuenta como secreto un valor que es llamada a función (`token = randomSecret()`). Nueva opción `skip_heuristics` de la regla `secrets`: en `tests/`, `drizzle/meta/` y `scripts/audit-storage-local.mjs` se omiten solo la asignación genérica y la tarjeta; las claves con formato conocido y las CURP se siguen revisando en todo el repositorio.
+- Archivos: `ia/guard.py`, `ia/test_guard.py`, `ia/politica.json` y este registro.
+- Verificación: `python3 ia/test_guard.py` → aprobado (34 pruebas, una nueva de regresión); `python3 ia/verificar.py reglas --check` → aprobado.
+- Pendiente: `ia/guard.py` debía ser idéntico en los repositorios de lianfixx; llevar el cambio a las demás copias si Emi lo pide. El workflow de GitHub evalúa con las reglas de la base, así que el primer push con esta integración puede salir en rojo una vez.
+
+## 2026-11-12 · integración de la corrección de registro y activación (23-oct)
+
+- Agente: Claude Code (sesión en la nube)
+- Solicitud: Emi, 12/11/2026: seguir construyendo aquí la última versión de la página, sobre v45 más la corrección del 23-oct, con migración posterior a una cuenta propia de Cloudflare.
+- Cambios: se fusiona `fix/account-registration-verification` (Codex/Emi, 23-oct): activación que sobrevive a la recarga, formularios sin JavaScript por POST sin exponer contraseñas, registro público con Turnstile y confirmación de correo por Resend, migración `0015_email_confirmation.sql`. Se resolvió el conflicto de README conservando la operación de comisiones y la nueva regla. Consecuencia: el registro público queda cerrado hasta configurar Resend y Turnstile en producción.
+- Archivos: los 31 de la rama (ver `docs/registro-confirmacion-correo.md`), `README.md` y este registro.
+- Verificación: `npm run typecheck`, `npm run lint` y `npm test` → aprobado (187 pruebas, 0 fallidas), con un `.openai/hosting.json` local que solo declara los bindings `DB` y `BUCKET` y no se versiona. Prueba de navegador `tests/browser/account-access.mjs` → no ejecutado.
+- Pendiente: el `.openai/hosting.json` real no está en el repositorio; no desplegado; configurar Resend (remitente con dominio verificado) y Turnstile antes de abrir el registro.
+
+## 2026-11-05 · La ruta: plan maestro, formatos y presentación (registro aplicado el 12-nov)
+
+- Agente: Claude (claude.ai, Opus 5.5); registro aplicado por Claude Code el 12/11/2026 desde el documento de Drive.
+- Solicitud: Emi, 5/11/2026: presentación «La ruta» con seis actividades, Enlaces APJ, sitio y Voces 360, Formatos de Evento y formulario para el show de magia.
+- Cambios: plan maestro con ficha única, seis Formatos APJ-F01, bases de Enlaces APJ, oficios, registros, riesgos y fuentes (Claude Docs, copia en Drive «La ruta · Plan maestro y Formatos de Evento»); presentación de 17 diapositivas; formulario para el equipo de magos en Jotform, sin compartir.
+- Archivos: ninguno en el repositorio; entregables en claude.ai, Drive y Jotform.
+- Verificación: datos de la Novena Regidora y de la representación del PAN ante el INE cotejados en fuentes públicas; fechas revisadas; render de diapositivas no ejecutado.
+- Pendiente: confirmaciones externas de la ficha única; aprobación del Comité de las bases de Enlaces APJ; flyers con fechas confirmadas; páginas de Luma; prueba del formulario en celular.
+
 ## 2026-11-04 · corrección: puentes de skill con YAML válido
 
 - Agente: Claude Code (sesión en la nube)

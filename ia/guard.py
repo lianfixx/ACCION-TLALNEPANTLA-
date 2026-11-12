@@ -23,7 +23,9 @@ Tipos de regla (`rules`, se evalúan todas; gana la más estricta: deny > ask > 
   `bash -c`, `env`, `time` y opciones globales de git.
 - `before_git`: corre `run` antes de `git commit|push`; `staged_regex` limita a ciertos archivos
   (`{dir}` = grupo 1); `requires` comprueba dependencias (si faltan, pregunta).
-- `secrets`: busca secretos y, con `pii`, CURP y tarjetas válidas (Luhn) en el diff.
+- `secrets`: busca secretos y, con `pii`, CURP y tarjetas válidas (Luhn) en el diff. `skip_heuristics`
+  (regex de rutas) omite allí solo las heurísticas genéricas (asignación de secreto y tarjeta); las
+  claves con formato conocido y las CURP se revisan en todo el repositorio.
 - `registro`: cada commit que cambie archivos actualiza un registro de `registro.logs`; si el
   log tiene `require`, lo añadido debe contenerlo; `only_added` cuenta solo archivos nuevos.
 - `inmutable`: `paths` (regex); deniega modificar, borrar o renombrar archivos ya versionados.
@@ -58,7 +60,7 @@ SECRET_PATTERNS = [
     ("token de Slack", re.compile(r"\bxox[abprs]-[A-Za-z0-9\-]{10,}")),
     ("asignación de secreto", re.compile(
         r"(?i)(?:^|[^A-Za-z0-9])(?:api[_-]?key|client[_-]?secret|secret|token|password|passwd|contraseña)"
-        r"\s*[:=]\s*['\"]?(?!\$|os\.|process\.|\{\{|<|env\b)[^'\"\s]{12,}")),
+        r"\s*[:=]\s*['\"]?(?!\$|os\.|process\.|\{\{|<|env\b|[A-Za-z_][\w.]*\()[^'\"\s]{12,}")),
 ]
 CURP = re.compile(r"\b[A-Z][AEIOUX][A-Z]{2}\d{2}(?:0[1-9]|1[0-2])(?:0[1-9]|[12]\d|3[01])[HM][A-Z]{2}[B-DF-HJ-NP-TV-Z]{3}[A-Z\d]\d\b")
 CARD = re.compile(r"\b(?:\d[ -]?){13,19}\b")
@@ -211,7 +213,11 @@ def collect_recipients(value, key=None, out=None, cc=None):
     return out, cc
 
 
-def scan_secrets(diff: str, pii: bool) -> list[str]:
+HEURISTIC_LABELS = {"asignación de secreto"}
+
+
+def scan_secrets(diff: str, pii: bool, skip_heuristics: list[str] | None = None) -> list[str]:
+    skip = [re.compile(p) for p in (skip_heuristics or [])]
     hits, current, line_no = [], "?", 0
     for line in diff.splitlines():
         if line.startswith("+++ "):
@@ -224,13 +230,16 @@ def scan_secrets(diff: str, pii: bool) -> list[str]:
         if line.startswith("+"):
             line_no += 1
             text = line[1:]
+            relaxed = any(p.search(current) for p in skip)
             for label, pat in SECRET_PATTERNS:
+                if relaxed and label in HEURISTIC_LABELS:
+                    continue
                 if pat.search(text):
                     hits.append(f"{current}:{line_no} ({label})")
             if pii:
                 if CURP.search(text):
                     hits.append(f"{current}:{line_no} (posible CURP)")
-                for cand in CARD.findall(text):
+                for cand in ([] if relaxed else CARD.findall(text)):
                     digits = re.sub(r"\D", "", cand)
                     if 13 <= len(digits) <= 19 and luhn(digits) and len(set(digits)) > 2:
                         hits.append(f"{current}:{line_no} (posible número de tarjeta)")
@@ -388,7 +397,7 @@ def evaluate(event: dict, policy: dict, root: Path, changes: Changes | None = No
                     if msg:
                         hit("deny", msg)
                 elif kind == "secrets":
-                    found = scan_secrets(ctx.diff(), rule.get("pii", False))
+                    found = scan_secrets(ctx.diff(), rule.get("pii", False), rule.get("skip_heuristics"))
                     if found:
                         shown = "; ".join(found[:15]) + ("…" if len(found) > 15 else "")
                         hit("deny", f"{rule['reason']} Revisar: {shown}. Si es un falso positivo, explícalo a Emi y que decida.")

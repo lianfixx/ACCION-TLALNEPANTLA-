@@ -57,7 +57,7 @@ export async function getStaffIdentity(): Promise<StaffIdentity | null> {
   const db = getRuntimeEnv().DB; if (!db) return null;
   try {
     const now = Date.now(), hash = await secretHash(token);
-    const row = await db.prepare("SELECT a.self_registered AS selfRegistered,a.id AS accountId,a.username,a.email,a.name AS displayName,a.credential_version AS credentialVersion,s.last_seen_at AS lastSeenAt FROM staff_sessions s JOIN staff_accounts a ON a.id=s.account_id WHERE s.token_hash=? AND s.credential_version=a.credential_version AND a.disabled_at IS NULL AND a.password_hash IS NOT NULL AND s.expires_at>? AND s.last_seen_at>?").bind(hash, now, now - idleLifetime).first<{ username: string | null; accountId: string; email: string; displayName: string; credentialVersion: number; lastSeenAt: number }>();
+    const row = await db.prepare("SELECT a.self_registered AS selfRegistered,a.id AS accountId,a.username,a.email,a.name AS displayName,a.credential_version AS credentialVersion,s.last_seen_at AS lastSeenAt FROM staff_sessions s JOIN staff_accounts a ON a.id=s.account_id WHERE s.token_hash=? AND s.credential_version=a.credential_version AND a.disabled_at IS NULL AND a.password_hash IS NOT NULL AND (a.email_verification_required=0 OR a.email_verified_at IS NOT NULL) AND s.expires_at>? AND s.last_seen_at>?").bind(hash, now, now - idleLifetime).first<{ username: string | null; accountId: string; email: string; displayName: string; credentialVersion: number; lastSeenAt: number }>();
     if (!row) return null;
     if (now - row.lastSeenAt > 60_000) await db.prepare('UPDATE staff_sessions SET last_seen_at=? WHERE token_hash=? AND last_seen_at=?').bind(now, hash, row.lastSeenAt).run();
     return { ...row, fullName: row.displayName, sessionHash: hash, authMethod: 'password' };
@@ -66,7 +66,7 @@ export async function getStaffIdentity(): Promise<StaffIdentity | null> {
 
 export async function createStaffSession(accountId: string, version: number) {
   const db = getRuntimeEnv().DB!, now = Date.now(), token = randomSecret(), hash = await secretHash(token);
-  const result = await db.prepare('INSERT INTO staff_sessions (token_hash,account_id,credential_version,created_at,last_seen_at,expires_at) SELECT ?,id,credential_version,?,?,? FROM staff_accounts WHERE id=? AND credential_version=? AND disabled_at IS NULL AND password_hash IS NOT NULL').bind(hash, now, now, now + sessionLifetime, accountId, version).run();
+  const result = await db.prepare('INSERT INTO staff_sessions (token_hash,account_id,credential_version,created_at,last_seen_at,expires_at) SELECT ?,id,credential_version,?,?,? FROM staff_accounts WHERE id=? AND credential_version=? AND disabled_at IS NULL AND password_hash IS NOT NULL AND (email_verification_required=0 OR email_verified_at IS NOT NULL)').bind(hash, now, now, now + sessionLifetime, accountId, version).run();
   if (!result.meta.changes) throw new Error('La cuenta cambió. Vuelve a entrar.');
   await db.prepare('DELETE FROM staff_sessions WHERE expires_at<=? OR last_seen_at<=?').bind(now, now - idleLifetime).run();
   return token;

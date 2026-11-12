@@ -9,7 +9,7 @@ async function signupBody(f,extra={}){
  const noticeToken=html.match(/"noticeToken":"([a-f0-9]{64})"/)[1];
  return{name:'Cuenta de prueba',email:'new@example.test',username:'new.person',password:'Una frase privada para estas pruebas 82',adult:true,consent:true,noticeToken,...extra};
 }
-const signup=(f,body,ip='192.0.2.10')=>f.call('/api/registro-cuenta','POST',body,null,{'CF-Connecting-IP':ip});
+const signup=(f,body,ip='192.0.2.10')=>f.call('/api/registro-cuenta','POST',{'cf-turnstile-response':'isolated-challenge',...body},null,{'CF-Connecting-IP':ip});
 const quota=f=>f.db.prepare("SELECT COALESCE(sum(count),0) n FROM rate_limits WHERE scope='self-register-created'").get().n;
 
 test('empty signups exhaust only their network allowance, never the global capacity for real accounts',async()=>{

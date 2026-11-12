@@ -103,7 +103,12 @@
       "type": "secrets",
       "git": "commit",
       "pii": true,
-      "reason": "El cambio contiene posibles secretos o datos personales."
+      "reason": "El cambio contiene posibles secretos o datos personales.",
+      "skip_heuristics": [
+        "^tests/",
+        "^drizzle/meta/",
+        "^scripts/audit-storage-local\\.mjs$"
+      ]
     },
     {
       "type": "before_git",
