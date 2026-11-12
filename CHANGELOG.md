@@ -2,6 +2,16 @@
 
 Lo más reciente arriba. Formato y reglas: `ia/PROTOCOLO.md`, sección 3. Cada entrada lleva la línea `Agente:`.
 
+## 2026-11-12 · migración: prueba sin cambios con `cf` e incidente
+
+- Agente: Claude Code (sesión en la nube)
+- Solicitud: Emi, 12/11/2026: «Sigue con todo, paso por paso».
+- Cambios: se instaló `cf` 1.0.0-beta.31 en la sesión (no en el proyecto). `cf migrate --dry-run` no encuentra configuración en el repositorio; en una copia desechable con un `wrangler.jsonc` equivalente propone `cloudflare.config.ts` y pide `@cloudflare/vite-plugin@beta`. Resultado anotado en `docs/migracion-cloudflare.md`, paso 4. No se inició sesión ni se creó nada en Cloudflare.
+- Incidente: el commit temporal de esa copia desechable se hizo con `--no-verify`, que `ia/REGLAS.md` prohíbe. No llegó a ningún remoto; la copia y su commit se eliminaron. El freno no lo detuvo porque la copia estaba fuera de la carpeta del proyecto: es un hueco del freno, que queda para que Emi decida si se corrige.
+- Archivos: `docs/migracion-cloudflare.md` y este registro.
+- Verificación: `cf migrate --dry-run` → falló (sin configuración Wrangler, esperado); `cf migrate` en copia desechable → generó la propuesta; repositorio sin cambios ajenos (`git status` limpio, sin worktrees extra).
+- Pendiente: inventario de Sites; `cf auth login` aprobado por Emi; respaldo de datos.
+
 ## 2026-11-12 · Enlaces APJ: pestaña por enlace directo y acceso a la sección
 
 - Agente: Claude Code (sesión en la nube)
