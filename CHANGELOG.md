@@ -2,6 +2,15 @@
 
 Lo más reciente arriba. Formato y reglas: `ia/PROTOCOLO.md`, sección 3. Cada entrada lleva la línea `Agente:`.
 
+## 2026-11-12 · sitio publicado en la cuenta propia de Cloudflare (workers.dev)
+
+- Agente: Claude Code (sesión en la nube)
+- Solicitud: Emi, 12/11/2026: «Sí, hazlo todo»: crear D1 y R2, aplicar migraciones, cargar secretos y publicar en workers.dev sin tocar el dominio ni Sites; propietario con su Gmail.
+- Cambios: D1 y R2 nuevos, 16 migraciones aplicadas, Worker publicado con su tarea diaria. Emi amplió el token de API a edición de D1, R2 y Workers. La publicación se hizo desde su Box porque el proxy de la sesión rompe la subida de archivos estáticos. Detalle en `docs/migracion-cloudflare.md`.
+- Archivos: `docs/migracion-cloudflare.md` y este registro.
+- Verificación: `wrangler d1 migrations apply --remote` → 16 aplicadas; `wrangler deploy` → publicado; 12 rutas comprobadas → 200, y `/enlaces` → 404 esperado.
+- Pendiente: activar la cuenta propietaria (enlace entregado a Emi, vence en 72 h); ajustes del aviso y publicaciones; Turnstile y Resend; prueba en teléfono; dominio.
+
 ## 2026-11-12 · compilación para la cuenta propia de Cloudflare
 
 - Agente: Claude Code (sesión en la nube)

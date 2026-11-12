@@ -1,6 +1,6 @@
 # Plan de migración a la cuenta propia de Cloudflare
 
-Estado: **plan; ejecutados la prueba sin cambios del paso 4 y un inventario de solo lectura** (12-nov-2026). Decisión de Emi del mismo día: publicar desde una cuenta propia de Cloudflare en lugar de Sites. Nada de lo siguiente se ha hecho. Cada paso marcado con «Emi aprueba» requiere su «sí» explícito, porque crea recursos, puede costar dinero, cambia DNS o mueve datos personales.
+Estado: **publicado en workers.dev en la cuenta propia; dominio sin mover** (12-nov-2026). Decisión de Emi del mismo día: publicar desde una cuenta propia de Cloudflare en lugar de Sites. Nada de lo siguiente se ha hecho. Cada paso marcado con «Emi aprueba» requiere su «sí» explícito, porque crea recursos, puede costar dinero, cambia DNS o mueve datos personales.
 
 ## Lo que hoy corre en Sites
 
@@ -34,6 +34,14 @@ Variables y secretos que lee el Worker (`lib/runtime-env.ts`). Solo se anotan lo
 Sites vive en una cuenta de ChatGPT sin suscripción, así que no se puede exportar su base ni su configuración. Emi confirmó que nadie se registró después del 9-oct-2026 y decidió publicar el código de GitHub en su Cloudflare con D1 y R2 nuevos. Las dos publicaciones de Actualidad y los ajustes del aviso se vuelven a cargar desde el panel. El sitio de Sites sigue en línea hasta el cambio de DNS. Los pasos 1 y 2 quedan sin efecto.
 
 Cómo se compila para la cuenta propia: `APJ_D1_DATABASE_NAME`, `APJ_D1_DATABASE_ID` y `APJ_R2_BUCKET` en el entorno de `npm run build`; después `wrangler deploy --config dist/server/wrangler.json`. Las migraciones se aplican desde `drizzle/` con `wrangler d1 migrations apply`. Prueba sin cambios del 12-nov: 570 KB comprimidos, con D1, R2 e Imágenes reconocidos.
+
+## Publicación del 12-nov-2026 (cuenta propia)
+
+- D1 `apj-tlalnepantla` creada y con las 16 migraciones aplicadas; bucket R2 privado `apj-tlalnepantla-privado` creado. Autorizado por Emi.
+- Worker `accion-juvenil-tlalnepantla` publicado en `https://accion-juvenil-tlalnepantla.milla-abogados.workers.dev`, con la tarea diaria `17 10 * * *`. Secretos cargados con `--secrets-file` (clave antiabuso, propietario y activación de 72 h); el archivo se borró después.
+- Publicar desde la sesión en la nube falló: el proxy de la sesión inyecta el token guardado y reemplaza el permiso temporal de subida de archivos (401). La publicación se hizo desde el Box de Emi con `wrangler login` autorizado en su sesión de Cloudflare.
+- Comprobado: portada, comisiones, agenda, actualidad, participación, registro, ingreso, activación, privacidad, sitemap e imágenes responden 200; `/enlaces` responde 404 mientras la convocatoria siga cerrada.
+- Pendiente: activar la cuenta propietaria, cargar los ajustes del aviso y las dos publicaciones, configurar Turnstile y Resend, probar en teléfono y después mover el dominio.
 
 ## Pasos
 
