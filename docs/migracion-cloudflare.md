@@ -29,6 +29,12 @@ Variables y secretos que lee el Worker (`lib/runtime-env.ts`). Solo se anotan lo
 - R2 quedó activado por Emi el 12-nov-2026 (plan con uso gratuito mensual).
 - Inventario de Sites: la cuenta de ChatGPT con «Continuar con Apple» es gratuita y no muestra Sites. Hay otra cuenta de OpenAI con el Gmail de Emi; por confirmar cuál publica el sitio.
 
+## Decisión del 12-nov-2026: empezar limpio
+
+Sites vive en una cuenta de ChatGPT sin suscripción, así que no se puede exportar su base ni su configuración. Emi confirmó que nadie se registró después del 9-oct-2026 y decidió publicar el código de GitHub en su Cloudflare con D1 y R2 nuevos. Las dos publicaciones de Actualidad y los ajustes del aviso se vuelven a cargar desde el panel. El sitio de Sites sigue en línea hasta el cambio de DNS. Los pasos 1 y 2 quedan sin efecto.
+
+Cómo se compila para la cuenta propia: `APJ_D1_DATABASE_NAME`, `APJ_D1_DATABASE_ID` y `APJ_R2_BUCKET` en el entorno de `npm run build`; después `wrangler deploy --config dist/server/wrangler.json`. Las migraciones se aplican desde `drizzle/` con `wrangler d1 migrations apply`. Prueba sin cambios del 12-nov: 570 KB comprimidos, con D1, R2 e Imágenes reconocidos.
+
 ## Pasos
 
 1. **Inventario de Sites.** Desde Sites o con ChatGPT, exportar el `.openai/hosting.json` real, la lista de variables (sin valores) y la versión publicada. Confirmar si la v45 sigue siendo la vigente.

@@ -2,6 +2,15 @@
 
 Lo más reciente arriba. Formato y reglas: `ia/PROTOCOLO.md`, sección 3. Cada entrada lleva la línea `Agente:`.
 
+## 2026-11-12 · compilación para la cuenta propia de Cloudflare
+
+- Agente: Claude Code (sesión en la nube)
+- Solicitud: Emi, 12/11/2026: empezar limpio en su Cloudflare, porque Sites quedó en una cuenta sin suscripción y nadie se registró después del 9-oct.
+- Cambios: `vite.config.ts` toma de `APJ_D1_DATABASE_NAME`, `APJ_D1_DATABASE_ID` y `APJ_R2_BUCKET` los recursos reales (sin ellas conserva los valores de antes) y declara `drizzle/` como carpeta de migraciones. Se versiona `.openai/hosting.json` con solo los nombres de binding `DB` y `BUCKET`, para que el repositorio compile sin archivos externos. Plan actualizado.
+- Archivos: `vite.config.ts`, `.openai/hosting.json`, `docs/migracion-cloudflare.md` y este registro.
+- Verificación: `npm run typecheck`, `npm run lint` y `npm test` → aprobado (192); compilación con nombres de prueba → `wrangler.json` con D1, R2 y migraciones correctos; `wrangler deploy --dry-run` → aprobado, sin publicar.
+- Pendiente: autorización de Emi para crear D1 y R2, aplicar migraciones, cargar secretos y publicar en workers.dev.
+
 ## 2026-11-12 · migración: dominio propio, R2 activo y cuenta de Sites por confirmar
 
 - Agente: Claude Code (sesión en la nube)
