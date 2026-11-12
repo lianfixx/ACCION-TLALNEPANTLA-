@@ -2,6 +2,15 @@
 
 Lo más reciente arriba. Formato y reglas: `ia/PROTOCOLO.md`, sección 3. Cada entrada lleva la línea `Agente:`.
 
+## 2026-11-12 · Enlaces APJ: pestaña por enlace directo y acceso a la sección
+
+- Agente: Claude Code (sesión en la nube)
+- Solicitud: Emi, 12/11/2026: «Sigue con todo, paso por paso». Revisión en pantalla de Mi comisión y del panel.
+- Cambios: `?tab=enlaces` no abría la pestaña de cartas porque la lista de pestañas válidas no la incluía. La sección de cartas ahora solo se muestra a administración y a quien se postuló, aunque alguien escriba la dirección a mano (el servidor ya rechazaba la entrega).
+- Archivos: `lib/workspace-navigation.ts`, `app/mi-comision/Workspace.tsx` y este registro.
+- Verificación: recorrido en Chromium contra la vista local con cuentas sintéticas (solicitud con postulación, aviso, entrega de carta, vista de la persona en escritorio y en iPhone 13 emulado, vista de administración y ajuste en Configuración) → sin errores de página ni desbordes; `npm run typecheck`, `npm run lint` y `npm test` → aprobado.
+- Pendiente: ninguno de este cambio.
+
 ## 2026-11-12 · Enlaces APJ: convocatoria, postulación y cartas
 
 - Agente: Claude Code (sesión en la nube)
