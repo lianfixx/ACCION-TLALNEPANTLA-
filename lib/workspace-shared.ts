@@ -11,7 +11,9 @@ export const workspaceNotice=[
 export const workKinds={event:'Formato de evento',question:'Consulta o autorización',report:'Reporte mensual',handover:'Entrega de comisión'} as const;
 export type WorkKind=keyof typeof workKinds;
 export const workStatuses={draft:'Borrador',submitted:'En revisión',changes:'Con ajustes',approved:'Autorizado',completed:'Terminado',archived:'En archivo',rejected:'No autorizado'} as const;
-export const docCategories={ine_front:'INE · frente',ine_back:'INE · reverso',address:'Comprobante de domicilio',affiliation:'Comprobante de afiliación PAN',affiliation_receipt:'Acuse del trámite PAN',evidence:'Evidencia o documento de actividad'} as const;
+export const enlacesCategories=['motivation_letter','recommendation_letter'] as const;
+export const isEnlacesCategory=(key:string)=>(enlacesCategories as readonly string[]).includes(key);
+export const docCategories={ine_front:'INE · frente',ine_back:'INE · reverso',address:'Comprobante de domicilio',affiliation:'Comprobante de afiliación PAN',affiliation_receipt:'Acuse del trámite PAN',motivation_letter:'Carta de motivos',recommendation_letter:'Carta de recomendación',evidence:'Evidencia o documento de actividad'} as const;
 export type WorkItem={id:string;owner_id:string;commission:string;kind:WorkKind;title:string;details_json:string;status:keyof typeof workStatuses;venue:string;starts_at:number|null;ends_at:number|null;space_confirmed:number;created_at:number;updated_at:number;retention_until:number;owner_name?:string};
 export type WorkDocument={id:string;owner_id:string;item_id:string|null;category:keyof typeof docCategories;name:string;mime:string;size:number;status:string;review_note:string;created_at:number;updated_at:number;retention_until:number;owner_name?:string};
 export const workFields:Record<WorkKind,{key:string;label:string;required?:boolean;type?:string;hint?:string}[]>={

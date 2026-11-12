@@ -1730,3 +1730,61 @@ body { background: #fff; }
  .workspace-work-form .workspace-actions .button { flex: 1 1 180px; }
  .workspace-application .workspace-help { margin-top: 24px; }
 }
+
+/* Enlaces APJ · convocatoria (diseño «APJ · Enlaces APJ», 12-nov-2026) */
+.enlaces { background: #fff; color: var(--ink); }
+.enlaces h1, .enlaces h2 { font-family: var(--serif); font-weight: 480; letter-spacing: -.05em; line-height: 1.07; margin: 0; }
+.enlaces h1 em, .enlaces h2 em { color: var(--blue); font-weight: 430; }
+.enlaces h1 { font-size: clamp(40px, 5vw, 72px); }
+.enlaces h2 { font-size: clamp(32px, 4vw, 52px); margin-bottom: 32px; }
+.enlaces .aj-eyebrow { margin: 0 0 18px; }
+.enlaces-preview { margin: 0; padding: 12px max(18px, calc((100% - 1240px) / 2)); background: #fff4ec; border-bottom: 1px solid #f1d3bf; color: #7a3206; font-size: 15px; }
+.enlaces-preview strong { font-weight: 620; }
+.enlaces-hero { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 40px; align-items: center; padding-block: 64px 56px; }
+.enlaces-lead { max-width: 470px; margin: 26px 0 0; color: var(--muted); font-size: 19px; line-height: 1.5; }
+.enlaces-figure { margin: 0; display: grid; gap: 14px; }
+.enlaces-arch { background: var(--paper-2); border-radius: 44% 44% 24px 24px; aspect-ratio: 1.12; overflow: hidden; display: flex; align-items: flex-end; justify-content: center; }
+.enlaces-arch img { width: 72%; height: auto; display: block; }
+.enlaces-figures { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin: 0; }
+.enlaces-figures div { border: 1px solid #dce4ef; border-radius: 16px; padding: 14px 16px; }
+.enlaces-figures dt { font-family: var(--serif); font-size: 30px; color: var(--blue); }
+.enlaces-figures dd { margin: 0; color: var(--muted); font-size: 14px; }
+.enlaces-band { background: var(--paper-2); }
+.enlaces-section { padding-block: 72px; }
+.enlaces-split { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 48px; }
+.enlaces-band .enlaces-split { padding-block: 72px; }
+.enlaces-split p:not(.aj-eyebrow) { color: var(--muted); font-size: 17px; line-height: 1.55; margin: 22px 0 0; }
+.enlaces-band h2 { margin-bottom: 0; }
+.enlaces-lines { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--line); }
+.enlaces-lines li { padding: 17px 0; border-bottom: 1px solid var(--line); font-size: 17px; line-height: 1.5; }
+.enlaces-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px; }
+.enlaces-cards article { border: 1px solid #dce4ef; border-radius: 20px; padding: 24px; }
+.enlaces-cards h3 { margin: 0; font-family: var(--serif); font-size: 24px; font-weight: 580; }
+.enlaces-cards p { margin: 10px 0 0; color: var(--muted); font-size: 16px; line-height: 1.5; }
+.enlaces-dark { background: var(--ink); color: #fff; }
+.enlaces-dark .aj-eyebrow, .enlaces-dark h2 em { color: #c9d5ea; }
+.enlaces-timeline { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 24px; }
+.enlaces-timeline li { border-top: 2px solid #7f93bd; padding-top: 18px; }
+.enlaces-timeline li[data-last=true] { border-top-color: #f29a62; }
+.enlaces-timeline time { display: block; font-family: var(--serif); font-size: 22px; }
+.enlaces-timeline span { display: block; margin-top: 8px; color: #c9d5ea; font-size: 16px; }
+.enlaces-weights { list-style: none; margin: 0; padding: 0; display: grid; gap: 14px; }
+.enlaces-weights li { display: grid; grid-template-columns: 1fr auto; gap: 8px 12px; font-size: 16px; }
+.enlaces-weights strong { font-weight: 620; }
+.enlaces-weights meter { grid-column: 1 / -1; width: 100%; height: 8px; appearance: none; border: 0; border-radius: 999px; background: #e7edf5; }
+.enlaces-weights meter::-webkit-meter-bar { background: #e7edf5; border: 0; border-radius: 999px; height: 8px; }
+.enlaces-weights meter::-webkit-meter-optimum-value { background: var(--blue); border-radius: 999px; }
+.enlaces-weights meter::-moz-meter-bar { background: var(--blue); border-radius: 999px; }
+.enlaces-duties { margin: 0; padding-left: 20px; display: grid; gap: 10px; font-size: 16px; line-height: 1.5; }
+.enlaces-note { margin: 20px 0 0; color: var(--muted); font-size: 15px; line-height: 1.55; max-width: 720px; }
+.enlaces-apply { border-top: 1px solid var(--line); }
+.enlaces-steps { list-style: none; margin: 0 0 32px; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px; }
+.enlaces-steps li { background: var(--paper-2); border-radius: 20px; padding: 24px; display: grid; gap: 8px; }
+.enlaces-steps strong { font-size: 18px; font-weight: 620; }
+.enlaces-steps span { color: var(--muted); font-size: 16px; line-height: 1.5; }
+.enlaces-check { margin-top: 4px; }
+@media (max-width: 760px) {
+  .enlaces-hero { padding-block: 36px 28px; gap: 28px; }
+  .enlaces-section, .enlaces-band .enlaces-split { padding-block: 48px; }
+  .enlaces .aj-actions .button { width: 100%; justify-content: center; }
+}

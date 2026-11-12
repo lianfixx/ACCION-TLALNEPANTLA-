@@ -1,0 +1,39 @@
+# Plan de migración a la cuenta propia de Cloudflare
+
+Estado: **plan, sin ejecutar** (12-nov-2026). Decisión de Emi del mismo día: publicar desde una cuenta propia de Cloudflare en lugar de Sites. Nada de lo siguiente se ha hecho. Cada paso marcado con «Emi aprueba» requiere su «sí» explícito, porque crea recursos, puede costar dinero, cambia DNS o mueve datos personales.
+
+## Lo que hoy corre en Sites
+
+| Pieza | En el código | Nota |
+|---|---|---|
+| Worker | `worker/index.ts`, compilado por Vinext y `@cloudflare/vite-plugin` | Compatibilidad `nodejs_compat` |
+| Base de datos D1 | binding `DB` | Migraciones `drizzle/0000` a `0015` |
+| Archivos privados R2 | binding `BUCKET` | Expedientes, cartas, imágenes privadas |
+| Imágenes | binding `IMAGES` | Optimización; el sitio tiene alternativa sin él |
+| Tarea diaria | cron `17 10 * * *` (04:17 en Ciudad de México) | Purga por conservación; su ejecución real no está acreditada |
+| Dominio | `acciontlalnepantla.site` | Administrado hoy por Sites |
+
+El archivo `.openai/hosting.json`, que vincula Sites con D1 y R2, no está en el repositorio. Para compilar en local se usa una copia que solo declara los nombres `DB` y `BUCKET` y que no se versiona.
+
+Variables y secretos que lee el Worker (`lib/runtime-env.ts`). Solo se anotan los nombres; los valores nunca van al repositorio ni al chat:
+
+- **Secretos:** `RATE_LIMIT_SECRET`, `TURNSTILE_SECRET_KEY`, `REGISTRATION_TURNSTILE_SECRET_KEY`, `RESEND_API_KEY`, `OWNER_SETUP_HASH`.
+- **Configuración:** `ADMIN_EMAILS`, `OWNER_ACCOUNT_EMAIL`, `OWNER_SETUP_EXPIRES_AT`, `TURNSTILE_SITE_KEY`, `TURNSTILE_EXPECTED_ACTION`, `TURNSTILE_EXPECTED_HOSTNAME`, `REGISTRATION_TURNSTILE_SITE_KEY`, `REGISTRATION_TURNSTILE_HOSTNAME`, `REGISTRATION_EMAIL_FROM`, `REGISTRATION_PUBLIC_ORIGIN`.
+- **Ajustes:** los demás (`MEMBERSHIP_*`, `ENLACES_*`, datos del aviso, redes) se guardan en D1 desde Configuración. Las variables solo sirven de valor inicial.
+
+## Pasos
+
+1. **Inventario de Sites.** Desde Sites o con ChatGPT, exportar el `.openai/hosting.json` real, la lista de variables (sin valores) y la versión publicada. Confirmar si la v45 sigue siendo la vigente.
+2. **Respaldo de datos (Emi aprueba).** Exportar D1 y los objetos de R2 de producción a un lugar privado, nunca a GitHub. Probar la restauración en una instancia aislada; existe `scripts/audit-storage-local.mjs` como referencia local.
+3. **Cuenta y plan.** Emi inicia sesión con `cf auth login` en su navegador. Revisar si D1, R2, Images y Cron caben en el plan gratuito o requieren pago. **Emi aprueba** cualquier plan de pago o la activación de R2.
+4. **Configuración de despliegue.** El proyecto configura Wrangler dentro de `vite.config.ts` (plugin de Cloudflare), no en un `wrangler.jsonc`. Antes de usar `cf dev`, `cf build` o `cf deploy`, correr `cf migrate --dry-run` y revisar qué propone. Si conviene un `wrangler.jsonc`, se crea con los IDs reales de D1 y R2 de la cuenta nueva.
+5. **Recursos (Emi aprueba).** Crear la D1 y el bucket R2 con `--dry-run` primero, aplicar las migraciones de `drizzle/`, importar el respaldo del paso 2 y cargar los secretos con `cf deploy --secrets-file` o `cf workers secrets update`, nunca en la línea de comandos.
+6. **Publicación de prueba (Emi aprueba).** Desplegar en el subdominio `workers.dev`, sin tocar el dominio. Probar con cuentas reales autorizadas: portada, registro, confirmación de correo, solicitud, carga de documentos, panel y descarga privada. Comprobar el cron en el registro de ejecuciones.
+7. **Dominio (Emi aprueba).** Mover `acciontlalnepantla.site` a la cuenta propia o apuntar su DNS al Worker. Ese cambio hace que el sitio deje de servirse desde Sites. Después, comprobar HTTPS, rutas críticas y el formulario real en móvil y escritorio.
+8. **Cierre.** Dejar Sites sin tráfico pero intacto hasta confirmar una semana sin incidencias. Registrar todo en `CHANGELOG.md`.
+
+## Riesgos
+
+- Datos personales (INE, comprobantes, cartas) viajan en el paso 2: canal privado, cifrado y borrado de copias temporales.
+- Si las sesiones dependen de secretos distintos, las personas deberán volver a iniciar sesión.
+- Mientras el DNS se propaga, Sites y la cuenta nueva pueden recibir escrituras a la vez. Conviene cerrar temporalmente el registro y la carga de documentos durante el cambio.

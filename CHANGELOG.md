@@ -2,6 +2,15 @@
 
 Lo más reciente arriba. Formato y reglas: `ia/PROTOCOLO.md`, sección 3. Cada entrada lleva la línea `Agente:`.
 
+## 2026-11-12 · Enlaces APJ: convocatoria, postulación y cartas
+
+- Agente: Claude Code (sesión en la nube)
+- Solicitud: Emi, 12/11/2026: generar un plan y construir la última versión de la página, con diseño en Claude Design bajo las mismas reglas, y preparar la migración a Cloudflare propio.
+- Cambios: página `/enlaces`, oculta hasta que Configuración tenga el acuerdo del Comité y el registro interno abierto (vista previa solo para administración); casilla de postulación en el registro; categorías privadas «Carta de motivos» y «Carta de recomendación», que solo pueden entregar los postulantes mientras la convocatoria esté abierta; pestaña de cartas en Mi comisión y en administración; ajustes `ENLACES_ENABLED` y `ENLACES_APPROVAL`; sitemap condicionado. Diseño en el lienzo «APJ · Enlaces APJ (diseño)». Plan de migración en `docs/migracion-cloudflare.md`, sin ejecutar. Corte de la skill 1.1.2.
+- Archivos: `app/enlaces/page.tsx`, `lib/enlaces.ts`, `tests/enlaces.test.mjs`, `docs/enlaces-apj.md`, `docs/migracion-cloudflare.md`; modificados `app/ApplicationProfileView.tsx`, `app/admin/SettingsManager.tsx`, `app/api/espacio/documentos/route.ts`, `app/api/espacio/route.ts`, `app/api/incorporaciones/route.ts`, `app/api/incorporaciones/[id]/route.ts`, `app/globals.css`, `app/mi-comision/Workspace.tsx`, `app/participacion/InternalRegistration.tsx`, `app/participacion/page.tsx`, `app/sitemap.xml/route.ts`, `lib/membership-profile.ts`, `lib/runtime-env.ts`, `lib/site-settings.ts`, `lib/workspace-shared.ts`, la skill (`SKILL.md`, `CHANGELOG.md`, `references/estado-fuentes.md`) y este registro.
+- Verificación: `npm run typecheck`, `npm run lint` y `npm test` → aprobado (192 pruebas, 5 nuevas). `/enlaces` revisada en Chromium a 1280 px y en iPhone 13 emulado → sin desbordes ni errores. Mi comisión y el panel con cartas → cubiertos por pruebas del Worker, no revisados visualmente.
+- Pendiente: aprobación de las bases por el Comité; no desplegado; ejecutar la migración paso a paso con autorización de Emi; revisión visual de Mi comisión y del panel con una cuenta de prueba.
+
 ## 2026-11-12 · freno de secretos: menos falsos positivos
 
 - Agente: Claude Code (sesión en la nube)

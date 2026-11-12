@@ -7,7 +7,7 @@ import VersionedForm from "./VersionedForm";
 
 const legalFields: Array<[SettingKey,string,string,number]> = [["DATA_CONTROLLER_NAME","Responsable del tratamiento","text",180],["DATA_CONTROLLER_ADDRESS","Domicilio del responsable","text",500],["ARCO_EMAIL","Correo de privacidad","email",254],["PRIVACY_NOTICE_VERSION","Versión del aviso aprobado","text",80],["CONTACT_RETENTION_DAYS","Conservación de mensajes de contacto · días","number",3],["COMMENTS_RETENTION_DAYS","Conservación de opiniones · días","number",3]];
 const networks: Array<[SettingKey,string]> = [["SOCIAL_INSTAGRAM","Instagram"],["SOCIAL_FACEBOOK","Facebook"],["SOCIAL_X","X"],["SOCIAL_YOUTUBE","YouTube"],["SOCIAL_WHATSAPP","WhatsApp"]];
-const membershipFields: SettingKey[] = ["MEMBERSHIP_ENABLED","MEMBERSHIP_RETENTION_DAYS","MEMBERSHIP_NOTICE_APPROVED","MEMBERSHIP_DIRECT_CONSENT","DATA_CONTROLLER_REGIME","DATA_CONTROLLER_LEGAL_BASIS","TRANSPARENCY_ADDRESS","RIGHTS_PROCEDURE"];
+const membershipFields: SettingKey[] = ["MEMBERSHIP_ENABLED","MEMBERSHIP_RETENTION_DAYS","MEMBERSHIP_NOTICE_APPROVED","MEMBERSHIP_DIRECT_CONSENT","DATA_CONTROLLER_REGIME","DATA_CONTROLLER_LEGAL_BASIS","TRANSPARENCY_ADDRESS","RIGHTS_PROCEDURE","ENLACES_ENABLED","ENLACES_APPROVAL"];
 export default function SettingsManager({ record }: { record: SettingsRecord }) {
   const accountFetch=useAdminFetch();
   const [busy,setBusy]=useState(false), [message,setMessage]=useState("");
@@ -15,7 +15,7 @@ export default function SettingsManager({ record }: { record: SettingsRecord }) 
   return <div className="settings-manager"><VersionedForm record={record} onSubmit={async(event,snapshot)=>{
     if (busy) return false;
     setBusy(true);setMessage("");
-    const form=new FormData(event.currentTarget);const values=Object.fromEntries([...legalFields.map(([key])=>key),...networks.map(([key])=>key),...membershipFields].map(key=>[key,String(form.get(key)??(["MEMBERSHIP_ENABLED","MEMBERSHIP_NOTICE_APPROVED","MEMBERSHIP_DIRECT_CONSENT"].includes(key)?"0":""))]));
+    const form=new FormData(event.currentTarget);const values=Object.fromEntries([...legalFields.map(([key])=>key),...networks.map(([key])=>key),...membershipFields].map(key=>[key,String(form.get(key)??(["MEMBERSHIP_ENABLED","MEMBERSHIP_NOTICE_APPROVED","MEMBERSHIP_DIRECT_CONSENT","ENLACES_ENABLED"].includes(key)?"0":""))]));
     try {
       const response=await accountFetch('/api/admin/settings',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({values,expectedUpdatedAt:snapshot.updatedAt})});
       const result=await response.json() as {error?:string;message?:string};setMessage(result.error??result.message??"Configuración guardada.");
@@ -31,6 +31,11 @@ export default function SettingsManager({ record }: { record: SettingsRecord }) 
       <label className="settings-check"><input type="checkbox" name="MEMBERSHIP_NOTICE_APPROVED" value="1" defaultChecked={snapshot.values.MEMBERSHIP_NOTICE_APPROVED==='1'}/><span>El responsable revisó el aviso, su procedimiento de derechos, conservación y mecanismo de consentimiento, y autoriza este tratamiento.</span></label>
       <label className="settings-check"><input type="checkbox" name="MEMBERSHIP_ENABLED" value="1" defaultChecked={snapshot.values.MEMBERSHIP_ENABLED==='1'}/><span>Abrir la recepción de solicitudes internas al guardar.</span></label>
       <p>Cerrar la recepción detiene nuevos envíos y correcciones. Las personas conservan acceso a su expediente y pueden retirarlo; administración puede continuar su seguimiento durante el plazo de conservación.</p>
+    </fieldset>
+    <fieldset disabled={busy} className="membership-settings" id="enlaces"><legend>Convocatoria Enlaces APJ</legend><p>La página <a href="/enlaces" target="_blank" rel="noreferrer">/enlaces</a> y la entrega de cartas se abren solo con el registro interno abierto y el acuerdo del Comité que aprobó las bases. Mientras siga cerrada, administración puede ver la página como vista previa.</p>
+      <label>Acuerdo del Comité que aprobó las bases<input name="ENLACES_APPROVAL" maxLength={300} defaultValue={snapshot.values.ENLACES_APPROVAL} placeholder="Órgano, fecha y referencia del acuerdo"/></label>
+      <label className="settings-check"><input type="checkbox" name="ENLACES_ENABLED" value="1" defaultChecked={snapshot.values.ENLACES_ENABLED==='1'}/><span>Publicar la convocatoria y recibir postulaciones y cartas al guardar.</span></label>
+      <p>Cerrarla oculta la página y detiene nuevas postulaciones y cartas. Lo entregado se conserva para su revisión durante el plazo del aviso.</p>
     </fieldset>
     <fieldset disabled={busy}><legend>Redes de la organización</legend><p>Solo aparecen los enlaces que guardes. Deja vacío lo que todavía no tenga un perfil propio.</p>{networks.map(([key,label])=><label key={key}>{label}<input type="url" name={key} maxLength={500} placeholder="https://" defaultValue={snapshot.values[key]} /></label>)}</fieldset><p>Guardar actualiza el aviso y el registro interno. Contacto y opiniones conservan su activación independiente.</p><button className="button button-primary" disabled={busy}>{busy?"Guardando…":"Guardar configuración"}</button></>}</VersionedForm><p role="status" aria-live="polite">{message}</p></div>;
 }

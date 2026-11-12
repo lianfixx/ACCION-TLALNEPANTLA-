@@ -7,6 +7,7 @@ import { membershipColumns, membershipConfiguration, membershipJson } from "@/li
 import { membershipReadIsCurrent } from "@/lib/membership-read";
 import { membershipConsent, parseMembershipFields, type MembershipApplication } from "@/lib/membership-shared";
 import { consumeRateLimit } from "@/lib/rate-limit";
+import { enlacesConfiguration } from "@/lib/enlaces";
 
 export async function GET(request:Request) {
   const user = await getStaffIdentity(), email = cleanEmail(user?.email);
@@ -34,6 +35,7 @@ export async function POST(request: Request) {
   try {
     const config = await membershipConfiguration();
     if (!config.enabled) return membershipJson({error:"La recepción del registro interno todavía no está abierta."},{status:503});
+    if (JSON.parse(fields.profileJson).enlaces === true && !(await enlacesConfiguration()).open) return membershipJson({error:"La convocatoria de Enlaces APJ no está abierta. Desmarca la postulación para enviar tu solicitud."},{status:409});
     if (body.noticeToken !== config.noticeToken) return membershipJson({error:"El aviso cambió. Actualiza la página y revísalo antes de enviar."},{status:409});
     if (!await consumeRateLimit("membership-create",email,5,60*60*1000)) return membershipJson({error:"Has realizado varios envíos en poco tiempo. Inténtalo más tarde."},{status:429});
     const db=getRuntimeEnv().DB!, now=Date.now(), id=crypto.randomUUID(), reference=`APJ-${crypto.randomUUID().replaceAll("-","").slice(0,12).toUpperCase()}`;

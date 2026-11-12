@@ -1,5 +1,10 @@
 # Cambios de la skill accion-tlalnepantla
 
+## 1.1.2 · 2026-11-12
+
+- Agente: Claude Code
+- Cambios: `references/estado-fuentes.md` añade el corte del 12-nov-2026 (sitio publicado, rama con Enlaces APJ, plan de migración y ficha de La ruta). El método no cambia.
+
 ## 1.1.1 · 2026-11-04
 
 - Agente: Claude Code

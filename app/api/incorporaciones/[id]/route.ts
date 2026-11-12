@@ -7,6 +7,8 @@ import { membershipConfiguration, membershipHistory, membershipJson, ownedMember
 import { membershipReadIsCurrent } from "@/lib/membership-read";
 import { parseMembershipFields } from "@/lib/membership-shared";
 import { consumeRateLimit } from "@/lib/rate-limit";
+import { enlacesConfiguration } from "@/lib/enlaces";
+import { readMembershipProfile } from "@/lib/membership-profile";
 
 type Context = { params:Promise<{id:string}> };
 export async function GET(_request:Request, {params}:Context) {
@@ -48,6 +50,7 @@ export async function PATCH(request:Request,{params}:Context) {
       const acceptedNotice=await db.prepare("SELECT notice_snapshot FROM membership_applications WHERE id=? AND owner_email=?").bind(id,email).first<{notice_snapshot:string}>();
       if(acceptedNotice?.notice_snapshot!==config.snapshot)return membershipJson({error:"El aviso cambió desde que enviaste esta solicitud. Para enviar datos nuevos, retira la solicitud y presenta otra con el aviso vigente. También puedes pedir rectificación por el canal de privacidad."},{status:409});
       let fields;try{fields=parseMembershipFields(body);}catch(error){return membershipJson({error:(error as Error).message},{status:400});}
+      if(JSON.parse(fields.profileJson).enlaces===true&&readMembershipProfile(current.profileJson)?.enlaces!==true&&!(await enlacesConfiguration()).open)return membershipJson({error:"La convocatoria de Enlaces APJ no está abierta. Desmarca la postulación para enviar tu solicitud."},{status:409});
       if(fields.name===current.name&&fields.commission===current.commission&&fields.note===current.note&&fields.profileJson===current.profileJson)return membershipJson({error:"No has cambiado ningún dato."},{status:400});
       if(!await consumeRateLimit('membership-edit',email,15,3600000))return membershipJson({error:"Has realizado varias correcciones en poco tiempo. Inténtalo más tarde. Puedes consultar o retirar tu solicitud mientras tanto."},{status:429});
       update=db.prepare(`UPDATE membership_applications SET name=?,commission=?,note=?,profile_json=?,updated_at=? WHERE id=? AND owner_email=? AND updated_at=? AND retention_until>? AND status IN ('submitted','in_review') AND ${guard.sql}`).bind(fields.name,fields.commission,fields.note,fields.profileJson,now,id,email,current.updatedAt,now,...guard.values);

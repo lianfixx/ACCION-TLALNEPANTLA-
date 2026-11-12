@@ -2,6 +2,16 @@
 
 ## Corte de auditoría
 
+Actualización del **12 de noviembre de 2026** (Claude Code):
+
+- El sitio publicado coincide con la v45 en las rutas revisadas; `/confirmar-correo` responde 404, así que la corrección de registro del 23-oct no está publicada.
+- En la rama `claude/kind-davinci-64007v` se integró esa corrección y se construyó Enlaces APJ (`/enlaces`, postulación y cartas). Ver `docs/enlaces-apj.md`. Nada de esto está desplegado.
+- `.openai/hosting.json` no está en el repositorio; compilar exige una copia local sin versionar.
+- Decisión de Emi: migrar el alojamiento a su cuenta de Cloudflare. Plan en `docs/migracion-cloudflare.md`, sin ejecutar.
+- «La ruta · Plan maestro y Formatos de Evento» (Drive, 5-nov-2026) es la ficha vigente de los eventos de diciembre a marzo; todo en estado de propuesta.
+
+Corte anterior:
+
 Estado observado el **3 de noviembre de 2026**:
 
 - No existía una skill local o en el repositorio que reuniera eventos, comunicación, presentaciones, sitio, podcast, datos y formularios.

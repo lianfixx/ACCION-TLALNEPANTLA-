@@ -8,6 +8,8 @@ export type SiteRuntimeEnv = {
   CONTACT_ENABLED?: string;
   COMMENTS_ENABLED?: string;
   MEMBERSHIP_ENABLED?: string;
+  ENLACES_ENABLED?: string;
+  ENLACES_APPROVAL?: string;
   MEMBERSHIP_RETENTION_DAYS?: string;
   MEMBERSHIP_NOTICE_APPROVED?: string;
   MEMBERSHIP_DIRECT_CONSENT?: string;

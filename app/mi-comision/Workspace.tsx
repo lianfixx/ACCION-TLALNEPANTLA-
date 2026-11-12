@@ -4,7 +4,7 @@ import {useEffect,useRef,useState,type FormEvent} from 'react';
 import {commissionGuides} from '@/lib/commission-guides';
 import {commissions,commissionName} from '@/lib/commissions';
 import {membershipStatuses} from '@/lib/membership-shared';
-import {docCategories,workFields,workKinds,workStatuses,workspaceConsent,workspaceNotice,workspaceVersion,type WorkDocument,type WorkItem,type WorkKind} from '@/lib/workspace-shared';
+import {docCategories,enlacesCategories,isEnlacesCategory,workFields,workKinds,workStatuses,workspaceConsent,workspaceNotice,workspaceVersion,type WorkDocument,type WorkItem,type WorkKind} from '@/lib/workspace-shared';
 import {activityLocalTime,activityTimeToEpoch} from '@/lib/activity-time';
 import {usePrivateData} from '@/lib/use-private-data';
 import VersionedForm from '@/app/admin/VersionedForm';
@@ -15,7 +15,7 @@ import {workspaceTab} from '@/lib/workspace-navigation';
 
 type Team={id:string;account_id:string;commission:string;role:string;active:number;updated_at:number;name:string;username:string};
 type Affiliation={account_id:string;folio:string;status:string;note:string;verification_source:string;verified_at:number|null;updated_at:number;retention_until:number;verified_document_id:string|null;verified_document_name:string|null;document_count:number;name?:string;username?:string};
-type Data={actor:{id:string;name:string;admin:boolean};roles:{commission:string;role:string}[];application:{id:string;commission:string;status:string;reference_code:string}|null;items:WorkItem[];total:number;page:number;team:Team[];teamTotal:number;affiliations:Affiliation[];affiliationTotal:number;consent:boolean;documentsEnabled:boolean;personalDocumentsReady:boolean;noticeToken:string;candidates?:{username:string;name:string;commission:string}[]};
+type Data={actor:{id:string;name:string;admin:boolean};roles:{commission:string;role:string}[];application:{id:string;commission:string;status:string;reference_code:string;enlaces?:number|boolean}|null;enlacesOpen?:boolean;items:WorkItem[];total:number;page:number;team:Team[];teamTotal:number;affiliations:Affiliation[];affiliationTotal:number;consent:boolean;documentsEnabled:boolean;personalDocumentsReady:boolean;noticeToken:string;candidates?:{username:string;name:string;commission:string}[]};
 const date=(n:number)=>new Intl.DateTimeFormat('es-MX',{dateStyle:'medium',timeZone:'America/Mexico_City'}).format(n);
 const moment=(n:number)=>new Intl.DateTimeFormat('es-MX',{dateStyle:'medium',timeStyle:'short',timeZone:'America/Mexico_City'}).format(n);
 const states:Record<string,string>={...membershipStatuses,received:'Recibido',checked:'Archivo revisado',changes:'Necesita una corrección',reported:'En revisión',confirmed:'Afiliación comprobada'};
@@ -57,8 +57,9 @@ export default function Workspace({accountId,adminView=false,initialArea='',init
  const affiliationComplete=Boolean(commissionConfirmed&&data?.personalDocumentsReady&&affiliation?.status==='confirmed'&&affiliation.verified_document_id);
  const readyForAffiliation=Boolean(commissionConfirmed&&data?.personalDocumentsReady);
  const canReceiveAffiliation=Boolean(data?.documentsEnabled&&readyForAffiliation);
- const tabs=admin?[['solicitud','Solicitudes'],['expediente','Documentos personales'],['afiliacion','Afiliación PAN'],['actividades','Actividades'],['equipo','Equipo'],['archivo','Archivo']]:[
+ const tabs=admin?[['solicitud','Solicitudes'],['expediente','Documentos personales'],['enlaces','Enlaces APJ'],['afiliacion','Afiliación PAN'],['actividades','Actividades'],['equipo','Equipo'],['archivo','Archivo']]:[
   ['solicitud','Mi registro'],['expediente','Documentos personales'],
+  ...(data?.application?.enlaces?[['enlaces','Cartas de Enlaces APJ']]:[]),
   ...(areas.length?[['actividades','Actividades'],['equipo','Mi equipo'],['archivo','Archivo']]:[]),
   ...(commissionConfirmed||data?.affiliations.length?[['afiliacion','Afiliación PAN']]:[]),
  ];
@@ -94,6 +95,12 @@ export default function Workspace({accountId,adminView=false,initialArea='',init
     {!admin&&!data.documentsEnabled&&<p>La recepción de documentos está cerrada en este momento. Puedes consultar lo que ya entregaste.</p>}
     {admin||data.consent?<Documents admin={admin} categoryOnly="identity" ownerId={data.actor.id} area={area} allowUpload={!admin&&canReceive} onUploaded={()=>setTick(v=>v+1)} act={act} tick={tick}/>:hasEnrollment&&data.documentsEnabled?<Consent key={data.noticeToken} data={data} act={act} busy={busy}/>:null}
     {!admin&&<div className="workspace-next-action"><p>{readyForAffiliation?(affiliationComplete?'Tus documentos y tu comprobante PAN están revisados. Puedes consultar el seguimiento de tu afiliación.':'Tus documentos están revisados y tu comisión confirmada. El siguiente paso es entregar tu comprobante de afiliación al PAN.'):data.personalDocumentsReady?'Tus documentos están revisados. Consulta en Mi registro la confirmación de tu comisión.':'Consulta aquí la respuesta a cada documento. Los tres deben aparecer como Archivo revisado antes de iniciar el último paso de afiliación al PAN.'}</p><button className="button button-secondary" onClick={()=>changeView(readyForAffiliation?'afiliacion':'solicitud')}>{readyForAffiliation?(affiliationComplete?'Ver mi afiliación':'Continuar con mi afiliación'):'Ver mi registro'}</button></div>}
+   </section>}
+   {tab==='enlaces'&&<section className="workspace-card workspace-enlaces">
+    <h2>{admin?'Cartas de Enlaces APJ':'Tus dos cartas'}</h2>
+    <p>{admin?'Revisa la carta de motivos y la carta de recomendación de cada postulación. Revisar una carta no acepta la postulación: la selección se registra aparte.':'Entrega tu carta de motivos y tu carta de recomendación de un docente, empleador o líder comunitario. Solo tú y la administración autorizada pueden consultarlas.'}</p>
+    {!admin&&!data.enlacesOpen&&<p>La recepción de cartas está cerrada. Puedes consultar lo que ya entregaste.</p>}
+    {admin||data.consent?<Documents admin={admin} categoryOnly="enlaces" ownerId={data.actor.id} area={area} allowUpload={!admin&&canReceive&&Boolean(data.enlacesOpen)} onUploaded={()=>setTick(v=>v+1)} act={act} tick={tick}/>:canReceive?<Consent key={data.noticeToken} data={data} act={act} busy={busy}/>:null}
    </section>}
    {(tab==='actividades'||tab==='archivo')&&<section className="workspace-card">
     {selected?<ItemDetail key={selected} id={selected} admin={admin} actorId={data.actor.id} consent={data.consent} busy={busy} act={act} tick={tick} onBack={()=>setSelected('')}/>:
@@ -174,10 +181,10 @@ function Documents(props:Parameters<typeof DocumentsContent>[0]){return <Documen
 function DocumentsContent({admin=false,ownerId,itemId,categoryOnly,accountFilter,area='',allowUpload=false,uploadOnly=false,onUploaded,act,tick}:{admin?:boolean;ownerId:string;itemId?:string;categoryOnly?:string;accountFilter?:string;area?:string;allowUpload?:boolean;uploadOnly?:boolean;onUploaded?:()=>void;act:Action;tick:number}){
  const[busy,setBusy]=useState(false),[msg,setMsg]=useState(''),[page,setPage]=useState(1),[refresh,setRefresh]=useState(0),[category,setCategory]=useState(itemId?'evidence':categoryOnly==='affiliation'||categoryOnly==='affiliation_receipt'?categoryOnly:'');
  const uploadLock=useRef(false);
- const identity=categoryOnly==='identity',affiliation=categoryOnly==='affiliation';
+ const identity=categoryOnly==='identity',affiliation=categoryOnly==='affiliation',enlaces=categoryOnly==='enlaces',checklist=identity?(['ine_front','ine_back','address'] as const):enlaces?enlacesCategories:null;
  const {data:loaded,error:loadError,retry}=usePrivateData<{documents:WorkDocument[];hasMore:boolean}>(`/api/espacio/documentos?commission=${area}&page=${page}&manage=${admin?1:0}${categoryOnly?'&category='+categoryOnly:''}${accountFilter?'&accountId='+accountFilter:''}${itemId?'&itemId='+itemId:''}`,`${tick}:${refresh}`,ownerId);
  const docs=loaded?.documents??[],more=loaded?.hasMore??false;
- const categoryMatches=(key:string)=>itemId?key==='evidence':identity?['ine_front','ine_back','address'].includes(key):affiliation?isAffiliationCategory(key):categoryOnly?key===categoryOnly:key!=='evidence';
+ const categoryMatches=(key:string)=>itemId?key==='evidence':identity?['ine_front','ine_back','address'].includes(key):enlaces?isEnlacesCategory(key):affiliation?isAffiliationCategory(key):categoryOnly?key===categoryOnly:key!=='evidence';
  async function upload(e:FormEvent<HTMLFormElement>){
   e.preventDefault();if(uploadLock.current)return;
   const form=e.currentTarget,f=new FormData(form),file=f.get('file') as File,chosen=String(f.get('category')||'');
@@ -187,12 +194,12 @@ function DocumentsContent({admin=false,ownerId,itemId,categoryOnly,accountFilter
   try{
    const r=await fetch(`/api/espacio/documentos?category=${chosen}${itemId?'&itemId='+itemId:''}`,{method:'POST',headers:{'Content-Type':file.type,'X-File-Name':encodeURIComponent(file.name),'X-Expected-Account-Id':ownerId},body:file});
    const x=await r.json() as {error?:string};if(!r.ok)throw new Error(x.error||'No pudimos guardar el documento.');
-   form.reset();setRefresh(v=>v+1);onUploaded?.();setMsg(chosen==='affiliation'?'Comprobante recibido. Administración lo revisará y verás aquí la respuesta.':chosen==='affiliation_receipt'?'Acuse recibido. Cuando el PAN confirme tu afiliación, entrega el comprobante para completar el último paso.':'Documento recibido. Puedes consultar aquí la respuesta de administración.');
+   form.reset();setRefresh(v=>v+1);onUploaded?.();setMsg(chosen==='affiliation'?'Comprobante recibido. Administración lo revisará y verás aquí la respuesta.':chosen==='affiliation_receipt'?'Acuse recibido. Cuando el PAN confirme tu afiliación, entrega el comprobante para completar el último paso.':isEnlacesCategory(chosen)?'Carta recibida. Recibirla no significa que tu postulación fue aceptada; aquí verás la revisión.':'Documento recibido. Puedes consultar aquí la respuesta de administración.');
   }catch(e){setMsg((e as Error).message);}finally{uploadLock.current=false;setBusy(false);}
  }
  return <div className="workspace-documents">
   <fieldset className="workspace-surface" disabled={Boolean(loadError)}>
-   {identity&&!admin&&loaded&&<ul className="workspace-document-checklist" aria-label="Documentos del expediente">{(['ine_front','ine_back','address'] as const).map(key=>{
+   {checklist&&!admin&&loaded&&<ul className="workspace-document-checklist" aria-label={enlaces?'Cartas de la postulación':'Documentos del expediente'}>{checklist.map(key=>{
     const latest=docs.find(d=>d.category===key);return <li key={key}><strong>{docCategories[key]}</strong><span>{latest?states[latest.status]||latest.status:'Por entregar'}</span></li>;
    })}</ul>}
    {!uploadOnly&&docs.filter(d=>categoryMatches(d.category)).map(d=><article className="workspace-document" key={d.id}>
@@ -206,7 +213,7 @@ function DocumentsContent({admin=false,ownerId,itemId,categoryOnly,accountFilter
      itemId?<input type="hidden" name="category" value="evidence"/>:
      <label>Qué documento vas a entregar<select name="category" required value={category} onChange={e=>setCategory(e.target.value)}><option value="">Selecciona el documento</option>{Object.entries(docCategories).filter(([key])=>categoryMatches(key)).map(([key,label])=><option key={key} value={key}>{label}</option>)}</select></label>}
     {isAffiliationCategory(category)&&<p className="workspace-help">{affiliationDocumentHelp[category as keyof typeof affiliationDocumentHelp]}</p>}
-    {category==='address'&&<p className="workspace-help">El domicilio debe poder leerse. Puedes ocultar consumos, saldos y números de cuenta.</p>}
+    {category==='recommendation_letter'&&<p className="workspace-help">Debe incluir el nombre de quien la firma y una forma de contactarle.</p>}{category==='address'&&<p className="workspace-help">El domicilio debe poder leerse. Puedes ocultar consumos, saldos y números de cuenta.</p>}
     <label>{affiliation?'Comprobante de afiliación PAN':categoryOnly==='affiliation_receipt'?'Acuse del trámite PAN':'Selecciona el archivo'}<input name="file" type="file" accept="application/pdf,image/jpeg,image/png" required/></label>
     <small>PDF, JPG o PNG de hasta 5 MB. Conserva el nombre y la información que permiten identificar el documento.</small>
     <button className="button button-primary" disabled={busy}>{busy?'Guardando archivo…':affiliation?'Enviar mi comprobante':categoryOnly==='affiliation_receipt'?'Guardar acuse':'Entregar documento'}</button>
