@@ -1,6 +1,6 @@
 # Plan de migración a la cuenta propia de Cloudflare
 
-Estado: **plan; solo se ejecutó la prueba sin cambios del paso 4** (12-nov-2026). Decisión de Emi del mismo día: publicar desde una cuenta propia de Cloudflare en lugar de Sites. Nada de lo siguiente se ha hecho. Cada paso marcado con «Emi aprueba» requiere su «sí» explícito, porque crea recursos, puede costar dinero, cambia DNS o mueve datos personales.
+Estado: **plan; ejecutados la prueba sin cambios del paso 4 y un inventario de solo lectura** (12-nov-2026). Decisión de Emi del mismo día: publicar desde una cuenta propia de Cloudflare en lugar de Sites. Nada de lo siguiente se ha hecho. Cada paso marcado con «Emi aprueba» requiere su «sí» explícito, porque crea recursos, puede costar dinero, cambia DNS o mueve datos personales.
 
 ## Lo que hoy corre en Sites
 
@@ -20,6 +20,14 @@ Variables y secretos que lee el Worker (`lib/runtime-env.ts`). Solo se anotan lo
 - **Secretos:** `RATE_LIMIT_SECRET`, `TURNSTILE_SECRET_KEY`, `REGISTRATION_TURNSTILE_SECRET_KEY`, `RESEND_API_KEY`, `OWNER_SETUP_HASH`.
 - **Configuración:** `ADMIN_EMAILS`, `OWNER_ACCOUNT_EMAIL`, `OWNER_SETUP_EXPIRES_AT`, `TURNSTILE_SITE_KEY`, `TURNSTILE_EXPECTED_ACTION`, `TURNSTILE_EXPECTED_HOSTNAME`, `REGISTRATION_TURNSTILE_SITE_KEY`, `REGISTRATION_TURNSTILE_HOSTNAME`, `REGISTRATION_EMAIL_FROM`, `REGISTRATION_PUBLIC_ORIGIN`.
 - **Ajustes:** los demás (`MEMBERSHIP_*`, `ENLACES_*`, datos del aviso, redes) se guardan en D1 desde Configuración. Las variables solo sirven de valor inicial.
+
+## Inventario del 12-nov-2026
+
+- Acceso: `cf` autenticado con un token de API de Emi guardado como secreto del entorno de la sesión (no en el repositorio). El token no tiene fecha de vencimiento; conviene ponerle una.
+- La cuenta de Emi tiene Workers y bases D1 de otros proyectos. No se tocan ni se comparten con APJ.
+- R2 no está activado en la cuenta. Activarlo es un paso que Emi aprueba (puede implicar costo).
+- El dominio `acciontlalnepantla.site` no está en la cuenta. Sus servidores DNS son de Alibaba Cloud DNS y responden con direcciones de la red de Cloudflare que usa Sites. Hay que identificar quién controla el registro del dominio antes del paso 7.
+- Inventario de Sites: pendiente de que Emi inicie sesión en ChatGPT.
 
 ## Pasos
 

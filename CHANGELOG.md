@@ -2,6 +2,15 @@
 
 Lo más reciente arriba. Formato y reglas: `ia/PROTOCOLO.md`, sección 3. Cada entrada lleva la línea `Agente:`.
 
+## 2026-11-12 · migración: acceso a Cloudflare e inventario de solo lectura
+
+- Agente: Claude Code (sesión en la nube)
+- Solicitud: Emi, 12/11/2026: iniciar sesión de Cloudflare y seguir con la migración paso por paso.
+- Cambios: el entorno de la sesión permite `dash.cloudflare.com`, `api.cloudflare.com` y `workers.cloudflare.com`, con aprobación de Emi. El inicio de sesión por código venció tres veces; Emi guardó un token de API en el formulario seguro del entorno, sin pasar por el chat. Inventario de solo lectura anotado en `docs/migracion-cloudflare.md`, sin nombres ni IDs de otros proyectos. No se creó, cambió ni borró nada en Cloudflare.
+- Archivos: `docs/migracion-cloudflare.md` y este registro.
+- Verificación: verificación del token → activo; listados de Workers, D1, R2 y zonas → leídos (R2 no activado; dominio fuera de la cuenta); DNS público del dominio → Alibaba Cloud DNS.
+- Pendiente: inventario de Sites; decisión sobre activar R2; identificar quién controla el registro del dominio; ponerle fecha de vencimiento al token.
+
 ## 2026-11-12 · migración: prueba sin cambios con `cf` e incidente
 
 - Agente: Claude Code (sesión en la nube)
