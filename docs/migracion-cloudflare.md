@@ -43,6 +43,14 @@ Cómo se compila para la cuenta propia: `APJ_D1_DATABASE_NAME`, `APJ_D1_DATABASE
 - Comprobado: portada, comisiones, agenda, actualidad, participación, registro, ingreso, activación, privacidad, sitemap e imágenes responden 200; `/enlaces` responde 404 mientras la convocatoria siga cerrada.
 - Pendiente: activar la cuenta propietaria, cargar los ajustes del aviso y las dos publicaciones, configurar Turnstile y Resend, probar en teléfono y después mover el dominio.
 
+## Republicación del 13-nov-2026
+
+- Publicada en workers.dev la versión del proceso simplificado (commit `ada5974`), desde el Box con `wrangler login` renovado. Sin migraciones nuevas.
+- Comprobado en línea: portada, comisiones, participación, crear cuenta, ingreso, privacidad, actualidad y agenda responden 200; Mi comisión redirige al ingreso (307); `/enlaces` sigue en 404. Los 8 PDF servidos son idénticos a los del repositorio. /comisiones muestra las 6 tarjetas y los 5 pasos.
+- No se probó el alta de una cuenta en línea: el correo de confirmación depende de Resend, que aún no está listo, y no se quisieron dejar cuentas de prueba en la base real.
+- La zona del dominio quedó activa en la cuenta de Emi con los servidores de nombres de Cloudflare. El dominio sigue apuntando a Sites; no se conectó al Worker.
+- Pendiente para Resend: registro DKIM `resend._domainkey.mail` (valor completo obtenido y validado como clave RSA de 1024 bits; agregarlo requiere el «sí» de Emi por ser un cambio de DNS), clave de envío restringida y secretos `RESEND_API_KEY` y `REGISTRATION_EMAIL_FROM`.
+
 ## Pasos
 
 1. **Inventario de Sites.** Desde Sites o con ChatGPT, exportar el `.openai/hosting.json` real, la lista de variables (sin valores) y la versión publicada. Confirmar si la v45 sigue siendo la vigente.

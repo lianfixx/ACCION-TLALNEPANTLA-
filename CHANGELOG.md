@@ -2,6 +2,15 @@
 
 Lo más reciente arriba. Formato y reglas: `ia/PROTOCOLO.md`, sección 3. Cada entrada lleva la línea `Agente:`.
 
+## 2026-11-13 · republicación en workers.dev y prueba en línea
+
+- Agente: Claude Code (sesión en la nube, publicación desde el Box de Emi)
+- Solicitud: Emi, 13/11/2026: «Sí» a publicar los cambios y «haz una prueba tú».
+- Cambios: publicada la versión `ada5974` en el Worker de prueba; sin migraciones. Zona del dominio activa en Cloudflare, sin conectar al Worker.
+- Verificación: rutas públicas en 200, Mi comisión 307 al ingreso, `/enlaces` 404; 8 PDF idénticos al repositorio; /comisiones con 6 tarjetas y 5 pasos. Alta de cuenta en línea no probada (falta Resend).
+- Archivos: `docs/migracion-cloudflare.md` y este registro.
+- Pendiente: «sí» de Emi para el registro DKIM de Resend; clave de Resend y secretos; prueba completa de registro con correo real; conectar el dominio.
+
 ## 2026-11-13 · proceso de participación más simple, comisiones claras y PDF útiles
 
 - Agente: Claude Code (sesión en la nube), con subagentes para la auditoría y los PDF
