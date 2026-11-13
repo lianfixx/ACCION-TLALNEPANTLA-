@@ -2,6 +2,16 @@
 
 Lo más reciente arriba. Formato y reglas: `ia/PROTOCOLO.md`, sección 3. Cada entrada lleva la línea `Agente:`.
 
+## 2026-11-13 · publicación del panel y del correo de registro
+
+- Agente: Claude Code (sesión en la nube, publicación desde el Box de Emi)
+- Solicitud: Emi, 13/11/2026: «Sí» a publicar el panel en workers.dev.
+- Cambios: migración `0016_panel_crm` aplicada en la D1 real; publicada la versión `f90ef5b` (versión del Worker 4ef15844). Resend: dominio de envío verificado; Emi guardó `RESEND_API_KEY`; remitente `REGISTRATION_EMAIL_FROM` cargado por entrada estándar.
+- Verificación en línea: portada, comisiones, participación, crear cuenta, privacidad y aviso del registro en 200; el aviso publicado ya informa de correos, notas y Cloudflare; `/admin`, `/admin/personas` y `/admin/contenido` redirigen al ingreso sin sesión; `/archivos/<pdf>` redirige al original y un nombre desconocido da 404; `/enlaces` sigue en 404.
+- No verificado: el panel con la sesión de Emi, el guardado de Configuración y el registro con correo real (requieren su contraseña y Turnstile en un navegador real).
+- Archivos: este registro y `docs/migracion-cloudflare.md`.
+- Pendiente: prueba de Emi en su teléfono; conectar el dominio con su «sí».
+
 ## 2026-11-13 · panel de administración: personas y contenido editable
 
 - Agente: Claude Code (sesión en la nube), con dos subagentes en copias aisladas (contenido editable; personas). Integración, encabezado común, correcciones y revisión: Claude Code.

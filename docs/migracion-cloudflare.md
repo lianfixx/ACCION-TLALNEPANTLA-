@@ -51,7 +51,10 @@ Cómo se compila para la cuenta propia: `APJ_D1_DATABASE_NAME`, `APJ_D1_DATABASE
 - La zona del dominio quedó activa en la cuenta de Emi con los servidores de nombres de Cloudflare. El dominio sigue apuntando a Sites; no se conectó al Worker.
 - Pendiente para Resend: registro DKIM `resend._domainkey.mail` (valor completo obtenido y validado como clave RSA de 1024 bits; agregarlo requiere el «sí» de Emi por ser un cambio de DNS), clave de envío restringida y secretos `RESEND_API_KEY` y `REGISTRATION_EMAIL_FROM`.
 
-## Pasos
+## Publicación del panel, 13-nov-2026
+
+- Migración 0016 aplicada con `wrangler d1 migrations apply --remote` y una configuración temporal que apunta `migrations_dir` a `drizzle/`. Publicada la versión `f90ef5b`.
+- Resend listo: dominio de envío verificado, clave guardada por Emi y remitente cargado. Falta la prueba real de registro.
 
 1. **Inventario de Sites.** Desde Sites o con ChatGPT, exportar el `.openai/hosting.json` real, la lista de variables (sin valores) y la versión publicada. Confirmar si la v45 sigue siendo la vigente.
 2. **Respaldo de datos (Emi aprueba).** Exportar D1 y los objetos de R2 de producción a un lugar privado, nunca a GitHub. Probar la restauración en una instancia aislada; existe `scripts/audit-storage-local.mjs` como referencia local.
