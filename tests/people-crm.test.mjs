@@ -293,3 +293,20 @@ test('administration resends the confirmation e-mail only to pending, active acc
  assert.equal((await act(f,id,{action:'resend-confirmation',expectedUpdatedAt:version(f,id)})).status,409);
  assert.equal(f.mail.length,before+1);
 }finally{f.close();}});
+
+test('selecting an Enlaces APJ keeps the application, documents and letters for 13 months',async()=>{const f=await fixture();try{
+ const id=person(f,'ana@example.test'),other=person(f,'beto@example.test');
+ const app=application(f,'ana@example.test','gobierno','accepted',{enlaces:true,enlacesPlan:'Plan de prueba para el primer mes.'});application(f,'beto@example.test');
+ await seedReviewedIdentityDocuments(f,id);
+ const appUpdated=()=>f.db.prepare('SELECT updated_at FROM membership_applications WHERE id=?').get(app).updated_at;
+ assert.equal((await act(f,other,{action:'enlaces.select',expectedUpdatedAt:version(f,other),expectedApplicationUpdatedAt:0})).status,409,'only Enlaces postulants');
+ assert.equal((await act(f,id,{action:'enlaces.select',expectedUpdatedAt:version(f,id),expectedApplicationUpdatedAt:1})).status,409,'stale application');
+ const before=Date.now();
+ assert.equal((await act(f,id,{action:'enlaces.select',expectedUpdatedAt:version(f,id),expectedApplicationUpdatedAt:appUpdated()})).status,200);
+ const row=f.db.prepare('SELECT retention_until,profile_json FROM membership_applications WHERE id=?').get(app);
+ assert.ok(row.retention_until>=before+395*86400000-1000);assert.ok(JSON.parse(row.profile_json).enlacesSelectedAt>=before);
+ assert.ok(f.db.prepare('SELECT min(retention_until) m FROM commission_documents WHERE owner_id=? AND item_id IS NULL').get(id).m>=before+395*86400000-1000);
+ assert.match(f.db.prepare("SELECT body FROM membership_events WHERE application_id=? AND kind='response'").get(app).body,/seleccionado como Enlace APJ/);
+ assert.equal(f.db.prepare("SELECT count(*) n FROM audit_logs WHERE action='person.enlaces.select'").get().n,1);
+ assert.equal((await act(f,id,{action:'enlaces.select',expectedUpdatedAt:version(f,id),expectedApplicationUpdatedAt:appUpdated()})).status,409,'once only');
+}finally{f.close();}});

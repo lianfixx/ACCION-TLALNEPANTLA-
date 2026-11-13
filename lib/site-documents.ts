@@ -7,7 +7,7 @@ export const siteDocumentList = [
   { slug: "guia-tecnologia", label: "Guía de Tecnología e IA" },
   { slug: "guia-mujeres", label: "Guía de Mujeres al frente" },
   { slug: "formato-evento", label: "Formato de evento APJ-F01" },
-  { slug: "bases-y-anexos-para-aprobacion", label: "Bases y anexos para aprobación" },
+  { slug: "bases-y-anexos", label: "Bases y anexos de las comisiones" },
 ] as const;
 
 export type SiteDocumentSlug = typeof siteDocumentList[number]["slug"];

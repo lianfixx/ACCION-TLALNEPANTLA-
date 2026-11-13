@@ -15,6 +15,7 @@ type Input = Record<string, unknown>;
 const reply = (data: unknown, status = 200) => membershipJson(data, { status });
 const fail = (error: string, status = 400) => reply({ error }, status);
 const marker = 'EXISTS (SELECT 1 FROM audit_logs WHERE id=?)';
+const enlacesRetentionMs = 395 * 86_400_000;
 const changed = 'La ficha cambió mientras trabajabas. Actualiza la página antes de continuar.';
 
 /** The audit row is written first, under the live admin guard; every other statement depends on it. */
@@ -138,6 +139,22 @@ export async function personAction(actor: Actor, id: string, input: Input) {
       if (!results[0].meta.changes) return fail(changed, 409);
     } catch { return fail('Ese usuario no está disponible o la ficha cambió. Actualiza la página.', 409); }
     return reply({ message: 'Datos guardados.' });
+  }
+
+  if (action === 'enlaces.select') {
+    // Selected Enlaces work for a year: their application, documents and letters are kept 13 months from selection.
+    const application = await db.prepare("SELECT id,updated_at AS updatedAt,retention_until AS retentionUntil FROM membership_applications WHERE owner_email=? AND status IN ('submitted','in_review','accepted') AND retention_until>? AND json_extract(profile_json,'$.enlaces')=1 AND json_extract(profile_json,'$.enlacesSelectedAt') IS NULL ORDER BY created_at DESC LIMIT 1").bind(target.email, now).first<{ id: string; updatedAt: number; retentionUntil: number }>();
+    if (!application) return fail('Esta persona no tiene una postulación vigente a Enlaces APJ sin seleccionar.', 409);
+    if (Number(input.expectedApplicationUpdatedAt) !== application.updatedAt) return fail(changed, 409);
+    const at = Math.max(now, application.updatedAt + 1), until = Math.max(application.retentionUntil, at + enlacesRetentionMs);
+    const audit = auditFirst(actor, 'person.enlaces.select', id, {}, at, 'EXISTS (SELECT 1 FROM membership_applications WHERE id=? AND updated_at=?)', [application.id, application.updatedAt]);
+    const untilText = new Intl.DateTimeFormat('es-MX', { dateStyle: 'long', timeZone: 'America/Mexico_City' }).format(until);
+    const [result] = await db.batch([audit.statement,
+      db.prepare(`UPDATE membership_applications SET profile_json=json_set(profile_json,'$.enlacesSelectedAt',?),retention_until=?,updated_at=? WHERE id=? AND ${marker}`).bind(at, until, at, application.id, audit.id),
+      db.prepare(`UPDATE commission_documents SET retention_until=MAX(retention_until,?) WHERE owner_id=? AND item_id IS NULL AND status IN ('received','checked','changes') AND ${marker}`).bind(until, id, audit.id),
+      db.prepare(`INSERT INTO membership_events(id,application_id,kind,body,actor_type,actor_email,created_at) SELECT ?,?,'response',?,'admin',?,? WHERE ${marker}`).bind(crypto.randomUUID(), application.id, `Fuiste seleccionado como Enlace APJ. Tu solicitud, tus documentos y tus cartas se conservan hasta el ${untilText}.`, actor.email, at, audit.id),
+    ]);
+    return result.meta.changes ? reply({ message: 'Marcado como Enlace APJ seleccionado.' }) : fail(changed, 409);
   }
 
   if (action === 'delete') return deletePerson(actor, target, input, expected);

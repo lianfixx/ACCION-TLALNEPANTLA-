@@ -1,6 +1,6 @@
 # Plan de migración a la cuenta propia de Cloudflare
 
-Estado: **publicado en workers.dev en la cuenta propia; dominio sin mover** (12-nov-2026). Decisión de Emi del mismo día: publicar desde una cuenta propia de Cloudflare en lugar de Sites. Nada de lo siguiente se ha hecho. Cada paso marcado con «Emi aprueba» requiere su «sí» explícito, porque crea recursos, puede costar dinero, cambia DNS o mueve datos personales.
+Estado: **publicado en la cuenta propia y conectado a `acciontlalnepantla.site`** (13-nov-2026). Sites ya no recibe tráfico del dominio. Decisión de Emi del mismo día: publicar desde una cuenta propia de Cloudflare en lugar de Sites. Nada de lo siguiente se ha hecho. Cada paso marcado con «Emi aprueba» requiere su «sí» explícito, porque crea recursos, puede costar dinero, cambia DNS o mueve datos personales.
 
 ## Lo que hoy corre en Sites
 

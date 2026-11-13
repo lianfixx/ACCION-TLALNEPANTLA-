@@ -2,6 +2,21 @@
 
 Lo más reciente arriba. Formato y reglas: `ia/PROTOCOLO.md`, sección 3. Cada entrada lleva la línea `Agente:`.
 
+## 2026-11-13 · dominio propio, decisiones de Emi y documentos vigentes
+
+- Agente: Claude Code (sesión en la nube)
+- Solicitud: Emi, 13/11/2026, respuestas a la auditoría: no agregar el comprobante de afiliación al aviso; sí reescribir las frases de cumplimiento pendiente; documentos para Enlaces desde la postulación; conservar todo de quien resulte Enlace; actualizar términos; publicar bases, guías y formato como versión oficial («eso del Comité es mero trámite»); conservar la publicación de Víctor Hugo Sondón. Emi conectó el dominio en Cloudflare.
+- Cambios:
+  - Origen público y hostname de Turnstile en `acciontlalnepantla.site`.
+  - Aviso y privacidad: el borrado automático diario se describe como hecho (comprobado en producción) y se quitan las frases de pendientes; conservación de 13 meses para Enlaces seleccionados; conservación de cuentas, publicaciones y registro de cambios.
+  - Ficha de persona: botón «Seleccionado como Enlace APJ» (13 meses para solicitud, documentos y cartas; aviso en el seguimiento; auditoría).
+  - Enlaces: el paso 3 pide las dos cartas y la INE y el comprobante de domicilio.
+  - Términos del 13-nov-2026: documentos, cartas, Enlaces APJ, suspensión y eliminación de cuentas, documentos vigentes.
+  - PDF: «Versión vigente» en guías, formato y bases; Anexo F como registro de acuerdos; bases renombradas a `bases-y-anexos.pdf` y enlazadas en /comisiones.
+  - Freno de secretos (autorizado por Emi el 13-nov-2026): `public/documentos/*.pdf` se omite de las heurísticas, porque las líneas de la tabla xref de los PDF generados (posiciones de bytes de 10 y 5 cifras) pasan la prueba de Luhn por azar. Los patrones de claves reales se siguen revisando; prueba nueva en `ia/test_guard.py`.
+- Archivos: `ia/politica.json`, `ia/test_guard.py`, `lib/membership-notice.ts`, `app/privacidad/page.tsx`, `app/terminos/page.tsx`, `lib/people-actions.ts`, `app/admin/personas/[id]/PersonRecord.tsx`, `app/enlaces/page.tsx`, `app/comisiones/page.tsx`, `app/admin/page.tsx`, `lib/site-documents.ts`, `scripts/build-documentos.py`, `scripts/documentos/bases.py`, `public/documentos/*.pdf`, `app/globals.css`, `docs/*`, `tests/people-crm.test.mjs`, este registro.
+- Verificación: typecheck y lint sin avisos; `npm test` → 214 aprobadas; `python3 -m unittest ia/test_guard.py` → 35 aprobadas; PDF regenerados (guías 2 p., formato 2 p., bases 13 p.).
+
 ## 2026-11-13 · publicación de las correcciones de la auditoría
 
 - Agente: Claude Code (sesión en la nube, publicación desde el Box de Emi)

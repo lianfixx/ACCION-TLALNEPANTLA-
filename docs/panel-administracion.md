@@ -10,10 +10,11 @@ Implementado el 13-nov-2026 a pedido de Emi: un solo panel para controlar el sit
   - Suspender cierra sus sesiones e impide entrar; reactivar lo revierte.
   - Reenviar confirmación manda otra vez el correo de confirmación, hasta 3 veces por hora.
   - Cambiar datos corrige nombre, usuario y comisión; la comisión se cambia en la solicitud vigente.
+  - «Seleccionado como Enlace APJ» (decisión de Emi, 13-nov-2026): conserva 13 meses la solicitud, los documentos personales y las cartas de quien se postuló, y se lo avisa en su seguimiento. Se hace una sola vez.
   - Borrar cuenta y datos pide escribir el usuario exacto. Primero suspende la cuenta, después borra los archivos en R2 y al final elimina las filas de la persona. Las menciones en registros de otras personas se sustituyen por una referencia que no se puede rastrear hasta ella. Si falla el borrado de algún archivo, se detiene y lo informa.
 - Ninguna acción aplica a la cuenta propietaria. Las cuentas con permisos de panel solo las cambia la propietaria.
 - Exportar a Excel: CSV con BOM de la lista filtrada (nombre, usuario, correo, comisión, estados, conteo de documentos, etiquetas y fechas), sin documentos. Las celdas que una hoja de cálculo ejecutaría como fórmula llevan apóstrofo. Cada descarga queda en `audit_logs` (`people.export`).
-- Correos: texto plano a una persona o al grupo filtrado, hasta 100 direcciones confirmadas por envío, con confirmación previa. Se envían con Resend desde `REGISTRATION_EMAIL_FROM` y queda una fila por destinatario en `outbound_emails`. Sin Resend configurado no se envía nada.
+- Correos: texto plano a una persona o al grupo filtrado, hasta 100 por envío, con confirmación previa del grupo exacto. Solo a cuentas activas con el correo confirmado y una solicitud enviada desde que se publicó el aviso del panel (13-nov-2026); la exportación y las etiquetas siguen la misma condición del aviso. Se envían con Resend desde `REGISTRATION_EMAIL_FROM` y queda una fila por destinatario en `outbound_emails`. Sin Resend configurado no se envía nada.
 
 ## Contenido del sitio (`/admin/contenido`)
 

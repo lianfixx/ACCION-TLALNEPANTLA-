@@ -1,11 +1,11 @@
-# Contenido de public/documentos/bases-y-anexos-para-aprobacion.pdf.
+# Contenido de public/documentos/bases-y-anexos.pdf.
 # Cada bloque es una tupla; el tipo está en la primera posición (ver build-documentos.py).
 # Las reglas de fondo vienen de la versión anterior de las bases (9-oct-2026), de
 # docs/comisiones-operacion.md y de la decisión de Emi del 13-nov-2026 sobre Enlaces APJ.
 # No agregues acuerdos, firmas, nombres, cargos ni fechas de aprobación: van en blanco.
 
 TITULO = 'Bases de operación de las comisiones'
-ESTADO = 'Proyecto pendiente de aprobación del Comité Directivo Municipal del PAN en Tlalnepantla de Baz. Borrador del 13 de noviembre de 2026.'
+ESTADO = 'Versión vigente del 13 de noviembre de 2026.'
 
 PORTADA = [
     ('p', 'Estas bases dicen qué hace cada comisión, cómo se incorpora una persona y cómo se proponen, '
@@ -291,14 +291,14 @@ ANEXOS = [
     ('nota', 'Antes de que venza el archivo, quien recibe comprueba que puede abrir los materiales depurados y anota el '
              'repositorio institucional y el plazo autorizado. El relevo no reinicia los 365 días del portal.'),
 
-    ('anexo', 'Anexo F', 'Aprobación'),
-    ('p', 'Se llena con el acta de la sesión. Mientras no esté completo y respaldado, estas bases siguen siendo un proyecto.'),
+    ('anexo', 'Anexo F', 'Registro de acuerdos'),
+    ('p', 'Se llena con el acta cuando el Comité respalde estas bases o sus cambios en sesión.'),
     ('formtabla', None, ['Dato del acuerdo', 'Por completar'], [2.2, 4], [
         'Adscripción de Acción Política Juvenil Tlalnepantla', 'Órgano, fecha y lugar de la sesión',
         'Número de sesión y punto del orden del día', 'Quórum y sentido de la votación',
         'Documentos y versiones aprobados', 'Condiciones y fecha de aplicación',
         'Responsables de ejecución y custodia']),
-    ('h2', 'Lo que se somete a aprobación'),
+    ('h2', 'Lo que el acuerdo puede respaldar'),
     ('lista', [
         'Esta base y sus anexos A a F, con la adscripción, funciones y condiciones que consten en el acta.',
         'Las personas facultadas para revisar solicitudes, autorizar actividades y administrar accesos, dentro de '
@@ -312,5 +312,5 @@ ANEXOS = [
         'Las guías de las seis comisiones y el Formato de evento APJ-F01.',
     ]),
     ('firmas', ['Nombre, cargo y firma de quien preside', 'Nombre, cargo y firma de quien da constancia del acuerdo']),
-    ('nota', 'La constancia o copia del acta acompaña la versión aprobada.'),
+    ('nota', 'La constancia o copia del acta se guarda junto con la versión a la que se refiere.'),
 ]

@@ -82,7 +82,7 @@ export default async function EnlacesPage() {
         <ol className="enlaces-steps">
           <li><strong>Crea tu cuenta</strong><span>Confirma tu correo con el enlace que te enviamos.</span></li>
           <li><strong>Envía tu solicitud</strong><span>Elige tu comisión, marca «Quiero ser Enlace APJ» y escribe qué harías en tu primer mes.</span></li>
-          <li><strong>Sube tus dos cartas</strong><span>En Mi comisión, en PDF, JPG o PNG, antes del cierre.</span></li>
+          <li><strong>Sube tus documentos</strong><span>Antes del cierre, en Mi comisión: tus dos cartas y, en Documentos personales, tu INE por ambos lados y un comprobante de domicilio. En PDF, JPG o PNG.</span></li>
         </ol>
         <div className="aj-actions"><Link className="button button-primary" href="/crear-cuenta">Crear mi cuenta</Link><Link className="aj-link" href="/participacion#registro">Ya tengo cuenta</Link></div>
         <p className="enlaces-note"><Lines text={apply.note} /></p>

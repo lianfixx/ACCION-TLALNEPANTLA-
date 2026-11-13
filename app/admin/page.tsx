@@ -59,7 +59,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
       <div className="admin-intro">
         <p className="section-kicker">Acceso protegido</p>
         <h1>Panel del equipo</h1>
-        {authorized.role==='admin'&&<a className="admin-document-link" href={siteDocumentHref("bases-y-anexos-para-aprobacion")} download>Bases y formatos para aprobación</a>}
+        {authorized.role==='admin'&&<a className="admin-document-link" href={siteDocumentHref("bases-y-anexos")} download>Bases y anexos de las comisiones</a>}
       </div>
       {authorized && data ? <AdminSessionBoundary key={authorized.accountId} accountId={authorized.accountId}><AdminConsole role={authorized.role} data={data} usesPassword={'authMethod' in authorized && authorized.authMethod === 'password'} /></AdminSessionBoundary> : (
         <section className="admin-lock">

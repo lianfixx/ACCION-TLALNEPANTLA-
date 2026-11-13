@@ -1,3 +1,4 @@
+import { siteDocumentHref } from "@/lib/site-documents";
 import Link from "next/link";
 import type { Metadata } from "next";
 import CommissionList from "./CommissionList";
@@ -29,6 +30,7 @@ export default async function CommissionsPage() {
       <div className="record-actions">
         <Link className="button button-primary" href="/participacion#registro">Empezar</Link>
         <Link className="text-link" href="/mi-comision">Ya tengo cuenta</Link>
+        <a className="text-link" href={siteDocumentHref("bases-y-anexos")}>Bases de las comisiones (PDF)</a>
       </div>
       {enlaces.open && <p className="commission-page-enlaces">¿Quieres coordinar? <Link href="/enlaces">Postúlate como Enlace APJ</Link>: dos lugares por comisión.</p>}
     </section>

@@ -107,7 +107,8 @@
       "skip_heuristics": [
         "^tests/",
         "^drizzle/meta/",
-        "^scripts/audit-storage-local\\.mjs$"
+        "^scripts/audit-storage-local\\.mjs$",
+        "^public/documentos/[a-z0-9-]+\\.pdf$"
       ]
     },
     {

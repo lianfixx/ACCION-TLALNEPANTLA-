@@ -34,7 +34,7 @@ import guias  # noqa: E402
 
 ORG = 'Acción Política Juvenil Tlalnepantla'
 FECHA = 'noviembre de 2026'
-ESTADO = 'Proyecto pendiente de aprobación del Comité'
+ESTADO = 'Versión vigente'
 
 # Fuentes ------------------------------------------------------------------------------
 SANS, SANS_SB, SANS_B = 'SourceSans3-Regular', 'SourceSans3-Semibold', 'SourceSans3-Bold'
@@ -506,7 +506,7 @@ def bases_story(toc):
 
 
 def build_bases():
-    name = 'bases-y-anexos-para-aprobacion.pdf'
+    name = 'bases-y-anexos.pdf'
     docname = 'Bases de operación'
     subject = 'Base permanente y anexos de las comisiones, para aprobación del Comité'
     probe = Doc(BytesIO(), docname, subject)

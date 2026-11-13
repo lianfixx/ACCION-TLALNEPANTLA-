@@ -32,6 +32,7 @@ export default function PersonRecord({ record, actorId, control, editable, email
   const [confirmSuspend, setConfirmSuspend] = useState(false), [deleteText, setDeleteText] = useState(''), [note, setNote] = useState(''), [tag, setTag] = useState('');
   const { account, application, members, affiliation, impact } = record;
   const profile = readMembershipProfile(application?.profileJson);
+  const enlacesSelectedAt = (() => { try { const value = JSON.parse(application?.profileJson ?? '{}').enlacesSelectedAt; return typeof value === 'number' ? value : null; } catch { return null; } })();
   const personPath = `/api/admin/personas/${account.id}`;
   const confirmWord = account.username ?? account.email;
   const activeApplication = application && ['submitted', 'in_review', 'accepted'].includes(application.status) ? application : null;
@@ -73,6 +74,9 @@ export default function PersonRecord({ record, actorId, control, editable, email
           {!application ? <p className="people-empty">Sin solicitud vigente.</p> : <>
             <dl className="people-facts"><div><dt>Comisión</dt><dd>{commissionName(application.commission)}</dd></div><div><dt>Folio</dt><dd>{application.referenceCode}</dd></div><div><dt>Recibida</dt><dd>{day(application.createdAt)}</dd></div><div><dt>Se conserva hasta</dt><dd>{day(application.retentionUntil)}</dd></div></dl>
             <details className="people-more"><summary>Perfil{profile?.enlaces ? ' · Enlaces APJ' : ''}</summary><ApplicationProfileView json={application.profileJson} />{application.note && <p className="request-message">{application.note}</p>}</details>
+            {profile?.enlaces && (enlacesSelectedAt
+              ? <p className="people-note">Seleccionado como Enlace APJ el {day(enlacesSelectedAt)}. Su solicitud, documentos y cartas se conservan hasta el {day(application.retentionUntil)}.</p>
+              : activeApplication && <div className="people-inline-actions"><button type="button" className="button button-secondary" disabled={busy} onClick={() => { if (window.confirm('¿Marcar a esta persona como Enlace APJ seleccionado? Su solicitud, documentos y cartas se conservarán 13 meses y se le avisará en su seguimiento.')) void person('enlaces.select', { expectedUpdatedAt: account.updatedAt, expectedApplicationUpdatedAt: application.updatedAt }); }}>Seleccionado como Enlace APJ</button></div>)}
             {!['closed', 'withdrawn'].includes(application.status) && <details className="people-more"><summary>Cambiar estado o responder</summary>
               <VersionedForm className="people-form" record={application} onSubmit={async (event, snapshot) => {
                 const values = Object.fromEntries(new FormData(event.currentTarget));

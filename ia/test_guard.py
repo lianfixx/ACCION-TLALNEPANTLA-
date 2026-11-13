@@ -237,6 +237,23 @@ class GenericRules(Base):
             "lib/x.ts:2 (posible número de tarjeta)",
         ]), hits)
 
+    def test_pdf_generados_sin_heuristica_de_tarjeta(self):
+        # Las líneas xref de los PDF (posición de 10 cifras y generación de 5) pasan la prueba de Luhn por azar.
+        sys.path.insert(0, str(self.root / "ia"))
+        import importlib, json, guard as g
+        importlib.reload(g)
+        politica = json.loads((Path(__file__).resolve().parent / "politica.json").read_text())
+        skip = next(r["skip_heuristics"] for r in politica["rules"] if r.get("skip_heuristics"))
+        xref = " ".join(["0" * 4 + "045" + "517", "0" * 5, "n"])
+        real = "ghp_" + "b" * 30
+        diff = (f'+++ b/public/documentos/guia-gobierno.pdf\n@@ -0,0 +1,2 @@\n+{xref}\n+{real}\n'
+                f'+++ b/public/documentos/sub/x.pdf\n@@ -0,0 +1,1 @@\n+{xref}\n')
+        hits = g.scan_secrets(diff, True, skip)
+        self.assertEqual(sorted(hits), sorted([
+            "public/documentos/guia-gobierno.pdf:2 (token de GitHub)",
+            "public/documentos/sub/x.pdf:1 (posible número de tarjeta)",
+        ]), hits)
+
     def test_responder_a_todos_y_borrador(self):
         self.policy([{"type": "recipients", "tool": "mcp__.*Gmail.*", "allow": ["yo@x.mx"], "reason": "Solo a mí."}])
         send = lambda name, i: call({"tool_name": name, "tool_input": i}, self.root)

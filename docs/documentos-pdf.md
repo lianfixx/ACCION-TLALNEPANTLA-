@@ -16,7 +16,7 @@ Source Sans 3 (400, 600, 700) y Source Serif 4 (400, 600) en `scripts/fonts/`, i
 
 - `guia-<comisión>.pdf` (6, A4, 2 p.): para qué existe, qué hace, primer mes con casillas, qué confirmar, riesgos propios, con quién se coordina, qué dejar al relevo, ciclo del mes y reporte mensual para llenar.
 - `formato-evento.pdf` (APJ-F01, A4, 2 p.): datos, programa, recursos, presupuesto, lista previa, firma, decisión del Comité y cierre.
-- `bases-y-anexos-para-aprobacion.pdf` (A4, 13 p.): portada con contenido, siete páginas de base y anexos A a F. El Anexo C remite al APJ-F01.
+- `bases-y-anexos.pdf` (A4, 13 p.): portada con contenido, siete páginas de base y anexos A a F. El Anexo C remite al APJ-F01.
 
 ## Pendiente
 
