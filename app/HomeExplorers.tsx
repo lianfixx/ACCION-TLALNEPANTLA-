@@ -2,7 +2,8 @@
 
 import { useState, useSyncExternalStore, type KeyboardEvent } from "react";
 import { timeline } from "./HomeData";
-import { commissions } from "@/lib/commissions";
+import type { CommissionContent } from "@/lib/site-content-defaults";
+import { commissionGuideHref } from "@/lib/site-documents";
 import Link from "next/link";
 
 function moveTab(event: KeyboardEvent<HTMLButtonElement>, index: number, count: number, choose: (index: number) => void) {
@@ -48,11 +49,11 @@ const subscribeNarrow = (notify: () => void) => {
 };
 const isNarrow = () => window.matchMedia("(max-width: 760px)").matches;
 
-export function ProgramExplorer() {
+export function ProgramExplorer({ commissions }: { commissions: CommissionContent[] }) {
   const [selected, setSelected] = useState(0);
   const narrow = useSyncExternalStore(subscribeNarrow, isNarrow, () => false);
   return <div className="aj-program-explorer commission-explorer">
     <div className="aj-program-tabs" role="tablist" aria-orientation={narrow ? "horizontal" : "vertical"} aria-label="Comisiones de trabajo">{commissions.map((commission,index)=><button key={commission.id} id={`program-${index}`} type="button" role="tab" aria-controls={`experience-${index}`} aria-selected={selected===index} tabIndex={selected===index?0:-1} onClick={()=>setSelected(index)} onKeyDown={e=>moveTab(e,index,commissions.length,setSelected)}>{commission.name}<b aria-hidden="true">+</b></button>)}</div>
-    <div className="commission-stage">{commissions.map((commission,index)=><div role="tabpanel" id={`experience-${index}`} aria-labelledby={`program-${index}`} tabIndex={0} hidden={selected!==index} key={commission.id} className="commission-panel"><h3>{commission.name}</h3><p className="commission-purpose">{commission.purpose}</p><ul>{commission.tasks.map(task=><li key={task}>{task}</li>)}</ul><div className="commission-delivery"><span>Trabajo a cargo</span><p>{commission.result}</p></div><div className="commission-links"><Link className="button button-primary" href={`/participacion?comision=${commission.id}#registro`}>Participar en {commission.name}</Link><a className="aj-link" href={`/documentos/guia-${commission.id}.pdf`} download>Guía en PDF</a></div></div>)}</div>
+    <div className="commission-stage">{commissions.map((commission,index)=><div role="tabpanel" id={`experience-${index}`} aria-labelledby={`program-${index}`} tabIndex={0} hidden={selected!==index} key={commission.id} className="commission-panel"><h3>{commission.name}</h3><p className="commission-purpose">{commission.purpose}</p><ul>{commission.tasks.map((task,taskIndex)=><li key={taskIndex}>{task}</li>)}</ul><div className="commission-delivery"><span>Trabajo a cargo</span><p>{commission.result}</p></div><div className="commission-links"><Link className="button button-primary" href={`/participacion?comision=${commission.id}#registro`}>Participar en {commission.name}</Link><a className="aj-link" href={commissionGuideHref(commission.id)} download>Guía en PDF</a></div></div>)}</div>
   </div>;
 }

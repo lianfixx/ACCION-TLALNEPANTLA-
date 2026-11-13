@@ -1,17 +1,17 @@
 "use client";
 import { useEffect, useRef } from "react";
-import { commissions } from "@/lib/commissions";
+import type { CommissionContent } from "@/lib/site-content-defaults";
 
-export default function RegistrationMap({ commission, step, steps, onStep }: { commission:string; step:number; steps:string[]; onStep:(step:number)=>void }) {
-  const host=useRef<HTMLDivElement>(null),stage=useRef<HTMLDivElement>(null),selection=useRef(commission),scene=useRef<{select:(index:number)=>void;dispose:()=>void}|null>(null);
-  useEffect(()=>{selection.current=commission;scene.current?.select(commissions.findIndex(c=>c.id===commission));},[commission]);
+export default function RegistrationMap({ commissions, commission, step, steps, onStep }: { commissions:CommissionContent[]; commission:string; step:number; steps:string[]; onStep:(step:number)=>void }) {
+  const host=useRef<HTMLDivElement>(null),stage=useRef<HTMLDivElement>(null),selection=useRef(commissions.findIndex(c=>c.id===commission)),scene=useRef<{select:(index:number)=>void;dispose:()=>void}|null>(null);
+  useEffect(()=>{selection.current=commissions.findIndex(c=>c.id===commission);scene.current?.select(selection.current);},[commission,commissions]);
   useEffect(()=>{
     const element=host.current,container=stage.current;if(!element||!container)return;
     const preferences=['(prefers-reduced-motion: reduce)','(prefers-reduced-data: reduce)','(prefers-reduced-transparency: reduce)','(prefers-contrast: more)'].map(query=>matchMedia(query));
     const limited=()=>preferences.some(p=>p.matches);
     let cancelled=false,loading=false;
     async function mount(){if(cancelled||loading||limited())return;loading=true;
-      try{const {mountCommissionScene}=await import('@/lib/commission-scene');if(cancelled)return;const mounted=await mountCommissionScene(element!,container!,commissions.findIndex(c=>c.id===selection.current));if(cancelled||limited())mounted.dispose();else {scene.current=mounted;mounted.select(commissions.findIndex(c=>c.id===selection.current));}}catch{/* The SVG map remains available without WebGL. */}finally{loading=false;}}
+      try{const {mountCommissionScene}=await import('@/lib/commission-scene');if(cancelled)return;const mounted=await mountCommissionScene(element!,container!,selection.current);if(cancelled||limited())mounted.dispose();else {scene.current=mounted;mounted.select(selection.current);}}catch{/* The SVG map remains available without WebGL. */}finally{loading=false;}}
     const observer=new IntersectionObserver(entries=>{if(entries.some(e=>e.isIntersecting)&&!scene.current)void mount();},{rootMargin:'120px'});observer.observe(container);
     const changed=()=>{scene.current?.dispose();scene.current=null;if(!limited())void mount();};preferences.forEach(p=>p.addEventListener('change',changed));
     return()=>{cancelled=true;observer.disconnect();scene.current?.dispose();scene.current=null;preferences.forEach(p=>p.removeEventListener('change',changed));};

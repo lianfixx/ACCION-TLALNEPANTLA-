@@ -2,6 +2,18 @@
 
 Lo más reciente arriba. Formato y reglas: `ia/PROTOCOLO.md`, sección 3. Cada entrada lleva la línea `Agente:`.
 
+## 2026-11-13 · panel de administración: personas y contenido editable
+
+- Agente: Claude Code (sesión en la nube), con dos subagentes en copias aisladas (contenido editable; personas). Integración, encabezado común, correcciones y revisión: Claude Code.
+- Solicitud: Emi, 13/11/2026: un panel o CRM para controlar todo y hacer cambios desde ahí (decisiones en la entrada «panel de administración completo (en curso)»).
+- Cambios:
+  - `/admin/personas`: lista con búsqueda y filtros, ficha única, notas, etiquetas, exportar CSV para Excel, correos con Resend, suspender, reactivar, reenviar confirmación, cambiar datos y borrar cuenta y datos con confirmación exacta.
+  - `/admin/contenido`: comisiones, Enlaces APJ, portada, Participa y los 5 pasos editables, con valores por defecto del código; PDF reemplazables en R2 servidos por `/archivos/`.
+  - Encabezado común en todas las páginas del panel. Ficha: la marca de correo ya no dice «confirmado» cuando la cuenta no requiere confirmación.
+- Archivos: `app/admin/AdminHeader.tsx`, `app/admin/personas/`, `app/admin/contenido/`, `app/api/admin/personas/`, `app/api/admin/contenido/`, `app/api/admin/documentos/`, `app/archivos/`, `app/CommissionCatalog.tsx`, `app/ContentText.tsx`, `lib/people*.ts`, `lib/site-content*.ts`, `lib/site-documents.ts`, `lib/onboarding-documents.ts`, páginas públicas que leen el contenido, `app/globals.css`, `docs/panel-administracion.md`, pruebas y este registro.
+- Verificación: typecheck, lint y `npm test` → 211 aprobadas. Revisión en Chromium a 1280 y 390 px con datos sintéticos.
+- Pendiente: aplicar la migración 0016 y publicar (requiere el «sí» de Emi); probar en línea el guardado de Configuración (error 403 reportado) y el registro con correo real.
+
 ## 2026-11-13 · aviso de privacidad para el panel de administración
 
 - Agente: Claude Code (sesión en la nube)

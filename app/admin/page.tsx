@@ -2,17 +2,17 @@ import AdminSessionBoundary from "./AdminSessionBoundary";
 import { redirect } from "next/navigation";
 import { adminConfigurationPresent, canHandleRequests, canManageRoles, canModerate, canPublish, canViewAudit, currentAuthorizedUser } from "@/lib/authz";
 import { dataChannelConfiguration } from "@/lib/privacy-config";
-import Link from "next/link";
 import type { Metadata } from "next";
 import AdminConsole from "./AdminConsole";
 import { adminCollection, adminMetrics, parseAdminQuery, type AdminQuery } from "@/lib/admin-queries";
 import type { PanelData } from "@/lib/admin-types";
 import { readSettingsRecord } from "@/lib/site-settings";
 import { membershipConfiguration, membershipReadiness } from "@/lib/membership";
-import StaffLogout from './StaffLogout';
+import AdminHeader from './AdminHeader';
 import { requestAssignees } from "@/lib/request-assignments";
 import { adminWriteGuard } from "@/lib/admin-write-guard";
 import { getRuntimeEnv } from "@/lib/runtime-env";
+import { siteDocumentHref } from "@/lib/site-documents";
 
 export const dynamic = "force-dynamic";
 
@@ -55,14 +55,11 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
   if(!await getRuntimeEnv().DB!.prepare('SELECT 1 WHERE '+live.sql).bind(...live.values).first())redirect('/admin/ingresar');
   return (
     <main className="admin-shell" id="main-content">
-      <header className="admin-header">
-        <Link href="/" className="wordmark"><strong>Administración</strong><span>Tlalnepantla</span></Link>
-        <div><span>{authorized.email}</span><Link href="/admin/cuenta">Usuarios y contraseñas</Link>{authorized.role==='admin'&&<Link href="/admin/comisiones">Comisiones y expedientes</Link>}<StaffLogout accountId={authorized.accountId} /></div>
-      </header>
+      <AdminHeader current="panel" email={authorized.email} role={authorized.role} accountId={authorized.accountId} />
       <div className="admin-intro">
         <p className="section-kicker">Acceso protegido</p>
         <h1>Panel del equipo</h1>
-        {authorized.role==='admin'&&<a className="admin-document-link" href="/documentos/bases-y-anexos-para-aprobacion.pdf" download>Bases y formatos para aprobación</a>}
+        {authorized.role==='admin'&&<a className="admin-document-link" href={siteDocumentHref("bases-y-anexos-para-aprobacion")} download>Bases y formatos para aprobación</a>}
       </div>
       {authorized && data ? <AdminSessionBoundary key={authorized.accountId} accountId={authorized.accountId}><AdminConsole role={authorized.role} data={data} usesPassword={'authMethod' in authorized && authorized.authMethod === 'password'} /></AdminSessionBoundary> : (
         <section className="admin-lock">

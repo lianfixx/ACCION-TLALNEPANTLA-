@@ -1,7 +1,8 @@
 "use client";
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
-import { commissions, isCommission } from "@/lib/commissions";
+import { isCommission } from "@/lib/commissions";
+import { defaultCommissions, type CommissionContent } from "@/lib/site-content-defaults";
 import { membershipConsent, membershipStatuses, type MembershipApplication, type MembershipEvent, type MembershipNotice } from "@/lib/membership-shared";
 import { signInPath } from "@/lib/account-paths";
 import ConsentRecord from "@/app/ConsentRecord";
@@ -11,8 +12,8 @@ import {emptyProfile,parseMembershipProfile,readMembershipProfile,residenceState
 
 const date=(n:number)=>new Intl.DateTimeFormat('es-MX',{dateStyle:'medium',timeStyle:'short',timeZone:'America/Mexico_City'}).format(n);
 type ApiResult={pagination:{page:number;pages:number;total:number};proof?:{snapshot:string;consentText:string};error?:string;message?:string;applications:MembershipApplication[];application:MembershipApplication;events:MembershipEvent[]};
-type Props={accountId:string;enabled:boolean;enlacesOpen?:boolean;notice:MembershipNotice;noticeToken:string;email:string;initialName:string;initialCommission:string};
-export default function InternalRegistration({accountId,enabled,enlacesOpen=false,notice,noticeToken,email,initialName,initialCommission}:Props){
+type Props={accountId:string;enabled:boolean;enlacesOpen?:boolean;notice:MembershipNotice;noticeToken:string;email:string;initialName:string;initialCommission:string;commissions?:CommissionContent[]};
+export default function InternalRegistration({accountId,enabled,enlacesOpen=false,notice,noticeToken,email,initialName,initialCommission,commissions=defaultCommissions}:Props){
   const [step,setStep]=useState(0),[name,setName]=useState(initialName),[commission,setCommission]=useState(isCommission(initialCommission)?initialCommission:''),[note,setNote]=useState(''),[consent,setConsent]=useState(false);
   const [profile,setProfile]=useState<MembershipProfile>(emptyProfile);
   const steps=['Tu solicitud','Revisar y enviar'];
@@ -119,7 +120,7 @@ export default function InternalRegistration({accountId,enabled,enlacesOpen=fals
       <div>{selected.noticeVersion!==notice.version&&<p className="membership-scope">El aviso de registro se actualizó. Para aportar datos nuevos puedes retirar esta solicitud y presentar otra, o solicitar una rectificación por el <Link href="/privacidad/registro">canal de privacidad</Link>.</p>}</div><div className="record-actions">{enabled&&selected.noticeVersion===notice.version&&['submitted','in_review'].includes(selected.status)&&<button className="button button-secondary" disabled={busy||detailLoading||!detailReady} onClick={()=>{setConfirmWithdraw(null);conflictGeneration.current++;setConflictLoading(false);setNeedsConflictReview(false);setEditConflict(null);setConflictError('');setEditBase({id:selected.id,updatedAt:selected.updatedAt});setName(selected.name);setCommission(isCommission(selected.commission)?selected.commission:'');setNote(selected.note);setProfile(readMembershipProfile(selected.profileJson)??emptyProfile());setEditing(true);setStep(0);setError('');}}>Corregir datos</button>}{['submitted','in_review','accepted'].includes(selected.status)&&<button className="button button-secondary" disabled={busy||detailLoading||!detailReady} onClick={()=>setConfirmWithdraw({id:selected.id,updatedAt:selected.updatedAt})}>Retirar solicitud</button>}{!hasActive&&<button className="button button-secondary" onClick={()=>{setConfirmWithdraw(null);setNewForm(true);setStep(0);setName(initialName);setCommission('');setNote('');setProfile(emptyProfile());setConsent(false);}}>Nueva solicitud</button>}</div>
       {confirmWithdraw&&<div className="withdraw-confirmation" role="group" aria-label="Confirmar retirada"><p>Se detendrá el seguimiento de esta solicitud. No afecta tu militancia en el PAN, si la tienes.</p><div className="record-actions"><button disabled={busy||detailLoading||!detailReady} className="button button-primary" onClick={()=>void withdraw()}>{busy?'Retirando…':'Confirmar retirada'}</button><button disabled={busy} className="button button-secondary" onClick={()=>setConfirmWithdraw(null)}>Conservar solicitud</button></div></div>}
       {records.length>1&&<details className="membership-previous"><summary>Solicitudes anteriores</summary>{records.map(record=><button key={record.id} type="button" disabled={busy||detailLoading} onClick={()=>{setError('');setConfirmWithdraw(null);void loadDetail(record);}}>{record.referenceCode} · {membershipStatuses[record.status]}</button>)}</details>}
-    </div>:<div className="registration-workspace"><RegistrationMap commission={commission} step={step} steps={steps} onStep={busy?()=>{}:go}/><form className="registration-form" onSubmit={save}>
+    </div>:<div className="registration-workspace"><RegistrationMap commissions={commissions} commission={commission} step={step} steps={steps} onStep={busy?()=>{}:go}/><form className="registration-form" onSubmit={save}>
       <div className="registration-form-heading"><span className="section-kicker">{editing?'Corregir solicitud':'Solicitud de incorporación'}</span><span>{step+1} de {steps.length}</span></div>
       <h2 ref={title} tabIndex={-1}>{steps[step]}</h2>
       {needsConflictReview&&<section className="admin-note" aria-label="Revisar cambios de la solicitud">
