@@ -99,7 +99,7 @@ export const contentDefaults: Record<string, Record<string, unknown>> = {
     ],
   },
   "enlaces.seats": {
-    eyebrow: "Plazas", title: "Una titular y un apoyo", emphasis: "por comisión.",
+    eyebrow: "Plazas", title: "Una persona titular y una de apoyo", emphasis: "por comisión.",
     roles: {
       gobierno: "Visita al Ayuntamiento, Escuela Parlamentaria y Parlamento Juvenil.",
       administracion: "Registros, listas, permisos y seguimiento de cada evento.",
@@ -143,7 +143,7 @@ export const contentDefaults: Record<string, Record<string, unknown>> = {
   },
   "enlaces.apply": { title: "Postúlate", emphasis: "en tres pasos.", note: "Recibir tu solicitud no significa que fue aceptada. Te avisamos el resultado en tu cuenta. Postularte no te afilia a ningún partido." },
   "home.hero": { eyebrow: "Tlalnepantla, Estado de México", title: "Tu talento puede", emphasis: "mover Tlalnepantla." },
-  "home.welcome": { title: "Ven como eres. Crece con los demás.", text: "Estudies en un bachillerato técnico o en una universidad pública o privada, tengas un trabajo u oficio o apenas estés encontrando tu camino, aquí puedes aportar." },
+  "home.welcome": { title: "Ven como eres. Crece con los demás.", text: "Estudies en un bachillerato técnico o en una universidad pública o privada, tengas un trabajo u oficio o apenas estés encontrando tu camino, aquí puedes aportar. Para unirte a una comisión necesitas 18 años cumplidos." },
   "home.history": { title: "Personas y", emphasis: "antecedentes.", text: "Archivo de Acción Juvenil." },
   "home.commissions": { eyebrow: "Comisiones", title: "El trabajo,", emphasis: "bien definido.", text: "Seis áreas de trabajo.\nConsulta sus funciones y responsabilidades." },
   "home.combination": { eyebrow: "La combinación que importa", title: "Algo que aprendes.\nAlguien que conoces.", emphasis: "Una idea que avanza." },
@@ -155,7 +155,7 @@ export const contentDefaults: Record<string, Record<string, unknown>> = {
       solicitud: { title: "Envía tu solicitud", hint: "Tus datos, tu comisión y tu disponibilidad." },
       documentos: { title: "Sube tus documentos", hint: "INE por ambos lados y comprobante de domicilio." },
       comision: { title: "Te confirmamos", hint: "Administración revisa y te habilita en tu comisión." },
-      afiliacion: { title: "Afiliación al PAN", hint: "Último paso, desde la app del PAN." },
+      afiliacion: { title: "Afiliación al PAN", hint: "Voluntaria. Si decides afiliarte, lo haces en la app del PAN." },
     },
   },
 };

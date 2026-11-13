@@ -25,7 +25,7 @@ const owner='owner@example.test';
 function person(f,email,{name,username=email.split('@')[0]}={}){
  f.seedAccount(email);
  const {id}=f.db.prepare('SELECT id FROM staff_accounts WHERE email=?').get(email);
- f.db.prepare('UPDATE staff_accounts SET username=?,name=? WHERE id=?').run(username,name??username,id);
+ f.db.prepare('UPDATE staff_accounts SET username=?,name=?,email_verified_at=? WHERE id=?').run(username,name??username,Date.now(),id);
  return id;
 }
 function application(f,email,commission='gobierno',status='submitted',extra={}){
@@ -86,7 +86,9 @@ test('the list searches and filters by commission, request, documents, affiliati
 }finally{f.close();}});
 
 test('notes and tags are internal, normalized and audited',async()=>{const f=await fixture();try{
- const id=person(f,'ana@example.test',{name:'Ana Prueba'});
+ const id=person(f,'ana@example.test',{name:'Ana Prueba'}),before=person(f,'old@example.test');
+ application(f,'ana@example.test');
+ assert.equal((await act(f,before,{action:'tag.add',tag:'activa'})).status,409,'no tags for people who never accepted the panel notice');
  assert.equal((await act(f,id,{action:'note.add',body:'  Prefiere contacto por la tarde. '})).status,200);
  const note=f.db.prepare('SELECT * FROM person_notes').get();assert.equal(note.body,'Prefiere contacto por la tarde.');assert.equal(note.author_email,owner);
  assert.equal((await act(f,id,{action:'note.add',body:'x'.repeat(2001)})).status,400);
@@ -170,6 +172,7 @@ test('deletion needs the exact username and leaves no rows or stored files of th
  f.db.prepare("INSERT INTO contact_requests(id,kind,name,email,message,notice_version,retention_until,created_at) VALUES(?,'idea','Ana',?,'Mensaje','v',?,?)").run(crypto.randomUUID(),email,now+86400000,now);
  f.db.prepare("INSERT INTO staff_email_verifications(account_id,token_hash,email,credential_version,return_to,expires_at) VALUES(?,?,?,1,'/',?)").run(id,'f'.repeat(64),email,now+1000);
  f.db.prepare("INSERT INTO audit_logs(id,actor_email,action,entity_type,entity_id,created_at) VALUES(?,?,'commission.created','commission',?,?),(?,?,'document.reviewed','commission',?,?)").run(crypto.randomUUID(),email,item,now,crypto.randomUUID(),owner,letter,now);
+ f.db.prepare('INSERT INTO commission_messages(id,item_id,author_id,body,created_at) VALUES(?,?,?,?,?)').run(crypto.randomUUID(),otherItem,other,'Relevo de Ana Prueba a beto. Gracias.',now);
  assert.equal((await act(f,id,{action:'note.add',body:'Nota sobre Ana'})).status,200);
  assert.equal((await act(f,id,{action:'tag.add',tag:'arco'})).status,200);
  f.db.prepare("INSERT INTO outbound_emails(id,batch_id,account_id,subject,status,sent_by,created_at) VALUES(?,?,?,'Hola','sent',?,?)").run(crypto.randomUUID(),'b',id,owner,now);
@@ -196,19 +199,21 @@ test('deletion needs the exact username and leaves no rows or stored files of th
   const leaked=f.db.prepare(`SELECT * FROM "${table}"`).all().filter(row=>{const text=JSON.stringify(row);return text.includes(id)||text.includes(email)||text.includes(app)||text.includes(item)||text.includes(letter)||text.includes(evidenceOnOther);});
   assert.deepEqual(leaked,[],`${table} still references the person`);
  }
- assert.equal(f.db.prepare('SELECT count(*) n FROM commission_messages').get().n,1,'only the message on the other person\'s item by another author remains');
+ assert.equal(f.db.prepare('SELECT count(*) n FROM commission_messages').get().n,2,'only messages by another author on the other person\'s item remain');
+ assert.ok(!f.db.prepare('SELECT body FROM commission_messages').all().some(row=>row.body.includes('Ana Prueba')),'handover notes no longer name the person');
  assert.equal(f.db.prepare('SELECT count(*) n FROM commission_items').get().n,1);
  assert.equal(f.db.prepare('SELECT count(*) n FROM membership_events WHERE application_id=?').get(otherApp).n,1,'events on other requests remain, without the email');
  const audit=f.db.prepare("SELECT * FROM audit_logs WHERE action='person.delete'").get();
  assert.match(audit.entity_id,/^persona-eliminada-[a-f0-9]{16}$/);assert.equal(audit.actor_email,owner);
- assert.deepEqual(JSON.parse(audit.metadata_json),{documents:6,items:1,applications:1,messages:1});
+ assert.deepEqual(JSON.parse(audit.metadata_json),{documents:6,items:1,applications:1,messages:2});
  assert.equal((await f.call('/admin/personas/'+id,'GET',undefined,owner)).status,404);
  assert.equal((await act(f,other,{action:'note.add',body:'Beto sigue disponible'})).status,200);
 }finally{f.close();}});
 
 test('the export is an Excel-ready CSV with neutralized formulas and an audit row',async()=>{const f=await fixture();try{
- person(f,'ana@example.test',{name:'=HYPERLINK("https://evil.example","Abrir")'});person(f,'beto@example.test',{name:'Beto, "el bueno"'});person(f,'caro@example.test',{name:'@Caro'});
- application(f,'beto@example.test','cultura','submitted');
+ person(f,'ana@example.test',{name:'=HYPERLINK("https://evil.example","Abrir")'});person(f,'beto@example.test',{name:'Beto, "el bueno"'});person(f,'caro@example.test',{name:'@Caro'});person(f,'dora@example.test',{name:'Dora Antes'});
+ application(f,'ana@example.test','gobierno','submitted');application(f,'beto@example.test','cultura','submitted');application(f,'caro@example.test','gobierno','submitted');
+ const before=application(f,'dora@example.test');f.db.prepare('UPDATE membership_applications SET created_at=? WHERE id=?').run(Date.UTC(2026,10,1),before);
  const response=await f.call('/api/admin/personas/exportar','POST',{filters:{q:'example',status:'',commission:'nada'}},owner);
  assert.equal(response.status,200,await response.clone().text());
  assert.match(response.headers.get('content-type'),/^text\/csv; charset=utf-8/);
@@ -216,7 +221,7 @@ test('the export is an Excel-ready CSV with neutralized formulas and an audit ro
  const bytes=new Uint8Array(await response.arrayBuffer());assert.deepEqual([...bytes.slice(0,3)],[0xef,0xbb,0xbf]);
  const text=new TextDecoder().decode(bytes.slice(3)),lines=text.trimEnd().split('\r\n');
  assert.equal(lines[0],'"Nombre","Usuario","Correo","Comisión","Solicitud","Documentos revisados (de 3)","Afiliación PAN","Etiquetas","Alta","Suspendida desde"');
- assert.equal(lines.length,4);
+ assert.equal(lines.length,4);assert.equal(response.headers.get('x-export-excluded'),'1');assert.doesNotMatch(text,/Dora Antes/);
  assert.ok(text.includes('"\'=HYPERLINK(""https://evil.example"",""Abrir"")"'),'formula is neutralized and quotes are doubled');
  assert.ok(text.includes('"\'@Caro"'));assert.ok(text.includes('"Beto, ""el bueno"""'));assert.ok(text.includes('"Cultura","Recibida","0"'));
  assert.doesNotMatch(text,/owner@example/);
@@ -228,10 +233,10 @@ test('the export is an Excel-ready CSV with neutralized formulas and an audit ro
 }finally{f.close();}});
 
 test('without Resend the panel says so and records nothing as sent',async()=>{const f=await fixture({RESEND_API_KEY:''});try{
- const id=person(f,'ana@example.test');batches.length=0;
+ const id=person(f,'ana@example.test');application(f,'ana@example.test');batches.length=0;
  const preview=await ok(await f.call('/api/admin/personas/correo','POST',{mode:'preview',accountId:id},owner));
- assert.deepEqual(preview,{count:1,excluded:0,limit:100,configured:false});
- const sent=await f.call('/api/admin/personas/correo','POST',{mode:'send',accountId:id,subject:'Aviso',body:'Hola',confirm:true,expectedCount:1},owner);
+ assert.deepEqual({...preview,group:undefined},{count:1,excluded:0,limit:100,configured:false,group:undefined});
+ const sent=await f.call('/api/admin/personas/correo','POST',{mode:'send',accountId:id,subject:'Aviso',body:'Hola',confirm:true,expectedCount:1,expectedGroup:preview.group},owner);
  assert.equal(sent.status,503);assert.match((await sent.json()).error,/no está configurado.*No se envió nada/);
  assert.equal(f.db.prepare('SELECT count(*) n FROM outbound_emails').get().n,0);assert.equal(batches.length,0);
  assert.equal(f.db.prepare("SELECT count(*) n FROM audit_logs WHERE action='people.email'").get().n,0);
@@ -243,11 +248,18 @@ test('messages go through Resend in one batch, to confirmed addresses only, one 
  application(f,'ana@example.test','gobierno');application(f,'beto@example.test','gobierno');application(f,'caro@example.test','gobierno');
  f.db.prepare("UPDATE staff_accounts SET email_verification_required=1,email_verified_at=NULL WHERE email='caro@example.test'").run();
  const group={filters:{commission:'gobierno'}};
- assert.deepEqual(await ok(await f.call('/api/admin/personas/correo','POST',{...group,mode:'preview'},owner)),{count:2,excluded:1,limit:100,configured:true});
- const stale=await f.call('/api/admin/personas/correo','POST',{...group,mode:'send',subject:'Reunión',body:'Nos vemos el sábado.',confirm:true,expectedCount:3},owner);
+ // Suspended accounts, revoked access and people without a post-notice application stay out.
+ const dora=person(f,'dora@example.test'),eli=person(f,'eli@example.test');person(f,'fede@example.test');
+ application(f,'dora@example.test','gobierno');application(f,'eli@example.test','gobierno');
+ f.db.prepare('UPDATE staff_accounts SET disabled_at=? WHERE id=?').run(Date.now(),dora);
+ f.db.prepare('UPDATE staff_accounts SET password_hash=NULL WHERE id=?').run(eli);
+ const old=application(f,'fede@example.test','gobierno');f.db.prepare('UPDATE membership_applications SET created_at=? WHERE id=?').run(Date.UTC(2026,10,1),old);
+ const preview=await ok(await f.call('/api/admin/personas/correo','POST',{...group,mode:'preview'},owner));
+ assert.deepEqual({...preview,group:undefined},{count:2,excluded:4,limit:100,configured:true,group:undefined});
+ const stale=await f.call('/api/admin/personas/correo','POST',{...group,mode:'send',subject:'Reunión',body:'Nos vemos el sábado.',confirm:true,expectedCount:2,expectedGroup:'otro-grupo'},owner);
  assert.equal(stale.status,409);assert.equal(batches.length,0);
- assert.equal((await f.call('/api/admin/personas/correo','POST',{...group,mode:'send',subject:'Reunión',body:'Nos vemos el sábado.',expectedCount:2},owner)).status,409,'explicit confirmation is required');
- const sent=await ok(await f.call('/api/admin/personas/correo','POST',{...group,mode:'send',subject:'Reunión\r\nBcc: x@evil.example',body:'Nos vemos el sábado.',confirm:true,expectedCount:2},owner));
+ assert.equal((await f.call('/api/admin/personas/correo','POST',{...group,mode:'send',subject:'Reunión',body:'Nos vemos el sábado.',expectedCount:2,expectedGroup:preview.group},owner)).status,409,'explicit confirmation is required');
+ const sent=await ok(await f.call('/api/admin/personas/correo','POST',{...group,mode:'send',subject:'Reunión\r\nBcc: x@evil.example',body:'Nos vemos el sábado.',confirm:true,expectedCount:2,expectedGroup:preview.group},owner));
  assert.equal(sent.sent,2);assert.equal(batches.length,1);
  assert.deepEqual(batches[0].messages.map(m=>m.to[0]).sort(),['ana@example.test','beto@example.test']);
  assert.ok(batches[0].messages.every(m=>m.subject==='Reunión Bcc: x@evil.example'&&m.text==='Nos vemos el sábado.'&&m.from==='no-reply@example.test'&&!m.html));
@@ -257,15 +269,16 @@ test('messages go through Resend in one batch, to confirmed addresses only, one 
  assert.deepEqual(rows.map(row=>row.account_id).sort(),[ana,beto].sort());
  const audit=JSON.parse(f.db.prepare("SELECT metadata_json FROM audit_logs WHERE action='people.email'").get().metadata_json);
  assert.deepEqual(audit,{batchId:rows[0].batch_id,recipients:2,filters:{commission:'gobierno',search:false}});
+ const single=(await ok(await f.call('/api/admin/personas/correo','POST',{mode:'preview',accountId:ana},owner))).group;
  batchFailure=true;
- const failed=await f.call('/api/admin/personas/correo','POST',{mode:'send',accountId:ana,subject:'Recordatorio',body:'Texto',confirm:true,expectedCount:1},owner);
+ const failed=await f.call('/api/admin/personas/correo','POST',{mode:'send',accountId:ana,subject:'Recordatorio',body:'Texto',confirm:true,expectedCount:1,expectedGroup:single},owner);
  assert.equal(failed.status,502);
  assert.equal(f.db.prepare("SELECT status FROM outbound_emails WHERE subject='Recordatorio'").get().status,'failed');
  batchFailure=false;
  assert.match(await(await f.call('/admin/personas/'+ana,'GET',undefined,owner)).text(),/Recordatorio/);
- for(let n=0;n<101;n++){const id=person(f,`grupo${n}@example.test`);void id;}
+ for(let n=0;n<101;n++){person(f,`grupo${n}@example.test`);application(f,`grupo${n}@example.test`);}
  const tooMany=await ok(await f.call('/api/admin/personas/correo','POST',{mode:'preview',filters:{q:'grupo'}},owner));assert.equal(tooMany.count,101);
- assert.equal((await f.call('/api/admin/personas/correo','POST',{mode:'send',filters:{q:'grupo'},subject:'Masivo',body:'Texto',confirm:true,expectedCount:101},owner)).status,400);
+ assert.equal((await f.call('/api/admin/personas/correo','POST',{mode:'send',filters:{q:'grupo'},subject:'Masivo',body:'Texto',confirm:true,expectedCount:101,expectedGroup:tooMany.group},owner)).status,400);
 }finally{f.close();}});
 
 test('administration resends the confirmation e-mail only to pending, active accounts',async()=>{const f=await fixture();try{

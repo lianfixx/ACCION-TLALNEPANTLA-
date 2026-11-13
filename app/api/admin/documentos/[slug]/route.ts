@@ -41,6 +41,11 @@ export async function POST(request: Request, context: Context) {
   const sha256 = hex(await crypto.subtle.digest("SHA-256", bytes as Uint8Array<ArrayBuffer>));
   const objectKey = `site-documents/${slug}/${sha256}.pdf`;
   let stored = false, previousKey = "";
+  // Two uploads can race: an object is removed only when no row points to it any more.
+  const removeUnused = async (key: string) => {
+    if (!key || await db.prepare("SELECT 1 FROM site_documents WHERE object_key = ?").bind(key).first()) return;
+    await bucket.delete(key).catch(() => undefined);
+  };
   try {
     const current = await db.prepare(`SELECT ${columns} FROM site_documents WHERE slug = ?`).bind(slug).first<SiteDocumentRow>();
     if ((current?.uploaded_at ?? 0) !== expected) return noStoreJson({ error: changedElsewhere }, { status: 409 });
@@ -57,13 +62,13 @@ export async function POST(request: Request, context: Context) {
       db.prepare("INSERT INTO audit_logs (id,actor_email,action,entity_type,entity_id,metadata_json,created_at) SELECT ?,?,'document.replace','site_document',?,?,? WHERE changes() > 0").bind(crypto.randomUUID(), actor.email, slug, JSON.stringify({ sizeBytes: bytes.byteLength, sha256 }), now),
     ]);
     if (!result.meta.changes) {
-      if (stored) await bucket.delete(objectKey).catch(() => undefined);
+      if (stored) await removeUnused(objectKey);
       return noStoreJson({ error: changedElsewhere }, { status: 409 });
     }
-    if (previousKey && previousKey !== objectKey) await bucket.delete(previousKey).catch(() => undefined);
+    if (previousKey !== objectKey) await removeUnused(previousKey);
     return noStoreJson({ document: { slug, object_key: objectKey, file_name: fileName, size_bytes: bytes.byteLength, sha256, uploaded_at: now, uploaded_by: actor.email }, message: "Listo. El sitio ya entrega la versión nueva." }, { status: 201 });
   } catch {
-    if (stored) await bucket.delete(objectKey).catch(() => undefined);
+    if (stored) await removeUnused(objectKey).catch(() => undefined);
     return noStoreJson({ error: "No fue posible guardar el documento." }, { status: 503 });
   }
 }

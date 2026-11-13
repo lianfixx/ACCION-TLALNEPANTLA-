@@ -23,7 +23,8 @@ Mientras está cerrada, `/enlaces` responde 404 al público y muestra una vista 
 
 ## Límites
 
-- El texto de la convocatoria y las fechas del calendario están en `app/enlaces/page.tsx`. Si el Comité aprueba otras bases o fechas, hay que cambiar ese archivo.
+- El texto de la convocatoria y las fechas del calendario se editan en Administración › Contenido del sitio › Enlaces APJ (valores por defecto en `lib/site-content-defaults.ts`). Los tres pasos de postulación siguen en `app/enlaces/page.tsx`.
+- La convocatoria solo aparece abierta si además el alta de cuentas funciona (Turnstile y Resend configurados).
 - El sitio no comprueba el rango de 18 a 29 años ni la residencia en Tlalnepantla: el registro solo declara mayoría de edad. Lo revisan las personas evaluadoras.
 - No hay cierre automático por fecha: se cierra desde Configuración.
 - La prueba se hizo con datos sintéticos y en vista local. No acredita la publicación ni el funcionamiento en producción.

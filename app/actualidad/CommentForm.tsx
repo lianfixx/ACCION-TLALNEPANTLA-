@@ -25,7 +25,7 @@ export default function CommentForm({ accountId, postId, enabled, signedIn, sign
       setSending(false);
     }
   }
-  if (!enabled) return <div className="comment-closed"><strong>Opiniones cerradas por ahora.</strong><p>Puedes leer y compartir esta publicación. Por ahora no recibe comentarios.</p></div>;
+  if (!enabled) return <p className="comment-closed">Esta publicación no recibe opiniones.</p>;
   if (!signedIn) return <div className="comment-closed"><strong>Inicia sesión para opinar.</strong><p>La autenticación ayuda a prevenir abuso; tu correo no se publica.</p><a className="button button-primary" href={signInPath}>Iniciar sesión</a></div>;
   return <form className="comment-form" onSubmit={submit} aria-busy={sending}><label>Nombre público opcional<input name="publicName" maxLength={80} placeholder="Participante" autoComplete="nickname" /></label><label>Tu opinión<textarea name="body" minLength={3} maxLength={1200} required rows={4} /></label><label className="consent-line"><input name="consent" type="checkbox" required /><span>He leído el <a href="/privacidad">aviso de privacidad</a> y acepto el tratamiento necesario para moderar esta opinión.</span></label><button className="button button-primary" type="submit" disabled={sending}>{sending ? "Enviando…" : "Enviar a moderación"}</button><p role="status" aria-live="polite">{message}</p></form>;
 }

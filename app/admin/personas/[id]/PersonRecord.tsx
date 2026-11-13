@@ -19,7 +19,7 @@ const day = (n: number) => new Intl.DateTimeFormat('es-MX', { dateStyle: 'medium
 const moment = (n: number) => new Intl.DateTimeFormat('es-MX', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'America/Mexico_City' }).format(n);
 const tone = (status: string | null | undefined) => status === 'accepted' || status === 'confirmed' || status === 'sent' ? 'ok' : status === 'submitted' || status === 'in_review' || status === 'reported' || status === 'pending' ? 'wait' : status === 'changes' || status === 'failed' ? 'warn' : 'off';
 const documentStates: { [key: string]: string } = { missing: 'Falta', received: 'Por revisar', checked: 'Revisado', changes: 'Pide corrección' };
-const emailStates: { [key: string]: string } = { sent: 'Enviado', failed: 'Falló', pending: 'Sin confirmar' };
+const emailStates: { [key: string]: string } = { sent: 'Enviado', failed: 'Falló', pending: 'Pendiente', unknown: 'Sin respuesta de Resend' };
 
 function Panel({ id, title, aside, children }: { id: string; title: string; aside?: ReactNode; children: ReactNode }) {
   return <section className="people-panel" id={id} aria-labelledby={`${id}-title`}><div className="people-panel-head"><h2 id={`${id}-title`}>{title}</h2>{aside}</div>{children}</section>;

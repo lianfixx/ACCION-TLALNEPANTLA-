@@ -72,7 +72,7 @@ export async function POST(r:Request){if(!requestIsSameOrigin(r))return wsError(
  }
  if(x.action!=='create')return wsError('No encontramos esa acción.');
  let v;try{v=parseWork(x);}catch(e){return wsError((e as Error).message);}const m=memberSQL(a,v.commission);if(!a.admin&&!await member(a,v.commission))return wsError('Administración debe confirmar tu incorporación a esta comisión.',403);
- if(!a.admin&&!await db.prepare('SELECT 1 FROM workspace_consents WHERE account_id=? AND snapshot=?').bind(a.accountId,(await workspaceSnapshot()).snapshot).first())return wsError('Acepta el aviso en Mi expediente antes de registrar actividades.',400);
+ if(!a.admin&&!await db.prepare('SELECT 1 FROM workspace_consents WHERE account_id=? AND snapshot=?').bind(a.accountId,(await workspaceSnapshot()).snapshot).first())return wsError('Acepta el aviso en Documentos personales antes de registrar actividades.',400);
  const id=crypto.randomUUID(),gg=a.admin?guard(a,true):combineGuards(guard(a),await consentGuard(a)),status=x.submit===true?'submitted':'draft';const [result]=await db.batch([db.prepare('INSERT INTO commission_items(id,owner_id,commission,kind,title,details_json,status,venue,starts_at,ends_at,created_at,updated_at,retention_until) SELECT ?,?,?,?,?,?,?,?,?,?,?,?,? WHERE '+gg.sql+(a.admin?'':' AND '+m.sql)).bind(id,a.accountId,v.commission,v.kind,v.title,JSON.stringify(v.details),status,v.venue,v.start,v.end,now,now,now+365*86400000,...gg.values,...(a.admin?[]:m.values)),auditStatement(a,'commission.created',id,now)]);
  return result.meta.changes?wsReply({id},{status:201}):wsError('Tu acceso cambió. Vuelve a entrar.',409);
  }catch{return wsError('No pudimos guardar el cambio. Inténtalo de nuevo.',503);}}

@@ -2,7 +2,7 @@ import Link from "next/link";
 import { membershipConfiguration } from "@/lib/membership";
 import type { Metadata } from "next";
 export const dynamic="force-dynamic";
-export const metadata:Metadata={title:"Privacidad del registro interno",robots:{index:false,follow:true}};
+export const metadata:Metadata={title:"Privacidad del registro interno",description:"Aviso de privacidad del registro interno: qué datos se piden, para qué, quién los ve y cuánto tiempo se guardan.",alternates:{canonical:"/privacidad/registro"},robots:{index:false,follow:true}};
 export default async function RegistrationPrivacyPage(){
   const config=await membershipConfiguration(),n=config.notice;
   return <main className="legal-shell legal-document" id="main-content"><p className="section-kicker">{n.version?`Versión ${n.version}`:'Preparación del aviso'}</p><h1>Privacidad del<br/>registro interno.</h1><p>Este aviso corresponde exclusivamente a las solicitudes de incorporación interna a Acción Política Juvenil Tlalnepantla y a su seguimiento en esta plataforma.</p><nav className="legal-links"><Link href="/participacion#registro">Volver al registro</Link><Link href="/privacidad">Privacidad del sitio</Link></nav>

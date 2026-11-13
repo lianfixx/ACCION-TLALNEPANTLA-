@@ -6,7 +6,7 @@ import { membershipStatuses, type MembershipApplication, type MembershipEvent } 
 import { affiliationLabels, type PeopleFilters } from './people-shared';
 import { cleanEmail } from './security';
 
-export type PersonRow = { id: string; name: string; username: string | null; email: string; createdAt: number; disabledAt: number | null; emailPending: number; applicationId: string | null; applicationStatus: string | null; commission: string | null; documents: number; affiliation: keyof typeof affiliationLabels; tags: string[] };
+export type PersonRow = { id: string; name: string; username: string | null; email: string; createdAt: number; disabledAt: number | null; emailConfirmed: number; hasPassword: number; panelNotice: number; applicationId: string | null; applicationStatus: string | null; commission: string | null; documents: number; affiliation: keyof typeof affiliationLabels; tags: string[] };
 type RawRow = Omit<PersonRow, 'tags'> & { tagsJson: string };
 
 export const peoplePageSize = 25;
@@ -17,12 +17,20 @@ export function ownerEmails() {
   return [env.ADMIN_EMAILS, env.OWNER_ACCOUNT_EMAIL].filter(Boolean).join(',').split(',').map(item => item.trim().toLowerCase()).filter(Boolean);
 }
 
+/**
+ * The registration notice that announces panel e-mails, tags and exports was published on 13-nov-2026.
+ * People whose only application is older accepted a notice that said the opposite, so they stay out.
+ */
+export const panelNoticeSince = Date.UTC(2026, 10, 13, 20, 45);
+
 /** One query, reused by the list, the export and the e-mail recipients. Placeholders follow text order. */
 function peopleQuery(filters: PeopleFilters, accountId?: string) {
   const now = Date.now(), owners = ownerEmails(), documents = reviewedIdentityCount('b.id', now);
-  const values: unknown[] = [now, ...owners];
+  const values: unknown[] = [panelNoticeSince, now, ...owners];
   const base = `SELECT a.id,a.name,a.username,a.email,a.created_at AS createdAt,a.disabled_at AS disabledAt,
-    CASE WHEN a.email_verification_required=1 AND a.email_verified_at IS NULL THEN 1 ELSE 0 END AS emailPending,
+    CASE WHEN a.email_verified_at IS NOT NULL THEN 1 ELSE 0 END AS emailConfirmed,
+    CASE WHEN a.password_hash IS NOT NULL THEN 1 ELSE 0 END AS hasPassword,
+    EXISTS (SELECT 1 FROM membership_applications mp WHERE mp.owner_email=a.email AND mp.created_at>=?) AS panelNotice,
     (SELECT ma.id FROM membership_applications ma WHERE ma.owner_email=a.email AND ma.retention_until>? ORDER BY ma.created_at DESC,ma.id DESC LIMIT 1) AS applicationId
     FROM staff_accounts a${owners.length ? ` WHERE a.email NOT IN (${owners.map(() => '?').join(',')})` : ''}`;
   values.push(...documents.values, now, now);
@@ -142,6 +150,6 @@ export async function deletionImpact(id: string, email: string) {
     (SELECT count(*) FROM commission_documents WHERE owner_id=? OR item_id IN (SELECT id FROM commission_items WHERE owner_id=?)) AS documents,
     (SELECT count(*) FROM commission_items WHERE owner_id=?) AS items,
     (SELECT count(*) FROM membership_applications WHERE owner_email=?) AS applications,
-    (SELECT count(*) FROM commission_messages WHERE author_id=?) AS messages`).bind(id, id, id, email, id).first<{ documents: number; items: number; applications: number; messages: number }>();
+    (SELECT count(*) FROM commission_messages WHERE author_id=? OR item_id IN (SELECT id FROM commission_items WHERE owner_id=?)) AS messages`).bind(id, id, id, email, id, id).first<{ documents: number; items: number; applications: number; messages: number }>();
   return { documents: Number(row?.documents ?? 0), items: Number(row?.items ?? 0), applications: Number(row?.applications ?? 0), messages: Number(row?.messages ?? 0) };
 }

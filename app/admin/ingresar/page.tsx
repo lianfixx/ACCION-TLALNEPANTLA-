@@ -4,7 +4,7 @@ import PanMark from '@/app/PanMark';
 import {isCommission} from '@/lib/commissions';
 
 export const dynamic = 'force-dynamic';
-export const metadata = { title: 'Acceso al equipo', robots: { index: false, follow: false, noarchive: true } };
+export const metadata = { title: 'Entrar', description: 'Entra con tu usuario y contraseña.', robots: { index: false, follow: false, noarchive: true } };
 export default async function StaffLogin({searchParams}:{searchParams:Promise<Record<string,string|string[]|undefined>>}) {
   const params=await searchParams;
   let commission='';

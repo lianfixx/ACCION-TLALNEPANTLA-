@@ -14,7 +14,8 @@ export default function PeopleTools({ filters, total, emailConfigured }: { filte
       const blob = await response.blob(), url = URL.createObjectURL(blob), link = document.createElement('a');
       link.href = url; link.download = response.headers.get('content-disposition')?.match(/filename="([^"]+)"/)?.[1] ?? 'personas.csv';
       document.body.appendChild(link); link.click(); link.remove(); setTimeout(() => URL.revokeObjectURL(url), 1000);
-      setMessage(`Archivo listo: ${response.headers.get('x-export-rows') ?? ''} personas. La descarga quedó registrada.`);
+      const excluded = Number(response.headers.get('x-export-excluded') ?? 0);
+      setMessage(`Archivo listo: ${response.headers.get('x-export-rows') ?? ''} personas. La descarga quedó registrada.${excluded ? ` ${excluded} quedan fuera porque no tienen una solicitud enviada desde el 13 de noviembre.` : ''}`);
     } catch { setMessage('No pudimos preparar el archivo. Inténtalo de nuevo.'); }
     finally { lock.current = false; setBusy(false); }
   }
@@ -30,23 +31,23 @@ export default function PeopleTools({ filters, total, emailConfigured }: { filte
 /** Preview first: the server answers how many confirmed addresses will receive the message. */
 export function EmailComposer({ filters, accountId, configured, onSent }: { filters?: PeopleFilters; accountId?: string; configured: boolean; onSent?: () => void }) {
   const request = useAdminFetch(), lock = useRef(false);
-  const [preview, setPreview] = useState<{ count: number | null; excluded: number } | null>(null), [busy, setBusy] = useState(false), [message, setMessage] = useState('');
+  const [preview, setPreview] = useState<{ count: number | null; excluded: number; group: string } | null>(null), [busy, setBusy] = useState(false), [message, setMessage] = useState('');
   const [subject, setSubject] = useState(''), [body, setBody] = useState(''), [confirmed, setConfirmed] = useState(false);
   const target = accountId ? { accountId } : { filters };
   async function call(payload: Record<string, unknown>) {
     const response = await request('/api/admin/personas/correo', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...target, ...payload }) });
-    return { response, data: await response.json().catch(() => ({})) as { error?: string; message?: string; count?: number | null; excluded?: number } };
+    return { response, data: await response.json().catch(() => ({})) as { error?: string; message?: string; count?: number | null; excluded?: number; group?: string } };
   }
   async function review() {
     if (lock.current) return; lock.current = true; setBusy(true); setMessage(''); setConfirmed(false);
-    try { const { response, data } = await call({ mode: 'preview' }); if (!response.ok) setMessage(data.error ?? 'No pudimos calcular los destinatarios.'); else setPreview({ count: data.count ?? null, excluded: data.excluded ?? 0 }); }
+    try { const { response, data } = await call({ mode: 'preview' }); if (!response.ok) setMessage(data.error ?? 'No pudimos calcular los destinatarios.'); else setPreview({ count: data.count ?? null, excluded: data.excluded ?? 0, group: data.group ?? '' }); }
     catch { setMessage('No pudimos calcular los destinatarios.'); }
     finally { lock.current = false; setBusy(false); }
   }
   async function send() {
     if (lock.current || !preview?.count) return; lock.current = true; setBusy(true); setMessage('');
     try {
-      const { response, data } = await call({ mode: 'send', subject, body, confirm: true, expectedCount: preview.count });
+      const { response, data } = await call({ mode: 'send', subject, body, confirm: true, expectedCount: preview.count, expectedGroup: preview.group });
       setMessage(data.error ?? data.message ?? 'Correo enviado.');
       if (response.ok) { setSubject(''); setBody(''); setPreview(null); setConfirmed(false); onSent?.(); }
       else if (response.status === 409) setPreview(null);
@@ -59,7 +60,7 @@ export function EmailComposer({ filters, accountId, configured, onSent }: { filt
     <label>Asunto<input value={subject} onChange={event => { setSubject(event.target.value); }} required minLength={3} maxLength={150} /></label>
     <label>Mensaje en texto simple<textarea value={body} onChange={event => setBody(event.target.value)} required maxLength={8000} rows={6} /></label>
     {preview && <div className="people-preview" role="status">
-      {preview.count === null ? <p>La lista es demasiado grande. Usa más filtros.</p> : <p><strong>{preview.count}</strong> {preview.count === 1 ? 'destinatario' : 'destinatarios'} con correo confirmado.{preview.excluded ? ` ${preview.excluded} sin confirmar quedan fuera.` : ''}</p>}
+      {preview.count === null ? <p>La lista es demasiado grande. Usa más filtros.</p> : <p><strong>{preview.count}</strong> {preview.count === 1 ? 'destinatario' : 'destinatarios'} con correo confirmado.{preview.excluded ? ` ${preview.excluded} quedan fuera: cuenta suspendida, correo sin confirmar o sin solicitud desde el 13 de noviembre.` : ''}</p>}
       {tooMany ? <p>Máximo {peopleEmailLimit} por envío. Usa más filtros.</p> : preview.count ? <label className="people-check"><input type="checkbox" checked={confirmed} onChange={event => setConfirmed(event.target.checked)} />Confirmo el envío a {preview.count} {preview.count === 1 ? 'persona' : 'personas'}.</label> : null}
     </div>}
     <div className="people-inline-actions">

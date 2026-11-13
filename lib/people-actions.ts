@@ -3,7 +3,7 @@ import { isConfiguredOwner } from './authz';
 import { isCommission, commissionName } from './commissions';
 import { membershipJson } from './membership';
 import { normalizeTag } from './people-shared';
-import { deletionImpact, personAccount, type PersonAccount } from './people';
+import { deletionImpact, panelNoticeSince, personAccount, type PersonAccount } from './people';
 import { consumeRateLimit } from './rate-limit';
 import { registrationServices, sendRegistrationConfirmation, RegistrationServiceError } from './registration-verification';
 import { getRuntimeEnv } from './runtime-env';
@@ -21,11 +21,6 @@ const changed = 'La ficha cambió mientras trabajabas. Actualiza la página ante
 function auditFirst(actor: Actor, action: string, entityId: string, metadata: Record<string, unknown>, now: number, condition = '1=1', values: unknown[] = []) {
   const db = getRuntimeEnv().DB!, id = crypto.randomUUID(), guard = adminWriteGuard(actor, ['admin']);
   return { id, statement: db.prepare(`INSERT INTO audit_logs(id,actor_email,action,entity_type,entity_id,metadata_json,created_at) SELECT ?,?,?,'person',?,?,? WHERE ${guard.sql} AND ${condition}`).bind(id, actor.email, action, entityId, JSON.stringify(metadata), now, ...guard.values, ...values) };
-}
-
-async function liveAdmin(actor: Actor) {
-  const guard = adminWriteGuard(actor, ['admin']);
-  return Boolean(await getRuntimeEnv().DB!.prepare('SELECT 1 WHERE ' + guard.sql).bind(...guard.values).first());
 }
 
 /** Accounts with team permissions are managed only by the owner, as in Usuarios y contraseñas. */
@@ -61,13 +56,15 @@ export async function personAction(actor: Actor, id: string, input: Input) {
   if (action === 'tag.add') {
     const tag = normalizeTag(input.tag);
     if (!tag) return fail('La etiqueta debe tener de 1 a 30 letras, números, espacios o guiones.');
-    const audit = auditFirst(actor, 'person.tag.add', id, { tag }, now, 'EXISTS (SELECT 1 FROM staff_accounts WHERE id=?) AND NOT EXISTS (SELECT 1 FROM person_tags WHERE account_id=? AND tag=?) AND (SELECT count(*) FROM person_tags WHERE account_id=?)<20', [id, id, tag, id]);
+    if (!await db.prepare('SELECT 1 FROM membership_applications WHERE owner_email=? AND created_at>=?').bind(target.email, panelNoticeSince).first()) return fail('Solo puedes etiquetar a quien envió su solicitud desde el 13 de noviembre de 2026, con el aviso que informa de las etiquetas.', 409);
+    // The audit trail records that a tag changed, not its free text.
+    const audit = auditFirst(actor, 'person.tag.add', id, {}, now, 'EXISTS (SELECT 1 FROM staff_accounts WHERE id=?) AND NOT EXISTS (SELECT 1 FROM person_tags WHERE account_id=? AND tag=?) AND (SELECT count(*) FROM person_tags WHERE account_id=?)<20', [id, id, tag, id]);
     const [result] = await db.batch([audit.statement, db.prepare(`INSERT INTO person_tags(id,account_id,tag,created_at,created_by) SELECT ?,?,?,?,? WHERE ${marker}`).bind(crypto.randomUUID(), id, tag, now, actor.email, audit.id)]);
     return result.meta.changes ? reply({ message: 'Etiqueta agregada.' }) : fail('Esa etiqueta ya está o la persona ya tiene 20 etiquetas.', 409);
   }
   if (action === 'tag.remove') {
     const tag = normalizeTag(input.tag);
-    const audit = auditFirst(actor, 'person.tag.remove', id, { tag }, now, 'EXISTS (SELECT 1 FROM person_tags WHERE account_id=? AND tag=?)', [id, tag]);
+    const audit = auditFirst(actor, 'person.tag.remove', id, {}, now, 'EXISTS (SELECT 1 FROM person_tags WHERE account_id=? AND tag=?)', [id, tag]);
     const [result] = await db.batch([audit.statement, db.prepare(`DELETE FROM person_tags WHERE account_id=? AND tag=? AND ${marker}`).bind(id, tag, audit.id)]);
     return result.meta.changes ? reply({ message: 'Etiqueta quitada.' }) : fail('Esa etiqueta ya no está.', 409);
   }
@@ -96,11 +93,16 @@ export async function personAction(actor: Actor, id: string, input: Input) {
     if (!target.emailVerificationRequired || target.emailVerifiedAt) return fail('Esta cuenta ya no necesita confirmar su correo.', 409);
     if (!registrationServices().emailReady) return fail('El envío de correos no está configurado. No se envió nada.', 503);
     if (!await consumeRateLimit('people-resend', id, 3, 60 * 60_000)) return fail('Ya se reenvió varias veces. Espera una hora.', 429);
-    if (!await liveAdmin(actor)) return fail('Tu acceso cambió. Vuelve a entrar.', 403);
-    try { await sendRegistrationConfirmation(id, '/participacion#registro'); }
-    catch (error) { if (error instanceof RegistrationServiceError) return fail('No pudimos enviar el correo. Inténtalo más tarde.', 502); throw error; }
+    // The request is recorded under the live admin guard before anything leaves.
     const audit = auditFirst(actor, 'person.confirmation_resent', id, {}, now);
-    await db.batch([audit.statement]);
+    const [recorded] = await db.batch([audit.statement]);
+    if (!recorded.meta.changes) return fail('Tu acceso cambió. Vuelve a entrar.', 403);
+    try { await sendRegistrationConfirmation(id, '/participacion#registro'); }
+    catch (error) {
+      if (!(error instanceof RegistrationServiceError)) throw error;
+      await db.prepare("UPDATE audit_logs SET action='person.confirmation_failed' WHERE id=?").bind(audit.id).run();
+      return fail('No pudimos enviar el correo. Inténtalo más tarde.', 502);
+    }
     return reply({ message: 'Correo de confirmación enviado.' });
   }
 
@@ -177,6 +179,8 @@ async function deletePerson(actor: Actor, target: PersonAccount, input: Input, e
     // References kept in other records lose the link to this person.
     then('UPDATE audit_logs SET actor_email=? WHERE actor_email=? AND id<>?', reference, email, audit.id),
     then(`UPDATE audit_logs SET entity_id=? WHERE id<>? AND (entity_id=? OR entity_id IN (SELECT id FROM membership_applications WHERE owner_email=?) OR entity_id IN (SELECT id FROM commission_documents WHERE owner_id=? OR item_id IN (${owned})) OR entity_id IN (${owned}))`, reference, audit.id, id, email, id, id, id),
+    // Handover notes in activities that stay with other people name both people in their text.
+    then("UPDATE commission_messages SET body=replace(body,?,'una persona cuya cuenta se eliminó') WHERE body LIKE 'Relevo de %' AND instr(body,?)>0", target.name, target.name),
     then('UPDATE commission_members SET updated_by=? WHERE updated_by=?', reference, id),
     then('UPDATE commission_documents SET reviewed_by=? WHERE reviewed_by=?', reference, id),
     then('UPDATE commission_affiliations SET reviewed_by=? WHERE reviewed_by=?', reference, id),

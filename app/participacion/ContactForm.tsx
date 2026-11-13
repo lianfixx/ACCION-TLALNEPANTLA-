@@ -29,7 +29,7 @@ export default function ContactForm({ enabled, siteKey, nonce }: { enabled: bool
   const [sending, setSending] = useState(false);
   const [receipt, setReceipt] = useState<{ code: string; title: string; expectsReply: boolean } | null>(null);
 
-  if (!enabled) return <div className="contact-closed"><strong>Las solicitudes en línea aún no están disponibles.</strong><p>Por ahora, consulta las actividades y sus convocatorias en Actualidad.</p><Link className="text-link" href="/actualidad">Consultar actualidad</Link></div>;
+  if (!enabled) return <div className="contact-closed"><strong>El formulario de contacto está cerrado por ahora.</strong><p>Para unirte a una comisión, usa el registro de arriba. Las actividades y sus convocatorias están en Actualidad.</p><Link className="text-link" href="/actualidad">Consultar actualidad</Link></div>;
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();

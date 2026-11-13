@@ -1,11 +1,12 @@
 import { effectiveSettings } from "./site-settings";
 import { membershipConfiguration } from "./membership";
+import { registrationServices } from "./registration-verification";
 
-/** Enlaces APJ opens only with the Comité's approval reference and the internal registry open. */
+/** Enlaces APJ opens only with the Comité's approval reference, the internal registry open and account sign-up working. */
 export async function enlacesConfiguration() {
   const [s, membership] = await Promise.all([effectiveSettings(), membershipConfiguration()]);
   const approval = (s.ENLACES_APPROVAL ?? "").trim();
-  return { open: s.ENLACES_ENABLED === "1" && approval.length >= 5 && membership.enabled, approval };
+  return { open: s.ENLACES_ENABLED === "1" && approval.length >= 5 && membership.enabled && registrationServices().ready, approval };
 }
 
 /** SQL fragment: the account has a live application marked as an Enlaces APJ postulation. */

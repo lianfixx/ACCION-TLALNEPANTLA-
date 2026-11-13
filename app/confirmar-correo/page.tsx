@@ -3,7 +3,7 @@ import { headers } from 'next/headers';
 import { registrationServices } from '@/lib/registration-verification';
 import EmailConfirmation from './EmailConfirmation';
 export const dynamic = 'force-dynamic';
-export const metadata = { title: 'Confirma tu correo', robots: { index: false, follow: false, noarchive: true } };
+export const metadata = { title: 'Confirma tu correo', description: 'Confirma tu correo para activar tu cuenta.', robots: { index: false, follow: false, noarchive: true } };
 export default async function Page() {
   const config = registrationServices();
   return <main className="staff-access-shell" id="main-content"><section className="staff-access-card">

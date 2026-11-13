@@ -2,6 +2,31 @@
 
 Lo más reciente arriba. Formato y reglas: `ia/PROTOCOLO.md`, sección 3. Cada entrada lleva la línea `Agente:`.
 
+## 2026-11-13 · auditoría completa antes del dominio: correcciones
+
+- Agente: Claude Code (sesión en la nube), con dos subagentes de auditoría en solo lectura (seguridad del panel; sitio público).
+- Solicitud: Emi, 13/11/2026: «Audita a fondo, analiza y razona y publica».
+- Hallazgos corregidos del panel:
+  - Correos solo a cuentas activas, con contraseña y correo confirmado (`email_verified_at`) y con una solicitud enviada desde que se publicó el aviso del panel. Exportación y etiquetas, con esa misma condición del aviso; el CSV informa cuántas personas quedan fuera.
+  - Al enviar se exige el mismo grupo de la vista previa (huella de los destinatarios). Si Resend no responde, el envío queda «sin respuesta» y no se afirma que no salió.
+  - Al borrar una cuenta, su nombre se reemplaza en las notas de relevo de actividades ajenas y el conteo previo incluye todos los mensajes que se borran.
+  - El texto de las etiquetas ya no se guarda en la auditoría. El reenvío de confirmación se registra antes de enviarse.
+  - Dos cargas simultáneas de un PDF ya no dejan el documento sin archivo.
+  - El aviso describe con exactitud destinatarios, contenido de las listas y alcance del borrado, y aclara que la INE contiene CURP, clave de elector y fecha de nacimiento.
+- Hallazgos corregidos del sitio:
+  - La afiliación al PAN se presenta como voluntaria en los 5 pasos y en la guía de afiliación. La portada aclara que se necesitan 18 años.
+  - Página 404 en español con `main`.
+  - `og:url` ya no fija la portada en todas las páginas; el `WebPage` de la portada sale del layout.
+  - Nueva imagen para compartir (1200×630, cacomixtle y nombre vigente) en lugar de la foto de un evento nacional. Se retiran `og.png` y plantillas sin uso.
+  - Contacto cerrado con texto y enlace coherentes. Las publicaciones dicen una sola vez que no reciben opiniones.
+  - «Mi expediente» → «Documentos personales». Entrada de `/privacidad` actualizada. «Entrar» como título del ingreso. Descripciones propias en páginas de cuenta.
+  - Enlace de ingreso sin comisión vacía. «Una persona titular y una de apoyo».
+  - Enlaces APJ solo se abre si el alta de cuentas funciona.
+  - Imágenes de Actualidad recodificadas: de 268-1825 KB a 30-148 KB por tamaño.
+- Archivos: `lib/people*.ts`, `app/api/admin/personas/*`, `app/admin/personas/*`, `app/api/admin/documentos/[slug]/route.ts`, `lib/membership-notice.ts`, `lib/site-content-defaults.ts`, `lib/enlaces.ts`, `app/layout.tsx`, `app/not-found.tsx`, `app/PanAffiliationGuide.tsx`, `app/ActionPortal.tsx`, `app/participacion/*`, `app/actualidad/*`, `app/privacidad/*`, páginas de cuenta, `app/api/espacio/route.ts`, `public/images/`, `docs/enlaces-apj.md`, pruebas y este registro.
+- Verificación: typecheck y lint sin avisos; `npm test` → 213 aprobadas.
+- Pendiente (decisión de Emi o del Comité): mencionar el comprobante de afiliación en el aviso y el consentimiento; quitar del aviso las frases de cumplimiento pendiente; documentos al postularse a Enlaces; conservación de 90 días frente a un año de Enlaces; actualizar los términos; PDF de bases en borrador público; publicación personal de Víctor Hugo Sondón.
+
 ## 2026-11-13 · preparación para el dominio propio
 
 - Agente: Claude Code (sesión en la nube)

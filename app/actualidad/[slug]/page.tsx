@@ -127,7 +127,7 @@ export default async function ActivityPage({ params }: PageProps) {
           ? <span><strong>Sesión activa.</strong> {commentsEnabled ? "Puedes enviar una opinión a moderación." : "Las opiniones siguen cerradas por ahora."}</span>
           : commentsEnabled
             ? <Link className="text-link" href={signInPath(`/actualidad/${post.slug}`)}>Iniciar sesión para opinar</Link>
-            : <span><strong>Opiniones cerradas.</strong> Puedes leer y compartir esta actividad sin iniciar sesión.</span>}
+            : null}
       </aside>
       <article className="post-list post-detail-shell">
         <div className="post-card post-detail">
@@ -136,14 +136,14 @@ export default async function ActivityPage({ params }: PageProps) {
           <p className="post-excerpt">{post.excerpt}</p>
           {cover ? <Image className={cover.height>cover.width?"post-image post-image-portrait":"post-image"} src={cover.src} alt={cover.alt} width={cover.width} height={cover.height} priority decoding="async" sizes="(max-width: 700px) calc(100vw - 48px), 960px" unoptimized /> : null}
           <PostBody body={post.body} />
-          <section className="approved-comments" aria-labelledby="opiniones-publicadas">
+          {(commentsEnabled || approvedComments.length > 0 || commentsUnavailable) ? <section className="approved-comments" aria-labelledby="opiniones-publicadas">
             <h2 id="opiniones-publicadas">Opiniones aprobadas</h2>
             {commentsUnavailable
               ? <p role="status">No pudimos cargar las opiniones. Vuelve a intentarlo en unos minutos.</p>
               : approvedComments.length === 0
               ? <p>Todavía no hay opiniones publicadas.</p>
               : approvedComments.map((comment) => <article key={comment.id}><strong>{comment.authorName}</strong><p>{comment.body}</p></article>)}
-          </section>
+          </section> : null}
           <CommentForm key={user?.accountId??"anonymous"} accountId={user?.accountId??""} postId={post.id} enabled={commentsEnabled} signedIn={signedIn} signInPath={signInPath(`/actualidad/${post.slug}`)} />
         </div>
       </article>

@@ -25,14 +25,13 @@ export const metadata: Metadata = {
     siteName: SITE_NAME,
     title: SITE_NAME,
     description: SITE_DESCRIPTION,
-    url: SITE_URL,
-    images: [{ url: "/images/real/accion-juvenil-referencia.webp", width: 1200, height: 1200, alt: "Actividad nacional de Acción Juvenil" }],
+    images: [{ url: "/images/og-tlalnepantla.png", width: 1200, height: 630, alt: "Acción Política Juvenil Tlalnepantla: seis comisiones con tareas concretas." }],
   },
   twitter: {
     card: "summary_large_image",
     title: SITE_NAME,
     description: SITE_DESCRIPTION,
-    images: ["/images/real/accion-juvenil-referencia.webp"],
+    images: ["/images/og-tlalnepantla.png"],
   },
   robots: {
     index: true,
@@ -57,15 +56,6 @@ export default async function RootLayout({
         name: SITE_NAME,
         description: SITE_DESCRIPTION,
         inLanguage: "es-MX",
-      },
-      {
-        "@type": "WebPage",
-        "@id": `${SITE_URL}/#inicio`,
-        url: `${SITE_URL}/`,
-        name: SITE_NAME,
-        description: SITE_DESCRIPTION,
-        inLanguage: "es-MX",
-        isPartOf: { "@id": `${SITE_URL}/#website` },
       },
     ],
   }).replaceAll("<", "\\u003c");

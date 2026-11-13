@@ -46,7 +46,7 @@ test("renders production metadata and remains indexable", async () => {
   assert.doesNotMatch(html, /codex-preview|noindex|nofollow/i);
   assert.match(html, /property="og:title" content="Acción Política Juvenil Tlalnepantla"/i);
   assert.match(html, /name="twitter:card" content="summary_large_image"/i);
-  assert.match(html, /rel="canonical" href="https:\/\/accion-juvenil-tlalnepantla\.emilianomilla\.chatgpt\.site\/?"/i);
+  assert.match(html, /rel="canonical" href="https:\/\/acciontlalnepantla\.site\/?"/i);
   assert.match(html, /type="application\/ld\+json"/i);
 });
 
@@ -66,7 +66,7 @@ test("publishes crawler rules and a safe sitemap", async () => {
   assert.equal(sitemap.status, 200);
   const sitemapText = await sitemap.text();
   assert.match(sitemapText, /<urlset/);
-  assert.match(sitemapText, /accion-juvenil-tlalnepantla\.emilianomilla\.chatgpt\.site\/participacion/);
+  assert.match(sitemapText, /acciontlalnepantla\.site\/participacion/);
   assert.doesNotMatch(sitemapText, /\/admin|\/api\//);
 });
 
