@@ -2,6 +2,15 @@
 
 Lo más reciente arriba. Formato y reglas: `ia/PROTOCOLO.md`, sección 3. Cada entrada lleva la línea `Agente:`.
 
+## 2026-11-13 · aviso de privacidad para el panel de administración
+
+- Agente: Claude Code (sesión en la nube)
+- Solicitud: Emi, 13/11/2026: panel con notas y etiquetas, exportar a Excel, enviar correos y borrar cuentas (ver entrada del panel).
+- Cambios: el aviso del registro informa correos de administración vía Resend, notas y etiquetas internas, listas descargables sin documentos y con registro, y eliminación definitiva al pedir cancelación; «segmentación» se precisa como «con fines publicitarios»; se quita la mención a Sites. Versión `-panel-2026-11-13`, plantilla `registro-panel-2026-11-13.1`. La página de privacidad menciona Cloudflare y Resend.
+- Archivos: `lib/membership-notice.ts`, `lib/membership.ts`, `app/privacidad/page.tsx`, este registro.
+- Verificación: `node --test` de membership-flow, rendered-html y enlaces → 37 aprobadas.
+- Pendiente: revisión del Comité o de Emi del texto; no está publicado.
+
 ## 2026-11-13 · panel de administración completo (en curso): tablas nuevas
 
 - Agente: Claude Code (sesión en la nube)
