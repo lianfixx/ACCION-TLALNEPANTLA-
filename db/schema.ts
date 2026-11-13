@@ -276,3 +276,52 @@ export const workspaceConsents = sqliteTable("workspace_consents", {
  id:text("id").primaryKey(),
  accountId:text("account_id").notNull().references(()=>staffAccounts.id),version:text("version").notNull(),snapshot:text("snapshot").notNull(),acceptedAt:integer("accepted_at").notNull(),
 });
+
+/** Editable public content. Values override the defaults kept in code; a missing row means «use the default». */
+export const siteContent = sqliteTable("site_content", {
+  key: text("key").primaryKey(),
+  valueJson: text("value_json").notNull(),
+  updatedAt: integer("updated_at").notNull(),
+  updatedBy: text("updated_by").notNull(),
+});
+
+/** Replacement PDFs stored in R2. Without a row the static file in public/documentos is served. */
+export const siteDocuments = sqliteTable("site_documents", {
+  slug: text("slug").primaryKey(),
+  objectKey: text("object_key").notNull(),
+  fileName: text("file_name").notNull(),
+  sizeBytes: integer("size_bytes").notNull(),
+  sha256: text("sha256").notNull(),
+  uploadedAt: integer("uploaded_at").notNull(),
+  uploadedBy: text("uploaded_by").notNull(),
+});
+
+/** Internal notes about a person, visible only to administration. */
+export const personNotes = sqliteTable("person_notes", {
+  id: text("id").primaryKey(),
+  accountId: text("account_id").notNull().references(() => staffAccounts.id, { onDelete: "cascade" }),
+  body: text("body").notNull(),
+  authorEmail: text("author_email").notNull(),
+  createdAt: integer("created_at").notNull(),
+  updatedAt: integer("updated_at").notNull(),
+}, t => [index("person_notes_account_idx").on(t.accountId, t.createdAt)]);
+
+export const personTags = sqliteTable("person_tags", {
+  id: text("id").primaryKey(),
+  accountId: text("account_id").notNull().references(() => staffAccounts.id, { onDelete: "cascade" }),
+  tag: text("tag").notNull(),
+  createdAt: integer("created_at").notNull(),
+  createdBy: text("created_by").notNull(),
+}, t => [uniqueIndex("person_tag_unique").on(t.accountId, t.tag), index("person_tags_tag_idx").on(t.tag)]);
+
+/** One row per recipient of a message sent from the panel. */
+export const outboundEmails = sqliteTable("outbound_emails", {
+  id: text("id").primaryKey(),
+  batchId: text("batch_id").notNull(),
+  accountId: text("account_id").references(() => staffAccounts.id, { onDelete: "cascade" }),
+  subject: text("subject").notNull(),
+  status: text("status").notNull(),
+  providerId: text("provider_id"),
+  sentBy: text("sent_by").notNull(),
+  createdAt: integer("created_at").notNull(),
+}, t => [index("outbound_emails_account_idx").on(t.accountId, t.createdAt), index("outbound_emails_batch_idx").on(t.batchId)]);

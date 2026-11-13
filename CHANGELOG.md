@@ -2,6 +2,15 @@
 
 Lo más reciente arriba. Formato y reglas: `ia/PROTOCOLO.md`, sección 3. Cada entrada lleva la línea `Agente:`.
 
+## 2026-11-13 · panel de administración completo (en curso): tablas nuevas
+
+- Agente: Claude Code (sesión en la nube)
+- Solicitud: Emi, 13/11/2026: un panel o CRM en su sesión para controlar todo y hacer cambios desde ahí. Decisiones de Emi: editar comisiones, convocatoria Enlaces, portada y textos generales y PDF; ficha única por persona con notas, etiquetas, exportar a Excel y enviar correos; acceso solo para administración; suspender y reactivar, reenviar confirmación, cambiar datos y borrar cuenta y datos.
+- Cambios: migración `0016_panel_crm` con `site_content`, `site_documents`, `person_notes`, `person_tags` y `outbound_emails`. Todavía no la usa ninguna pantalla.
+- Archivos: `db/schema.ts`, `drizzle/0016_panel_crm.sql`, `drizzle/meta/`, este registro.
+- Verificación: `node --test tests/migrations.test.mjs` aprobado.
+- Pendiente: pantallas del panel, ajuste del aviso de privacidad, pruebas y publicación.
+
 ## 2026-11-13 · republicación en workers.dev y prueba en línea
 
 - Agente: Claude Code (sesión en la nube, publicación desde el Box de Emi)
