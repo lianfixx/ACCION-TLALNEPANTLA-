@@ -1,4 +1,4 @@
-export const SITE_URL = "https://accion-juvenil-tlalnepantla.emilianomilla.chatgpt.site";
+export const SITE_URL = "https://acciontlalnepantla.site";
 
 export const SITE_NAME = "Acción Política Juvenil Tlalnepantla";
 

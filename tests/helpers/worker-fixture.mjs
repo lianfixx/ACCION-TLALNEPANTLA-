@@ -85,6 +85,7 @@ export async function createWorkerFixture(overrides = {}) {
     headers: { origin: "https://example.test", "content-type": "application/json", ...(actor ? {cookie:fixture.seedAccount(actor)} : {}), ...extraHeaders },
     ...(method === "GET" ? {} : { body: JSON.stringify(body) }),
   }), env, ctx);
+  fixture.fetchUrl = (url, init = {}) => worker.fetch(new Request(url, init), env, ctx);
   fixture.callRaw = (path,body,actor="owner@example.test",headers={},method="POST") => worker.fetch(new Request(`https://example.test${path}`,{method,headers:{origin:"https://example.test",...(actor?{cookie:fixture.seedAccount(actor)}:{}),...headers},body}),env,ctx);
   fixture.confirmEmail = async email => {
     const sent=mail.findLast(message=>message.to.includes(email));

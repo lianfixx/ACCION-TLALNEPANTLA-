@@ -8,6 +8,15 @@ interface Env {
   DB: D1Database;
   BUCKET: R2Bucket;
   IMAGES?: ImagesBinding;
+  REGISTRATION_PUBLIC_ORIGIN?: string;
+}
+
+/** Host of the public origin, if it is an HTTPS domain other than workers.dev. */
+function canonicalHost(env: Env) {
+  try {
+    const origin = new URL(env.REGISTRATION_PUBLIC_ORIGIN ?? "");
+    return origin.protocol === "https:" && !origin.hostname.endsWith(".workers.dev") ? origin.hostname : "";
+  } catch { return ""; }
 }
 
 interface ExecutionContext {
@@ -31,6 +40,12 @@ const worker = {
       if (!["GET", "HEAD"].includes(request.method)) return new Response("Usa la dirección HTTPS para enviar datos.", { status: 403, headers: { "Cache-Control": "no-store", "Content-Type": "text/plain; charset=utf-8" } });
       url.protocol = "https:";
       return Response.redirect(url.href, 308);
+    }
+    // Once the domain is the public origin, the workers.dev address and www lead to it.
+    const canonical = canonicalHost(env);
+    if (canonical && ["GET", "HEAD"].includes(request.method) && (url.hostname.endsWith(".workers.dev") || url.hostname === `www.${canonical}`)) {
+      url.hostname = canonical;
+      return new Response(null, { status: 301, headers: { Location: url.href, "Cache-Control": "public, max-age=3600" } });
     }
     if (["/favicon.ico","/apple-touch-icon.png","/apple-touch-icon-precomposed.png"].includes(url.pathname) && ["GET","HEAD"].includes(request.method)) {
       return new Response(null,{status:308,headers:{Location:new URL("/images/real/pan-logo-oficial.png",url).href,"Cache-Control":"public, max-age=86400","X-Content-Type-Options":"nosniff",...(url.protocol==='https:'?{"Strict-Transport-Security":"max-age=31536000"}:{})}});

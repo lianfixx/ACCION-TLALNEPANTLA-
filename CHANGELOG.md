@@ -2,6 +2,15 @@
 
 Lo más reciente arriba. Formato y reglas: `ia/PROTOCOLO.md`, sección 3. Cada entrada lleva la línea `Agente:`.
 
+## 2026-11-13 · preparación para el dominio propio
+
+- Agente: Claude Code (sesión en la nube)
+- Solicitud: Emi, 13/11/2026: «Audita a fondo, analiza y razona y publica».
+- Cambios: `SITE_URL` pasa del subdominio de Sites a `https://acciontlalnepantla.site` (metadatos, canonical, sitemap, robots y datos estructurados). El Worker redirige con 301 las peticiones GET y HEAD de `*.workers.dev` y de `www.` al dominio cuando `REGISTRATION_PUBLIC_ORIGIN` es un dominio propio; mientras siga siendo workers.dev no redirige nada.
+- Archivos: `lib/site.ts`, `worker/index.ts`, `tests/helpers/worker-fixture.mjs` (`fetchUrl`), `tests/canonical-host.test.mjs`, este registro.
+- Verificación: `npm run build` y `node --test tests/canonical-host.test.mjs` → 2 aprobadas.
+- Pendiente: hallazgos de las auditorías en curso; conexión del dominio (la hace Emi en Cloudflare).
+
 ## 2026-11-13 · publicación del panel y del correo de registro
 
 - Agente: Claude Code (sesión en la nube, publicación desde el Box de Emi)
