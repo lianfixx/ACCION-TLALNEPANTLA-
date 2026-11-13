@@ -2,6 +2,15 @@
 
 Lo más reciente arriba. Formato y reglas: `ia/PROTOCOLO.md`, sección 3. Cada entrada lleva la línea `Agente:`.
 
+## 2026-11-13 · aviso cargado, Turnstile conectado y dominio de envío en Resend
+
+- Agente: Claude Code (sesión en la nube)
+- Solicitud: Emi, 12-13/11/2026: «usa los mismos datos» del aviso aprobado el 12-sep, crear Turnstile y usar Resend; el cambio de dominio espera.
+- Cambios: Emi activó su cuenta propietaria. La configuración del aviso (`docs/registro-aprobado-2026-09-12.json`) quedó guardada en D1 con su registro de auditoría `settings.update`, con el registro interno abierto y Enlaces APJ cerrado. Se escribió directo en la base porque el formulario del panel, manejado a distancia desde el Box, respondió «Solo la persona propietaria puede guardar esta configuración» y después no envió. Se creó un widget de Turnstile propio de APJ (dirección workers.dev y dominio) y se cargaron como secretos sus claves, `REGISTRATION_TURNSTILE_HOSTNAME` y `REGISTRATION_PUBLIC_ORIGIN`. En Resend se agregó `mail.acciontlalnepantla.site`, que espera sus registros DNS; no se usa el dominio de MILLA.
+- Archivos: este registro.
+- Verificación: `/privacidad/registro` publicado → muestra responsable, domicilio, fundamento, Unidad de Transparencia, derechos y 90 días; `wrangler secret bulk` → 4 secretos creados; Resend → dominio en «Not Started».
+- Pendiente: registros DNS de Resend (tras pasar el DNS a Cloudflare), clave de API de Resend y remitente; entender por qué el panel respondió 403 a la propietaria; prueba de registro completa.
+
 ## 2026-11-12 · sitio publicado en la cuenta propia de Cloudflare (workers.dev)
 
 - Agente: Claude Code (sesión en la nube)
