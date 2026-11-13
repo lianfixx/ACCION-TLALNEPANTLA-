@@ -2,6 +2,15 @@
 
 Lo más reciente arriba. Formato y reglas: `ia/PROTOCOLO.md`, sección 3. Cada entrada lleva la línea `Agente:`.
 
+## 2026-11-13 · publicación de las correcciones de la auditoría
+
+- Agente: Claude Code (sesión en la nube, publicación desde el Box de Emi)
+- Solicitud: Emi, 13/11/2026: «… y publica».
+- Cambios: publicada en workers.dev la versión `9d41a89` (versión del Worker 6cf0f254). Sin migraciones nuevas.
+- Verificación en línea: portada, comisiones, participación, crear cuenta y privacidad en 200; 404 en español; imagen nueva para compartir servida y declarada; paso 5 «Voluntaria…» visible; panel redirige al ingreso sin sesión.
+- Archivos: este registro.
+- Pendiente: conectar el dominio (lo hace Emi en Cloudflare) y, después, fijar el origen público y el hostname de Turnstile en el dominio.
+
 ## 2026-11-13 · auditoría completa antes del dominio: correcciones
 
 - Agente: Claude Code (sesión en la nube), con dos subagentes de auditoría en solo lectura (seguridad del panel; sitio público).
