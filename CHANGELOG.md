@@ -2,6 +2,15 @@
 
 Lo más reciente arriba. Formato y reglas: `ia/PROTOCOLO.md`, sección 3. Cada entrada lleva la línea `Agente:`.
 
+## 2026-11-13 · sitio publicado en acciontlalnepantla.site
+
+- Agente: Claude Code (sesión en la nube, publicación desde el Box de Emi)
+- Solicitud: Emi, 13/11/2026: conectar el dominio y publicar.
+- Cambios: publicada la versión `11b356f` (versión del Worker 41156b4f) con el dominio propio conectado.
+- Verificación en línea en `https://acciontlalnepantla.site`: portada, comisiones, términos, privacidad y aviso del registro en 200; certificado válido; `www`, workers.dev y `http` redirigen al dominio; las bases vigentes se descargan desde /comisiones; la ruta vieja de las bases da 404; los avisos publicados describen el borrado diario y los 13 meses de Enlaces.
+- Archivos: este registro.
+- Pendiente: la prueba de Emi en su teléfono (panel, Configuración y una cuenta de prueba); borrar los dos TXT de Sites que quedan en la zona.
+
 ## 2026-11-13 · dominio propio, decisiones de Emi y documentos vigentes
 
 - Agente: Claude Code (sesión en la nube)
