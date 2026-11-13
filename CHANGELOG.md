@@ -2,6 +2,15 @@
 
 Lo más reciente arriba. Formato y reglas: `ia/PROTOCOLO.md`, sección 3. Cada entrada lleva la línea `Agente:`.
 
+## 2026-11-13 · recuperación de la cuenta propietaria y límite del plan gratuito
+
+- Agente: Claude Code (sesión en la nube, operación desde el Box de Emi)
+- Solicitud: Emi, 13/11/2026: «se cayó la página» y «no recuerdo la contraseña».
+- Diagnóstico: el sitio responde, pero Cloudflare cortó 12 peticiones por `exceededResources` entre 23:07 y 23:08 UTC. La cuenta está en el plan gratuito de Workers (10 ms de CPU por petición) y comprobar o crear una contraseña con scrypt (N=32768, r=8, p=3) cuesta mucho más. Fallan el ingreso, el registro y los cambios de contraseña. Recomendado: Workers Paid (5 USD al mes), que paga y activa Emi.
+- Cambios: contraseña temporal para `emilianomilla_` generada en el Box de Emi y guardada solo en un archivo de su escritorio; en D1 se guardó su hash, se incrementó `credential_version` (cierra sesiones) y se registró `owner.password_reset` en `audit_logs`. La activación de propietario no sirve para esto: es de un solo uso por diseño.
+- Archivos: este registro.
+- Pendiente: Emi activa Workers Paid, entra con la contraseña temporal, la cambia y borra el archivo.
+
 ## 2026-11-13 · sitio publicado en acciontlalnepantla.site
 
 - Agente: Claude Code (sesión en la nube, publicación desde el Box de Emi)
