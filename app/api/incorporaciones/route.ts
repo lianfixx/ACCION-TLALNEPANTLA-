@@ -8,6 +8,8 @@ import { membershipReadIsCurrent } from "@/lib/membership-read";
 import { membershipConsent, parseMembershipFields, type MembershipApplication } from "@/lib/membership-shared";
 import { consumeRateLimit } from "@/lib/rate-limit";
 import { enlacesConfiguration } from "@/lib/enlaces";
+import { workspaceSnapshot } from "@/lib/workspace";
+import { workspaceVersion } from "@/lib/workspace-shared";
 
 export async function GET(request:Request) {
   const user = await getStaffIdentity(), email = cleanEmail(user?.email);
@@ -37,6 +39,7 @@ export async function POST(request: Request) {
     if (!config.enabled) return membershipJson({error:"La recepción del registro interno todavía no está abierta."},{status:503});
     if (JSON.parse(fields.profileJson).enlaces === true && !(await enlacesConfiguration()).open) return membershipJson({error:"La convocatoria de Enlaces APJ no está abierta. Desmarca la postulación para enviar tu solicitud."},{status:409});
     if (body.noticeToken !== config.noticeToken) return membershipJson({error:"El aviso cambió. Actualiza la página y revísalo antes de enviar."},{status:409});
+    const workspace = await workspaceSnapshot();
     if (!await consumeRateLimit("membership-create",email,5,60*60*1000)) return membershipJson({error:"Has realizado varios envíos en poco tiempo. Inténtalo más tarde."},{status:429});
     const db=getRuntimeEnv().DB!, now=Date.now(), id=crypto.randomUUID(), reference=`APJ-${crypto.randomUUID().replaceAll("-","").slice(0,12).toUpperCase()}`;
     const guard=sessionWriteGuard(user,now);
@@ -44,6 +47,8 @@ export async function POST(request: Request) {
       db.prepare(`DELETE FROM membership_applications WHERE owner_email=? AND retention_until<=? AND ${guard.sql}`).bind(email,now,...guard.values),
       db.prepare(`INSERT INTO membership_applications (id,owner_email,name,commission,note,profile_json,reference_code,status,notice_version,notice_snapshot,consent_text,consent_at,adult_self_declared,retention_until,created_at,updated_at) SELECT ?,?,?,?,?,?,?,'submitted',?,?,?,?,1,?,?,? WHERE NOT EXISTS (SELECT 1 FROM membership_applications WHERE owner_email=? AND status IN ('submitted','in_review','accepted')) AND ${guard.sql}`).bind(id,email,fields.name,fields.commission,fields.note,fields.profileJson,reference,config.notice.version,config.snapshot,membershipConsent,now,now+config.notice.retentionDays*86400000,now,now,email,...guard.values),
       db.prepare("INSERT INTO membership_events (id,application_id,kind,body,actor_type,actor_email,created_at) SELECT ?,?,'submitted','Solicitud recibida.','applicant',?,? WHERE changes()>0").bind(crypto.randomUUID(),id,email,now),
+      // One consent covers the application and the personal documents: record the expediente notice with the same text.
+      db.prepare("INSERT INTO workspace_consents(id,account_id,version,snapshot,accepted_at) SELECT ?,?,?,?,? WHERE EXISTS (SELECT 1 FROM membership_applications WHERE id=?) ON CONFLICT(id) DO NOTHING").bind(user.accountId+':'+workspace.token,user.accountId,workspaceVersion,workspace.snapshot,now,id),
     ]);
     const record=await db.prepare(`SELECT ${membershipColumns} FROM membership_applications WHERE owner_email=? AND status IN ('submitted','in_review','accepted') AND retention_until>? AND ${guard.sql} LIMIT 1`).bind(email,now,...guard.values).first<MembershipApplication>();
     if(!record)return membershipJson({error:"Tu sesión o solicitud cambió durante el envío. Vuelve a entrar y comprueba el estado antes de enviarla otra vez."},{status:409});

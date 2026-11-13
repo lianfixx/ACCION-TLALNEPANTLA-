@@ -37,7 +37,7 @@ const calendar: Array<[string, string]> = [
 ];
 const weights: Array<[string, number]> = [
   ["Carta de motivos", 30],
-  ["Propuesta para la comisión", 25],
+  ["Propuesta para el primer mes", 25],
   ["Participación previa en tu escuela o comunidad", 25],
   ["Carta de recomendación", 20],
 ];
@@ -116,7 +116,7 @@ export default async function EnlacesPage() {
         <h2 id="enlaces-pasos">Postúlate <em>en tres pasos.</em></h2>
         <ol className="enlaces-steps">
           <li><strong>Crea tu cuenta</strong><span>Confirma tu correo con el enlace que te enviamos.</span></li>
-          <li><strong>Envía tu solicitud</strong><span>Elige tu comisión y marca que te postulas a Enlaces APJ.</span></li>
+          <li><strong>Envía tu solicitud</strong><span>Elige tu comisión, marca «Quiero ser Enlace APJ» y escribe qué harías en tu primer mes.</span></li>
           <li><strong>Sube tus dos cartas</strong><span>En Mi comisión, en PDF, JPG o PNG, antes del cierre.</span></li>
         </ol>
         <div className="aj-actions"><Link className="button button-primary" href="/crear-cuenta">Crear mi cuenta</Link><Link className="aj-link" href="/participacion#registro">Ya tengo cuenta</Link></div>

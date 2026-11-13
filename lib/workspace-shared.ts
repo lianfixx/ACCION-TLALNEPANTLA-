@@ -1,6 +1,6 @@
 import {isCommission} from './commissions';
-export const workspaceVersion='comisiones-2026-10-06.1';
-export const workspaceConsent='He leído el aviso del espacio de trabajo y consiento expresamente el tratamiento de mis datos y de la información que pueda revelar mi participación o afiliación política para revisar mi expediente y dar seguimiento a mi trabajo en la comisión.';
+export const workspaceVersion='comisiones-2026-11-13.1';
+export const workspaceConsent='Tengo 18 años cumplidos y presento esta solicitud por mí. Autorizo el uso de mis datos, y de la INE y el comprobante de domicilio que entregue después, para revisar mi solicitud, confirmar mi comisión y dar seguimiento a mi trabajo en ella. Sé que esta información puede revelar una vinculación política. Este consentimiento no me afilia al PAN, no me da un cargo y no autoriza publicar mis datos.';
 export const workspaceNotice=[
  {title:'Para qué usamos la información',body:'El responsable indicado en el aviso del registro administra tu expediente interno, las actividades de tu comisión y el seguimiento del trámite de afiliación que realices directamente con el PAN. Tu cuenta no acredita una identidad verificada, un nombramiento ni una afiliación oficial.'},
  {title:'Documentos personales',body:'Puedes presentar tu INE por ambos lados, un comprobante de domicilio y, cuando lo recibas, el documento de tu trámite de afiliación. Se usan para comprobar los datos de tu expediente interno y revisar el seguimiento que reportes. No se enviarán automáticamente al PAN ni se usarán para publicidad. Evita incluir datos de otras personas; en el comprobante puedes ocultar consumos, saldos y números de cuenta.'},

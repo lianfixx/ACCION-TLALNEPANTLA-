@@ -112,7 +112,7 @@ test('PAN upload cannot complete if the personal documents naturally expire whil
   }
   const info=await(await f.call('/api/espacio','GET',undefined,'member@example.test')).json();
   assert.equal(info.personalDocumentsReady,true);
-  const consent=await f.call('/api/espacio','POST',{action:'consent',version:'comisiones-2026-10-06.1',noticeToken:info.noticeToken,consent:true},'member@example.test');assert.equal(consent.status,200,await consent.clone().text());
+  const consent=await f.call('/api/espacio','POST',{action:'consent',version:'comisiones-2026-11-13.1',noticeToken:info.noticeToken,consent:true},'member@example.test');assert.equal(consent.status,200,await consent.clone().text());
   const result=await f.callRaw('/api/espacio/documentos?category=affiliation','%PDF-1.4\n%%EOF','member@example.test',{'content-type':'application/pdf','x-file-name':'Prueba.pdf'});
   assert.equal(clock,started+60_001,'storage completed after the prerequisite deadline');
   assert.equal(result.status,409,await result.clone().text());

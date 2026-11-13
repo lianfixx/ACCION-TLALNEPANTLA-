@@ -5,7 +5,7 @@ Implementado el 12 de noviembre de 2026 a partir de «La ruta · Plan maestro y 
 ## Qué hace
 
 - `/enlaces` presenta la convocatoria: requisitos, plazas por comisión, calendario, criterios de selección, compromisos y pasos para postularse.
-- En el registro interno aparece la casilla «Me postulo a Enlaces APJ». Marca la solicitud como postulación; no cambia el consentimiento ni la comisión elegida.
+- En la solicitud aparece la casilla «Quiero ser Enlace APJ de esta comisión». Al marcarla se pide, obligatorio, «Qué harías en tu primer mes» (20 a 700 caracteres), que es el criterio «Propuesta para el primer mes» de la selección. Desde el 13-nov-2026 sustituye a la antigua opción «Me interesa coordinar» con tres propuestas.
 - En Mi comisión, quien se postuló ve «Cartas de Enlaces APJ» y entrega la carta de motivos y la de recomendación (PDF, JPG o PNG, hasta 5 MB). Se guardan como documentos privados del expediente, con el aviso y la conservación de la solicitud.
 - Administración revisa las cartas en Comisiones › Enlaces APJ con el mismo flujo de documentos: «Archivo revisado» o «Pedir corrección», con respuesta para la persona.
 - El perfil de la solicitud muestra «Postulación a Enlaces APJ».

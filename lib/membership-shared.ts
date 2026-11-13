@@ -4,7 +4,7 @@ import { parseMembershipProfile } from "./membership-profile";
 
 export const membershipStatuses = { submitted: "Recibida", in_review: "En revisión", accepted: "Solicitud aceptada", closed: "Cerrada", withdrawn: "Retirada" } as const;
 export type MembershipStatus = keyof typeof membershipStatuses;
-export const membershipConsent = "Solicito mi incorporación interna a Acción Política Juvenil Tlalnepantla y consiento expresamente el tratamiento de mi nombre, correo, entidad y municipio, comisión, disponibilidad y de la información que decida aportar sobre mi actividad, experiencia y propuestas de trabajo. Se usarán para revisar mi solicitud y comunicar el seguimiento dentro de mi cuenta. Entiendo que pueden revelar una vinculación política. He leído el aviso del registro. Este consentimiento no autoriza mi afiliación al PAN, un nombramiento, la publicación de mis datos ni su entrega para una afiliación posterior.";
+export { workspaceConsent as membershipConsent } from "./workspace-shared";
 export type MembershipApplication = { id: string; ownerEmail: string; name: string; commission: string; note: string; profileJson?:string; referenceCode: string; status: MembershipStatus; noticeVersion: string; consentAt: number; createdAt: number; updatedAt: number; retentionUntil: number };
 export type MembershipEvent = { id: string; kind: string; body: string; createdAt: number; actorType: string; actorEmail?: string };
 export type MembershipNotice = { controller: string; address: string; email: string; version: string; regime: string; legalBasis: string; rightsProcedure: string; retentionDays: number; audience: string };

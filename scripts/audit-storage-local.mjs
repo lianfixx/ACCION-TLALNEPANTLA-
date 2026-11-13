@@ -30,7 +30,7 @@ try{
  let current=(await(await send('/api/incorporaciones/'+app.id,'GET',undefined,member)).json()).application;
  await send('/api/admin/incorporaciones/'+app.id,'PATCH',{status:'accepted',response:'Solicitud revisada en prueba aislada',expectedUpdatedAt:current.updatedAt},owner);checks.push('Application submission, review and acceptance');
  let info=await(await send('/api/espacio','GET',undefined,member)).json();
- await send('/api/espacio','POST',{action:'consent',version:'comisiones-2026-10-06.1',noticeToken:info.noticeToken,consent:true},member);
+ await send('/api/espacio','POST',{action:'consent',version:'comisiones-2026-11-13.1',noticeToken:info.noticeToken,consent:true},member);
  const pdf='%PDF-1.4\n% Document created for isolated audit only\n%%EOF';const headers={'content-type':'application/pdf','x-file-name':'auditoria-aislada.pdf'};
  await send('/api/espacio/documentos?category=affiliation','POST',pdf,member,403,headers);checks.push('PAN upload blocked until commission enabled');
  const ids=[];for(const category of ['ine_front','ine_back','address']){const uploaded=await(await send('/api/espacio/documentos?category='+category,'POST',pdf,member,201,headers)).json();ids.push(uploaded.id);}

@@ -22,7 +22,7 @@ async function applicant(f,username='applicant'){
  const current=await expect(await f.call('/api/incorporaciones/'+app.id,'GET',undefined,email),200);
  await expect(await f.call('/api/admin/incorporaciones/'+app.id,'PATCH',{status:'accepted',response:'Solicitud revisada en prueba aislada',expectedUpdatedAt:current.application.updatedAt}),200);
  const info=await snapshot(f,{email});
- await expect(await f.call('/api/espacio','POST',{action:'consent',version:'comisiones-2026-10-06.1',noticeToken:info.noticeToken,consent:true},email),200);
+ await expect(await f.call('/api/espacio','POST',{action:'consent',version:'comisiones-2026-11-13.1',noticeToken:info.noticeToken,consent:true},email),200);
  return {email,username,id:info.actor.id};
 }
 const snapshot=(f,a)=>f.call('/api/espacio','GET',undefined,a.email).then(r=>expect(r,200));

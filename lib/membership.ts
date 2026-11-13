@@ -14,9 +14,9 @@ export function membershipJson(data: unknown, init?: ResponseInit) {
 }
 export async function membershipConfiguration() {
   const s = await effectiveSettings();
-  const notice: MembershipNotice = { controller:s.DATA_CONTROLLER_NAME ?? "", address:s.DATA_CONTROLLER_ADDRESS ?? "", email:s.ARCO_EMAIL ?? "", version:s.PRIVACY_NOTICE_VERSION ? `${s.PRIVACY_NOTICE_VERSION}-comisiones-2026-10-06` : "", regime:s.DATA_CONTROLLER_REGIME ?? "", legalBasis:s.DATA_CONTROLLER_LEGAL_BASIS ?? "", rightsProcedure:s.RIGHTS_PROCEDURE ?? "", retentionDays:Number(s.MEMBERSHIP_RETENTION_DAYS)||0, audience:s.MEMBERSHIP_DIRECT_CONSENT ?? "0" };
+  const notice: MembershipNotice = { controller:s.DATA_CONTROLLER_NAME ?? "", address:s.DATA_CONTROLLER_ADDRESS ?? "", email:s.ARCO_EMAIL ?? "", version:s.PRIVACY_NOTICE_VERSION ? `${s.PRIVACY_NOTICE_VERSION}-comisiones-2026-11-13` : "", regime:s.DATA_CONTROLLER_REGIME ?? "", legalBasis:s.DATA_CONTROLLER_LEGAL_BASIS ?? "", rightsProcedure:s.RIGHTS_PROCEDURE ?? "", retentionDays:Number(s.MEMBERSHIP_RETENTION_DAYS)||0, audience:s.MEMBERSHIP_DIRECT_CONSENT ?? "0" };
   const sections=registrationNoticeSections(notice,s.TRANSPARENCY_ADDRESS ?? "");
-  const snapshot = JSON.stringify({ template:"registro-comisiones-2026-10-06.1", ...notice, transparencyAddress:s.TRANSPARENCY_ADDRESS ?? "", consent:membershipConsent, sections });
+  const snapshot = JSON.stringify({ template:"registro-comisiones-2026-11-13.1", ...notice, transparencyAddress:s.TRANSPARENCY_ADDRESS ?? "", consent:membershipConsent, sections });
   const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(snapshot));
   const noticeToken = [...new Uint8Array(digest)].map(b=>b.toString(16).padStart(2,"0")).join("");
   const ready=membershipSettingsComplete(s) && Boolean(s.DB && s.RATE_LIMIT_SECRET && s.RATE_LIMIT_SECRET.length >= 32);

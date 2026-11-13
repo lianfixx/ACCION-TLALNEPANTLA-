@@ -45,7 +45,7 @@ El folio y el plazo vigentes no se amplían por subir archivos. Los documentos n
 
 ## Documentos de apoyo
 
-Hay seis guías, una por comisión, y un Formato de Evento en `public/documentos`. Cada actividad también tiene una vista privada imprimible para guardarla como PDF. Los documentos se generan mediante `scripts/build-commission-guides.py`.
+Hay seis guías, una por comisión, y un Formato de Evento en `public/documentos`. Cada actividad también tiene una vista privada imprimible para guardarla como PDF. Los documentos se generan mediante `scripts/build-documentos.py` (ver `docs/documentos-pdf.md`).
 
 ## Correcciones de la auditoría
 

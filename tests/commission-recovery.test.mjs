@@ -56,7 +56,7 @@ test('every activity message remains accessible across stable, bounded pages wit
   f.seedAccount(person);const account=f.db.prepare('SELECT id FROM staff_accounts WHERE email=?').get(person).id;
   f.db.prepare("INSERT INTO commission_members(id,account_id,commission,role,active,updated_at,updated_by) VALUES(?,?,'gobierno','member',1,1,'owner')").run(crypto.randomUUID(),account);
   const cfg=await(await f.call('/api/espacio','GET',undefined,person)).json();
-  assert.equal((await f.call('/api/espacio','POST',{action:'consent',version:'comisiones-2026-10-06.1',noticeToken:cfg.noticeToken,consent:true},person)).status,200);
+  assert.equal((await f.call('/api/espacio','POST',{action:'consent',version:'comisiones-2026-11-13.1',noticeToken:cfg.noticeToken,consent:true},person)).status,200);
   const created=await f.call('/api/espacio','POST',{action:'create',kind:'question',commission:'gobierno',title:'Seguimiento de la actividad',submit:true,details:{request:'Confirmar el espacio',context:'Acuerdos de planeación',deadline:'2026-12-01'}},person);
   assert.equal(created.status,201);const id=(await created.json()).id,stamp=Date.now()-1000;
   for(let n=0;n<101;n++)f.db.prepare('INSERT INTO commission_messages(id,item_id,author_id,body,created_at) VALUES(?,?,?,?,?)').run('message-'+String(n).padStart(3,'0'),id,account,n===0?'Acuerdo original':'Seguimiento '+n,stamp);

@@ -2,6 +2,22 @@
 
 Lo más reciente arriba. Formato y reglas: `ia/PROTOCOLO.md`, sección 3. Cada entrada lleva la línea `Agente:`.
 
+## 2026-11-13 · proceso de participación más simple, comisiones claras y PDF útiles
+
+- Agente: Claude Code (sesión en la nube), con subagentes para la auditoría y los PDF
+- Solicitud: Emi, 13/11/2026: auditar el proceso de crear cuenta, subir documentos y postularse; hacerlo sencillo, completo y claro; rehacer los PDF para que sirvan y no parezcan hechos por IA; ordenar la interfaz de comisiones y del proceso. Decisiones de Emi: «coordinar» se fusiona con Enlaces APJ; los documentos se siguen pidiendo antes de confirmar la comisión; un solo consentimiento para solicitud y documentos; habilitar desde la solicitud; propuesta breve obligatoria para Enlaces.
+- Auditoría: colaborar tomaba ~9 pantallas, 25-30 clics, 3 consentimientos y 2 declaraciones de edad; el trámite estaba repartido entre /participacion y /mi-comision; /comisiones leía como manual (hasta 523 palabras); los PDF repetían 76-80 % del texto, usaban DejaVu y una leyenda de proyecto en cada página.
+- Cambios:
+  - Solicitud en 2 pasos (datos y comisión; revisar y enviar), sin la opción «coordinar» ni las tres propuestas; Enlaces APJ con «Qué harías en tu primer mes» obligatorio (20-700). Una sola casilla con la declaración de edad y el consentimiento, que también cubre INE y comprobante; al enviar se registra el consentimiento del expediente con el mismo texto. Aviso del registro actualizado (versión `-comisiones-2026-11-13`, plantilla `registro-comisiones-2026-11-13.1`, expediente `comisiones-2026-11-13.1`).
+  - Componente común de 5 pasos (cuenta, solicitud, documentos, confirmación, afiliación) en /comisiones, /participacion y Mi comisión.
+  - /comisiones: cuadrícula de 6 tarjetas con propósito, tareas, «Participar» y guía PDF; el detalle de seguimiento pasa a cada guía. Portada: botón «Participar» en el explorador y se quita la lista duplicada de «Quién hace qué».
+  - Mi comisión: avance con los 5 pasos y una sola tarjeta de «siguiente paso»; resumen de solicitud en una línea; pestañas en orden (Mi registro, Documentos, Cartas, Afiliación, Actividades); cada documento con su propio botón que sube al elegir el archivo.
+  - Administración: «Habilitar en [comisión]» desde la solicitud aceptada, sin escribir el usuario; el servidor sigue exigiendo los tres documentos revisados.
+  - PDF: nuevo `scripts/build-documentos.py` con contenido en `scripts/documentos/`, fuentes Source Sans 3 y Source Serif 4 (OFL) en `scripts/fonts/`; guías específicas por comisión con primer mes en casillas y modelo de reporte; APJ-F01 con tablas, aforo, lista previa, firmas y recuadro de decisión; base y anexos de 13 páginas con las cautelas agrupadas una vez, sin domicilios ni correos. Detalle en `docs/documentos-pdf.md`.
+- Archivos: `app/ProcessSteps.tsx` (nuevo), `app/comisiones/*`, `app/participacion/*`, `app/mi-comision/Workspace.tsx`, `app/admin/MembershipManager.tsx`, `app/api/espacio/route.ts`, `app/api/incorporaciones/route.ts`, `app/ApplicationProfileView.tsx`, `app/HomeExplorers.tsx`, `app/page.tsx`, `app/enlaces/page.tsx`, `app/globals.css`, `lib/membership*.ts`, `lib/workspace-shared.ts`, `public/documentos/*.pdf`, `scripts/build-documentos.py`, `scripts/documentos/`, `scripts/fonts/`, `scripts/build-commission-guides.py` (eliminado), `docs/documentos-pdf.md`, `docs/enlaces-apj.md`, `docs/comisiones-operacion.md`, pruebas y este registro.
+- Verificación: `npm run typecheck`, `npm run lint` y `npm test` → aprobado (194, 2 nuevas: propuesta obligatoria con consentimiento único y habilitación desde la solicitud). Recorrido en Chromium con cuenta sintética: solicitud enviada, documentos sin segundo consentimiento, subida de INE al elegir el archivo, escritorio e iPhone 13 sin desbordes; Mi comisión de ~445 a 114 palabras y Documentos a 73. PDF: `pdffonts` solo Source, 27 páginas revisadas como imagen, ninguna palabra fuera del margen.
+- Pendiente: publicar estos cambios en workers.dev (pide autorización); aprobación del Comité de guías, formato y base; decidir si los campos nuevos del APJ-F01 pasan al portal; prueba impresa de los renglones.
+
 ## 2026-11-13 · aviso cargado, Turnstile conectado y dominio de envío en Resend
 
 - Agente: Claude Code (sesión en la nube)

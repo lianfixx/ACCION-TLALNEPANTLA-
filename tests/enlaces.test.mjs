@@ -9,9 +9,9 @@ function bucket(){const files=new Map();return{files,async put(k,v){files.set(k,
 const fixture=env=>createWorkerFixture({...env,BUCKET:bucket()});
 function account(f,email){f.seedAccount(email);const a=f.db.prepare('SELECT id FROM staff_accounts WHERE email=?').get(email);f.db.prepare('UPDATE staff_accounts SET username=? WHERE id=?').run(email.split('@')[0],a.id);return a.id;}
 async function token(f,email){const html=(await(await f.call('/participacion','GET',undefined,email)).text()).replaceAll('\\"','"');return html.match(/"noticeToken":"([a-f0-9]{64})"/)[1];}
-const profile=(extra={})=>({participation:'collaborate',state:'Estado de México',municipality:'Tlalnepantla de Baz',activity:'',experience:'',availability:'Cuatro horas por semana',projects:[],...extra});
+const profile=(extra={})=>({participation:'collaborate',state:'Estado de México',municipality:'Tlalnepantla de Baz',activity:'',experience:'',availability:'Cuatro horas por semana',projects:[],...(extra.enlaces?{enlacesPlan:'Organizar un foro sobre movilidad con dos escuelas.'}:{}),...extra});
 async function apply(f,email,extra={}){return f.call('/api/incorporaciones','POST',{name:'Persona de prueba',commission:'gobierno',profile:profile(extra),note:'',consent:true,adultSelfDeclared:true,noticeToken:await token(f,email)},email);}
-async function consent(f,email){const x=await(await f.call('/api/espacio','GET',undefined,email)).json();const r=await f.call('/api/espacio','POST',{action:'consent',version:'comisiones-2026-10-06.1',noticeToken:x.noticeToken,consent:true},email);assert.equal(r.status,200,await r.clone().text());}
+async function consent(f,email){const x=await(await f.call('/api/espacio','GET',undefined,email)).json();const r=await f.call('/api/espacio','POST',{action:'consent',version:'comisiones-2026-11-13.1',noticeToken:x.noticeToken,consent:true},email);assert.equal(r.status,200,await r.clone().text());}
 const upload=(f,email,category)=>f.callRaw('/api/espacio/documentos?category='+category,'%PDF-1.4\n%%EOF',email,{'content-type':'application/pdf','x-file-name':encodeURIComponent('Carta de prueba.pdf')});
 
 test('a closed call stays hidden from the public and refuses postulations',async()=>{const f=await fixture(base);try{
@@ -63,4 +63,28 @@ test('settings refuse to open the call without the Comité agreement or the inte
  const closedRegistry=await f.call('/api/admin/settings','PATCH',{values:{...values,MEMBERSHIP_ENABLED:'0',ENLACES_APPROVAL:'Acuerdo de prueba aislada'},expectedUpdatedAt:0});assert.equal(closedRegistry.status,400);assert.match((await closedRegistry.json()).error,/registro interno/);
  const saved=await f.call('/api/admin/settings','PATCH',{values:{...values,ENLACES_APPROVAL:'Acuerdo de prueba aislada'},expectedUpdatedAt:0});assert.equal(saved.status,200,await saved.clone().text());
  assert.equal((await f.call('/enlaces','GET',undefined,null)).status,200);
+}finally{f.close();}});
+
+test('a postulation needs a first-month proposal and the documents need no second consent',async()=>{const f=await fixture(open);try{
+ account(f,user);
+ const missing=await apply(f,user,{enlaces:true,enlacesPlan:''});assert.equal(missing.status,400);
+ const created=await apply(f,user,{enlaces:true});assert.equal(created.status,201,await created.clone().text());
+ assert.equal(JSON.parse((await created.json()).application.profileJson).enlacesPlan,'Organizar un foro sobre movilidad con dos escuelas.');
+ const space=await(await f.call('/api/espacio','GET',undefined,user)).json();assert.equal(space.consent,true,'the application consent covers the expediente');
+ assert.equal((await upload(f,user,'motivation_letter')).status,201);
+ assert.equal((await upload(f,user,'ine_front')).status,201);
+}finally{f.close();}});
+
+test('administration enables an accepted applicant from the application, only with reviewed documents',async()=>{const f=await fixture(base);try{
+ const id=account(f,user);
+ const created=await apply(f,user);assert.equal(created.status,201);let app=(await created.json()).application;
+ let r=await f.call('/api/admin/incorporaciones/'+app.id,'PATCH',{status:'in_review',expectedUpdatedAt:app.updatedAt});assert.equal(r.status,200);app=(await r.json()).record??app;
+ const current=f.db.prepare('SELECT updated_at FROM membership_applications WHERE id=?').get(app.id).updated_at;
+ r=await f.call('/api/admin/incorporaciones/'+app.id,'PATCH',{status:'accepted',response:'Aceptada',expectedUpdatedAt:current});assert.equal(r.status,200,await r.clone().text());
+ const enable=()=>f.call('/api/espacio','POST',{action:'team',commission:'gobierno',email:user,role:'member',active:true});
+ r=await enable();assert.equal(r.status,409,'documents still pending');assert.match((await r.json()).error,/INE/);
+ const {seedReviewedIdentityDocuments}=await import('./helpers/identity-documents.mjs');await seedReviewedIdentityDocuments(f,id);
+ r=await enable();assert.equal(r.status,200,await r.clone().text());
+ assert.equal(f.db.prepare("SELECT active FROM commission_members WHERE account_id=? AND commission='gobierno'").get(id).active,1);
+ const member=await f.call('/api/espacio','POST',{action:'team',commission:'gobierno',email:other,role:'member',active:true},user);assert.notEqual(member.status,200,'only administration can enable by email');
 }finally{f.close();}});

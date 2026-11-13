@@ -2,7 +2,7 @@ import { cleanText } from "./security";
 
 export const residenceStates = ["Aguascalientes","Baja California","Baja California Sur","Campeche","Chiapas","Chihuahua","Ciudad de México","Coahuila","Colima","Durango","Estado de México","Guanajuato","Guerrero","Hidalgo","Jalisco","Michoacán","Morelos","Nayarit","Nuevo León","Oaxaca","Puebla","Querétaro","Quintana Roo","San Luis Potosí","Sinaloa","Sonora","Tabasco","Tamaulipas","Tlaxcala","Veracruz","Yucatán","Zacatecas"] as const;
 export type InitialProject = { title:string; proposal:string; firstStep:string; needs:string; timeframe:string; result:string };
-export type MembershipProfile = { version:1; participation:"collaborate"|"coordinate"; state:string; municipality:string; activity:string; experience:string; availability:string; projects:InitialProject[]; enlaces?:true };
+export type MembershipProfile = { version:1; participation:"collaborate"|"coordinate"; state:string; municipality:string; activity:string; experience:string; availability:string; projects:InitialProject[]; enlaces?:true; enlacesPlan?:string };
 export const projectQuestions: Array<{key:keyof InitialProject;label:string;hint:string;max:number;min:number}> = [
   {key:"title",label:"Nombre del proyecto",hint:"Un nombre breve que permita reconocer la idea.",min:3,max:100},
   {key:"proposal",label:"Qué te gustaría hacer",hint:"Explica la idea, a quién estaría dirigida y qué quieres resolver.",min:20,max:700},
@@ -29,7 +29,7 @@ export function parseMembershipProfile(value:unknown):MembershipProfile{
   const participation=p.participation;
   const profile:MembershipProfile={version:1,participation,state:p.state as string,municipality:field(p.municipality,"Municipio o alcaldía",100,2),activity:field(p.activity,"Tu actividad actual",200),experience:field(p.experience,"Tu experiencia",800,participation==="coordinate"?10:0),availability:field(p.availability,"Tu disponibilidad",200,5),projects:[]};
   if(p.enlaces!==undefined&&typeof p.enlaces!=="boolean")throw new Error("Indica si te postulas a Enlaces APJ.");
-  if(p.enlaces===true)profile.enlaces=true;
+  if(p.enlaces===true){profile.enlaces=true;profile.enlacesPlan=field(p.enlacesPlan,"Tu propuesta para el primer mes",700,20);}
   if(participation==="coordinate"){
     if(!Array.isArray(p.projects)||p.projects.length!==3)throw new Error("Comparte tus tres primeras propuestas.");
     profile.projects=p.projects.map((project,index)=>{

@@ -2,6 +2,7 @@
 import Link from 'next/link';
 import {useEffect,useRef,useState,type FormEvent} from 'react';
 import {commissionGuides} from '@/lib/commission-guides';
+import ProcessSteps from '@/app/ProcessSteps';
 import {commissions,commissionName} from '@/lib/commissions';
 import {membershipStatuses} from '@/lib/membership-shared';
 import {docCategories,enlacesCategories,isEnlacesCategory,workFields,workKinds,workStatuses,workspaceConsent,workspaceNotice,workspaceVersion,type WorkDocument,type WorkItem,type WorkKind} from '@/lib/workspace-shared';
@@ -58,10 +59,10 @@ export default function Workspace({accountId,adminView=false,initialArea='',init
  const readyForAffiliation=Boolean(commissionConfirmed&&data?.personalDocumentsReady);
  const canReceiveAffiliation=Boolean(data?.documentsEnabled&&readyForAffiliation);
  const tabs=admin?[['solicitud','Solicitudes'],['expediente','Documentos personales'],['enlaces','Enlaces APJ'],['afiliacion','Afiliación PAN'],['actividades','Actividades'],['equipo','Equipo'],['archivo','Archivo']]:[
-  ['solicitud','Mi registro'],['expediente','Documentos personales'],
-  ...(data?.application?.enlaces?[['enlaces','Cartas de Enlaces APJ']]:[]),
-  ...(areas.length?[['actividades','Actividades'],['equipo','Mi equipo'],['archivo','Archivo']]:[]),
+  ['solicitud','Mi registro'],['expediente','Documentos'],
+  ...(data?.application?.enlaces?[['enlaces','Cartas Enlaces APJ']]:[]),
   ...(commissionConfirmed||data?.affiliations.length?[['afiliacion','Afiliación PAN']]:[]),
+  ...(areas.length?[['actividades','Actividades'],['equipo','Mi equipo'],['archivo','Archivo']]:[]),
  ];
  return <main className="workspace" id="main-content">
   <header className="workspace-header"><div><Link href={admin?'/admin':'/'} className="text-link">{admin?'Volver al panel':'Acción Política Juvenil Tlalnepantla'}</Link><h1>{admin?'Comisiones':'Mi comisión'}</h1>{data&&<p>{data.actor.name}</p>}</div><div className="workspace-actions"><Link href="/comisiones">Guías de comisiones</Link>{data?.actor.admin&&!admin&&<Link href="/admin/comisiones">Administración</Link>}<Link href={admin?'/admin/cuenta':'/cuenta'}>Mi cuenta</Link><StaffLogout accountId={accountId}/></div></header>
@@ -73,28 +74,23 @@ export default function Workspace({accountId,adminView=false,initialArea='',init
    {tab==='solicitud'&&<section className="workspace-card workspace-application">
     <h2>{admin?'Solicitudes de incorporación':'Mi registro'}</h2>
     {admin?<><p>Revisa el perfil, los documentos y las propuestas. Los tres documentos personales deben quedar revisados. Después de aceptar la solicitud, habilita el acceso en Equipo para abrir el último paso de afiliación al PAN.</p><div className="workspace-actions"><Link className="button button-primary" href="/admin?section=incorporaciones">Revisar solicitudes</Link><button className="button button-secondary" onClick={()=>changeView('equipo')}>Abrir Equipo</button></div></>:<>
-     <ol className="workspace-onboarding" aria-label="Avance de tu registro">
-      <li data-complete="true"><strong>Cuenta</strong><span>Creada</span></li>
-      <li data-complete={profileReceived}><strong>Perfil</strong><span>{profileReceived?'Datos recibidos':commissionConfirmed?'Registro previo':'Por completar'}</span></li>
-      <li data-complete={commissionConfirmed}><strong>Comisión</strong><span>{commissionConfirmed?'Confirmada':'Por confirmar'}</span></li>
-      <li data-complete={affiliationComplete}><strong>Afiliación PAN</strong><span>{affiliationComplete?'Comprobante revisado':commissionConfirmed?!data.personalDocumentsReady?'Documentos pendientes':affiliation?.status==='changes'?'Requiere corrección':affiliation?'En seguimiento':'Por completar':'Último paso'}</span></li>
-     </ol>
-     {data.application?<><div className="workspace-status">{states[data.application.status]||data.application.status}</div><h3>{commissionName(data.application.commission)}</h3><p>Folio {data.application.reference_code}</p><p>{data.application.status==='accepted'?(data.roles.length?'Tu solicitud fue aceptada y tu acceso al equipo está habilitado.':'Tu solicitud fue aceptada. Falta habilitar tu acceso al equipo.'):
-      data.application.status==='submitted'?'Tu solicitud llegó al equipo. Consulta aquí las respuestas y cualquier dato que te pidan aclarar.':
-      data.application.status==='in_review'?'El equipo está revisando tu solicitud. Abre el seguimiento para leer las respuestas o corregir tus datos.':
-      'Abre el seguimiento para consultar el cierre o presentar una nueva solicitud.'}</p><Link className="button button-primary" href="/participacion#registro">Ver solicitud y respuestas</Link></>:
-      data.roles.length?<><div className="workspace-status">Acceso al equipo habilitado</div><p>{data.roles.map(r=>commissionName(r.commission)).join(' · ')}</p></>:<><p>Elige una comisión y comparte tus datos y disponibilidad. Si quieres coordinar, añade tu experiencia y tres propuestas.</p><Link className="button button-primary" href="/participacion#registro">Completar mi solicitud</Link></>}
-     {hasEnrollment&&(!data.personalDocumentsReady||commissionConfirmed)&&<div className="workspace-next-action"><h3>{readyForAffiliation?(affiliationComplete?'Ya completaste el último paso':'Completa el último paso'):'Revisa tus documentos personales'}</h3><p>{readyForAffiliation?(affiliationComplete?'Administración revisó tu comprobante. Puedes consultarlo y continuar con las actividades de tu comisión.':'Tu comisión está confirmada. Realiza tu afiliación en la app del PAN y sube el documento que la acredita. Si ya estás afiliado, entrega tu comprobante sin repetir el trámite.'):commissionConfirmed?'Tu comisión está confirmada. Para entregar o actualizar el comprobante PAN, la INE por ambos lados y el comprobante de domicilio deben aparecer como Archivo revisado. Consulta si falta entregar o corregir alguno.':'Sube la INE por ambos lados y el comprobante de domicilio. Administración debe revisar los tres documentos antes de confirmar tu comisión y abrir el paso de afiliación.'}</p><button className="button button-primary" onClick={()=>changeView(readyForAffiliation?(affiliationComplete?'actividades':'afiliacion'):'expediente')}>{readyForAffiliation?(affiliationComplete?'Abrir actividades':affiliation?'Continuar mi afiliación':'Completar mi afiliación'):'Abrir documentos personales'}</button>{readyForAffiliation&&affiliationComplete&&<button className="text-link" onClick={()=>changeView('afiliacion')}>Ver mi comprobante</button>}</div>}
-     {!commissionConfirmed&&<p className="workspace-help">La afiliación al PAN aparecerá al final, cuando tu comisión esté confirmada. La toma de protesta se comunicará por separado.</p>}
+     <ProcessSteps label="Tu avance" done={['cuenta',...(profileReceived||commissionConfirmed?['solicitud']:[]),...(data.personalDocumentsReady?['documentos']:[]),...(commissionConfirmed?['comision']:[]),...(affiliationComplete?['afiliacion']:[])]} current={!profileReceived&&!commissionConfirmed?'solicitud':!data.personalDocumentsReady?'documentos':!commissionConfirmed?'comision':!affiliationComplete?'afiliacion':undefined}/>
+     <div className="workspace-next-action">{!profileReceived&&!commissionConfirmed?<><h3>Envía tu solicitud</h3><p>Tus datos, tu comisión y tu disponibilidad. Toma unos minutos.</p><Link className="button button-primary" href="/participacion#registro">Llenar solicitud</Link></>:
+      !data.personalDocumentsReady?<><h3>Sube tus documentos</h3><p>INE por ambos lados y comprobante de domicilio. Solo tú y administración los ven.</p><button className="button button-primary" onClick={()=>changeView('expediente')}>Subir documentos</button></>:
+      !commissionConfirmed?<><h3>Estamos revisando</h3><p>Tus documentos ya están revisados. Te avisamos aquí cuando quede confirmada tu comisión.</p></>:
+      !affiliationComplete?<><h3>Afíliate al PAN</h3><p>Es el último paso. Si ya estás afiliado, solo sube tu comprobante.</p><button className="button button-primary" onClick={()=>changeView('afiliacion')}>Ir a afiliación</button></>:
+      <><h3>Todo listo</h3><p>Ya puedes trabajar con tu comisión.</p><button className="button button-primary" onClick={()=>changeView('actividades')}>Ir a actividades</button></>}</div>
+     {data.application&&<dl className="workspace-application-summary"><div><dt>Comisión</dt><dd>{commissionName(data.application.commission)}</dd></div><div><dt>Solicitud</dt><dd>{states[data.application.status]||data.application.status}</dd></div><div><dt>Folio</dt><dd>{data.application.reference_code}</dd></div></dl>}
+     {data.application&&<p className="workspace-help"><Link href="/participacion#registro">Ver mi solicitud y las respuestas</Link>{data.application.enlaces?<> · <button className="text-link" onClick={()=>changeView('enlaces')}>Mis cartas de Enlaces APJ</button></>:null}</p>}
     </>}
    </section>}
    {tab==='expediente'&&<section className="workspace-card workspace-personal-docs">
-    <h2>Documentos personales</h2>
-    <p>{admin?'Revisa la INE por ambos lados y el comprobante de domicilio. Los tres deben quedar como Archivo revisado antes de confirmar el acceso al equipo.':'Entrega aquí la INE por ambos lados y el comprobante de domicilio. Administración revisará los tres documentos para confirmar tu comisión.'}</p>
-    {!admin&&!hasEnrollment&&<div className="workspace-next-action"><p>Primero envía tu solicitud para poder entregar los documentos.</p><Link className="button button-primary" href="/participacion#registro">Completar mi solicitud</Link></div>}
-    {!admin&&!data.documentsEnabled&&<p>La recepción de documentos está cerrada en este momento. Puedes consultar lo que ya entregaste.</p>}
+    <h2>{admin?'Documentos personales':'Tus documentos'}</h2>
+    <p>{admin?'Revisa la INE por ambos lados y el comprobante de domicilio. Con los tres revisados se puede habilitar a la persona en su comisión.':'Sube cada documento en su renglón. Solo tú y administración los ven.'}</p>
+    {!admin&&!hasEnrollment&&<div className="workspace-next-action"><p>Primero envía tu solicitud.</p><Link className="button button-primary" href="/participacion#registro">Llenar solicitud</Link></div>}
+    {!admin&&!data.documentsEnabled&&<p>La recepción está cerrada por ahora. Puedes ver lo que ya entregaste.</p>}
     {admin||data.consent?<Documents admin={admin} categoryOnly="identity" ownerId={data.actor.id} area={area} allowUpload={!admin&&canReceive} onUploaded={()=>setTick(v=>v+1)} act={act} tick={tick}/>:hasEnrollment&&data.documentsEnabled?<Consent key={data.noticeToken} data={data} act={act} busy={busy}/>:null}
-    {!admin&&<div className="workspace-next-action"><p>{readyForAffiliation?(affiliationComplete?'Tus documentos y tu comprobante PAN están revisados. Puedes consultar el seguimiento de tu afiliación.':'Tus documentos están revisados y tu comisión confirmada. El siguiente paso es entregar tu comprobante de afiliación al PAN.'):data.personalDocumentsReady?'Tus documentos están revisados. Consulta en Mi registro la confirmación de tu comisión.':'Consulta aquí la respuesta a cada documento. Los tres deben aparecer como Archivo revisado antes de iniciar el último paso de afiliación al PAN.'}</p><button className="button button-secondary" onClick={()=>changeView(readyForAffiliation?'afiliacion':'solicitud')}>{readyForAffiliation?(affiliationComplete?'Ver mi afiliación':'Continuar con mi afiliación'):'Ver mi registro'}</button></div>}
+     {!admin&&data.personalDocumentsReady&&<div className="workspace-next-action"><p>{readyForAffiliation?'Documentos revisados y comisión confirmada.':'Documentos revisados. Falta que administración confirme tu comisión.'}</p>{readyForAffiliation&&<button className="button button-secondary" onClick={()=>changeView('afiliacion')}>{affiliationComplete?'Ver mi afiliación':'Ir a afiliación'}</button>}</div>}
    </section>}
    {tab==='enlaces'&&(admin||Boolean(data.application?.enlaces))&&<section className="workspace-card workspace-enlaces">
     <h2>{admin?'Cartas de Enlaces APJ':'Tus dos cartas'}</h2>
@@ -200,15 +196,17 @@ function DocumentsContent({admin=false,ownerId,itemId,categoryOnly,accountFilter
  return <div className="workspace-documents">
   <fieldset className="workspace-surface" disabled={Boolean(loadError)}>
    {checklist&&!admin&&loaded&&<ul className="workspace-document-checklist" aria-label={enlaces?'Cartas de la postulación':'Documentos del expediente'}>{checklist.map(key=>{
-    const latest=docs.find(d=>d.category===key);return <li key={key}><strong>{docCategories[key]}</strong><span>{latest?states[latest.status]||latest.status:'Por entregar'}</span></li>;
+    const latest=docs.find(d=>d.category===key);return <li key={key} data-state={latest?.status??'missing'}><div><strong>{docCategories[key]}</strong><span>{latest?states[latest.status]||latest.status:'Falta'}</span>{key==='address'&&!latest&&<small>Puedes tapar consumos, saldos y números de cuenta.</small>}{key==='recommendation_letter'&&!latest&&<small>Con nombre y contacto de quien la firma.</small>}{latest?.status==='changes'&&latest.review_note&&<small className="workspace-review-response">{latest.review_note}</small>}</div>
+     {allowUpload&&latest?.status!=='checked'&&<form className="workspace-inline-upload" onSubmit={upload}><input type="hidden" name="category" value={key}/><label className="workspace-file-button">{latest?'Reemplazar':'Elegir archivo'}<input name="file" type="file" accept="application/pdf,image/jpeg,image/png" required onChange={e=>{if(e.currentTarget.files?.length)e.currentTarget.form?.requestSubmit();}}/></label></form>}</li>;
    })}</ul>}
+   {checklist&&!admin&&allowUpload&&<p className="workspace-help">PDF, JPG o PNG de hasta 5 MB. Se sube al elegirlo.</p>}
    {!uploadOnly&&docs.filter(d=>categoryMatches(d.category)).map(d=><article className="workspace-document" key={d.id}>
     <div><strong>{docCategories[d.category]}</strong>{admin&&<span>{d.owner_name}</span>}<a href={`/api/espacio/documentos/${d.id}`}>{d.name}</a><small>{states[d.status]||d.status} · Disponible hasta {date(d.retention_until)}</small>{d.review_note&&<p className="workspace-review-response">{d.review_note}</p>}</div>
     {(admin||d.owner_id===ownerId)&&<button className="text-link" onClick={()=>void act(`/api/espacio/documentos/${d.id}`,{action:'remove',expectedUpdatedAt:d.updated_at},'PATCH')}>Retirar documento</button>}
     {admin&&<VersionedForm className="workspace-form" record={{...d,updatedAt:d.updated_at}} onSubmit={async(e,snapshot)=>{const f=new FormData(e.currentTarget);return act(`/api/espacio/documentos/${d.id}`,{action:'review',status:f.get('status'),note:f.get('note'),expectedUpdatedAt:snapshot.updatedAt},'PATCH');}}>{()=><><label>Resultado de la revisión<select name="status"><option value="checked">Archivo revisado</option><option value="changes">Pedir corrección</option></select></label><label>Respuesta para la persona<textarea name="note" required maxLength={1200}/></label><button className="button button-secondary">Guardar revisión del archivo</button></>}</VersionedForm>}
    </article>)}
-   {!uploadOnly&&(!loaded?<p role="status">{loadError||'Cargando documentos…'}{loadError&&<button type="button" className="text-link" onClick={retry}>Volver a intentar</button>}</p>:!docs.length&&<p>{affiliation?'Todavía no has entregado tu comprobante.':'Aún no hay documentos recibidos.'}</p>)}
-   {allowUpload&&<form className="workspace-form workspace-upload" onSubmit={upload}>
+   {!uploadOnly&&(!loaded?<p role="status">{loadError||'Cargando documentos…'}{loadError&&<button type="button" className="text-link" onClick={retry}>Volver a intentar</button>}</p>:!docs.length&&!(checklist&&!admin)&&<p>{affiliation?'Todavía no has entregado tu comprobante.':'Aún no hay documentos.'}</p>)}
+   {allowUpload&&!(checklist&&!admin)&&<form className="workspace-form workspace-upload" onSubmit={upload}>
     {affiliation||categoryOnly==='affiliation_receipt'?<><h3>{affiliation?'Sube tu comprobante de afiliación':'Comparte el acuse del trámite'}</h3><input type="hidden" name="category" value={affiliation?'affiliation':'affiliation_receipt'}/></>:
      itemId?<input type="hidden" name="category" value="evidence"/>:
      <label>Qué documento vas a entregar<select name="category" required value={category} onChange={e=>setCategory(e.target.value)}><option value="">Selecciona el documento</option>{Object.entries(docCategories).filter(([key])=>categoryMatches(key)).map(([key,label])=><option key={key} value={key}>{label}</option>)}</select></label>}

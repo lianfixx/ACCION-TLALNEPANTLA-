@@ -7,7 +7,6 @@ import ActionPortal from "./ActionPortal";
 import ExperienceMatrix from "./ExperienceMatrix";
 import ConversationPreview from "./ConversationPreview";
 import HeroMascot from "./HeroMascot";
-import { commissions } from "@/lib/commissions";
 import { leaders, references, cases, standards, conversations } from "./HomeData";
 
 export const dynamic = "force-dynamic";
@@ -49,7 +48,7 @@ export default function Home() {
         <ActionPortal />
         <div className="aj-more">
           <details id="estandar"><summary>Cómo trabajamos en equipo<span aria-hidden="true">+</span></summary><div className="aj-practical-list">{standards.map(([title,text])=><article key={title}><h3>{title}</h3><p>{text}</p></article>)}</div></details>
-          <details id="equipo"><summary>Quién hace qué<span aria-hidden="true">+</span></summary><div className="aj-team-credit"><strong>Yohualli Emiliano García Milla</strong><span>Impulsa esta etapa del proyecto.</span><p>La convocatoria para coordinar las comisiones se publicará en Actualidad. Aquí aparecerán los nombres de quienes sean designados.</p></div><div className="aj-practical-list aj-team-list">{commissions.map(item=><article key={item.id}><h3>{item.name}</h3><p>{item.purpose}</p><Link href={`/comisiones#${item.id}`}>Ver las tareas de {item.name}</Link></article>)}</div></details>
+          <details id="equipo"><summary>Quién hace qué<span aria-hidden="true">+</span></summary><div className="aj-team-credit"><strong>Yohualli Emiliano García Milla</strong><span>Impulsa esta etapa del proyecto.</span><p>Cada comisión tendrá dos Enlaces APJ, elegidos por convocatoria. Sus nombres aparecerán aquí cuando el Comité los designe.</p></div></details>
           <details id="experiencias"><summary>Experiencias de Acción Juvenil en México<span aria-hidden="true">+</span></summary><div className="aj-reference-grid">{references.map(item=><a key={item.title} href={item.href} target="_blank" rel="noreferrer"><Image unoptimized src={item.image} alt={item.title} width={item.width} height={item.height} loading="lazy" sizes="(max-width: 760px) 90vw, 30vw" /><small>{item.eyebrow}</small><h3>{item.title}</h3><p>{item.text}</p><span>Leer en {item.source}</span></a>)}</div><div className="aj-case-list">{cases.map(item=><article key={item.title}><h3>{item.title}</h3><p>{item.text}</p><a href={item.href} target="_blank" rel="noreferrer">{item.linkLabel}</a></article>)}</div></details>
           <details><summary>Antes de participar<span aria-hidden="true">+</span></summary><ConversationPreview pairs={conversations} /></details>
         </div>

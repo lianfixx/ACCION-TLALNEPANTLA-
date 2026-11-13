@@ -1,0 +1,287 @@
+# Contenido de las guías de comisión (public/documentos/guia-<id>.pdf).
+# Cada guía ocupa dos páginas A4. Lo común (ciclo del mes y reporte) está en CICLO y REPORTE.
+# Se escribe en segunda persona. No agregues nombres, contactos ni fechas de aprobación.
+
+CICLO = [
+    ('Proponer', 'Llena el Formato de evento (APJ-F01) o una consulta en Mi comisión › Actividades.'),
+    ('Autorizar', 'Quien tiene facultades decide. Administración registra la decisión y confirma el espacio.'),
+    ('Realizar', 'Haz solo lo autorizado. Si cambia la fecha, la sede o el costo, pide revisión.'),
+    ('Reportar', 'Sube las evidencias y pasa el reporte de abajo a Mi comisión.'),
+]
+
+# Renglones del reporte mensual: (etiqueta, indicación). La indicación de «Resultados»
+# se toma de cada comisión.
+REPORTE = [
+    ('Lo realizado', 'Actividades, reuniones y tareas del mes.'),
+    ('Recursos usados', 'Dinero, materiales y apoyos, con su origen.'),
+    ('Resultados', None),
+    ('Pendientes', 'Qué sigue, quién lo hará y para cuándo.'),
+]
+
+GUIAS = {
+    'gobierno': {
+        'nombre': 'Gobierno',
+        'para_que': 'Organiza foros, parlamentos juveniles y modelos de Naciones Unidas para que jóvenes de Tlalnepantla debatan asuntos públicos con reglas claras y lleguen a propuestas.',
+        'hace': [
+            'Foros con especialistas, académicos o servidores públicos sobre un tema que importe en el municipio.',
+            'Parlamentos juveniles: las y los participantes presentan, debaten y votan propuestas con un reglamento de debate.',
+            'Modelos de Naciones Unidas: delegaciones, temas, guías de estudio y mesa de debate.',
+            'Gestiones con instituciones cuando otra comisión las necesita para su actividad.',
+        ],
+        'primer_mes': [
+            'Elige el tema y el formato (foro, parlamento o modelo de la ONU) y escribe el objetivo en una frase.',
+            'Arma el programa por bloques y decide quién se encarga de cada uno ese día.',
+            'Haz la lista de invitaciones institucionales: a quién, para qué y quién la gestiona.',
+            'Redacta el reglamento de debate o la guía para participantes.',
+            'Llena el Formato de evento (APJ-F01) y envíalo a revisión.',
+            'Acuerda con Comunicación cuándo empezará la difusión una vez autorizado.',
+        ],
+        'confirmar_titulo': 'Antes de anunciar, confirma',
+        'confirmar': [
+            'Cada invitación institucional, con respuesta por escrito.',
+            'La sede y el horario. Pedir un espacio no es reservarlo.',
+            'El presupuesto y los permisos que requiera la actividad.',
+            'Nombres y cargos de ponentes, tal como aparecerán en la difusión.',
+        ],
+        'cuida': [
+            'No anuncies a una autoridad o ponente hasta tener su confirmación por escrito.',
+            'Presenta los acuerdos de un parlamento o modelo como propuestas de quienes participaron, no como postura del Comité.',
+            'Si participan estudiantes menores de edad, pide autorización de madre, padre o tutor para fotografías y datos de contacto.',
+            'Registra la asistencia como total. Las listas con nombres no se publican ni van al archivo compartido.',
+        ],
+        'coordina': [
+            ('Comunicación', 'Carteles, textos, fechas de difusión y cobertura del encuentro.'),
+            ('Administración', 'Seguimiento de la autorización y confirmación de la sede.'),
+            ('Tecnología e IA', 'Registro digital de asistentes o transmisión, si los habrá.'),
+            ('Otras comisiones', 'Gestiones con instituciones que te pidan para sus actividades.'),
+        ],
+        'relevo': [
+            'Programas, reglamentos de debate y guías de estudio reutilizables.',
+            'Acuerdos vigentes y compromisos pendientes con instituciones.',
+            'Contactos institucionales por cargo e institución, sin datos personales.',
+            'Pendientes con responsable y fecha.',
+        ],
+        'resultados': 'Asistencia total, acuerdos alcanzados y gasto.',
+    },
+    'administracion': {
+        'nombre': 'Administración',
+        'para_que': 'Lleva el registro interno y el seguimiento de solicitudes y autorizaciones, para que cada comisión sepa en qué estado está lo que pidió y quién lo atiende.',
+        'hace': [
+            'Revisa las solicitudes de incorporación asignadas y anota qué falta aclarar.',
+            'Reúne la información de cada evento para su revisión y registra la decisión de quien puede autorizarlo.',
+            'Registra la confirmación de espacios y responde las consultas de las comisiones.',
+            'Lleva el calendario de pendientes, cada uno con responsable y fecha de revisión.',
+            'Revisa el cierre de actividades y las entregas de comisión.',
+        ],
+        'primer_mes': [
+            'Pide la lista de pendientes vigente y confirma quién atiende cada uno.',
+            'Revisa las actividades en revisión o con ajustes y anota qué le falta a cada una.',
+            'Confirma con el Comité quién revisa y quién autoriza cada asunto (Anexo B de las bases).',
+            'Arma un calendario semanal de seguimiento y compártelo con las coordinaciones.',
+            'Revisa con Tecnología e IA que los permisos del portal correspondan a las funciones actuales.',
+            'Prepara el primer reporte del mes.',
+        ],
+        'confirmar_titulo': 'Antes de dar algo por autorizado, confirma',
+        'confirmar': [
+            'Que la decisión esté registrada con el nombre y cargo de quien la tomó.',
+            'Que el espacio esté confirmado por escrito, no solo solicitado.',
+            'Que los recursos estén autorizados antes de que alguien los comprometa.',
+            'Para habilitar una comisión: la solicitud aceptada, la INE por ambos lados y el comprobante de domicilio revisados.',
+        ],
+        'cuida': [
+            'Los documentos personales solo los ven la persona y la administración autorizada. No van en reportes, entregas ni archivos compartidos.',
+            'Formar parte de esta comisión no da acceso al panel ni a los expedientes. Ese permiso se concede por separado.',
+            'Comprobar un documento y decidir un asunto son actos distintos. Registra cada uno por separado.',
+            'Retira los accesos de quien deja una función en cuanto cambie.',
+        ],
+        'coordina': [
+            ('Todas las comisiones', 'Estado de sus solicitudes, ajustes pendientes y fechas de respuesta.'),
+            ('Comunicación', 'Aviso de que un evento ya está autorizado y puede difundirse.'),
+            ('Tecnología e IA', 'Altas y bajas de accesos, respaldos e incidencias del portal.'),
+            ('Comité', 'Decisiones que no corresponden a las comisiones.'),
+        ],
+        'relevo': [
+            'Procedimientos y criterios de revisión.',
+            'Calendario de pendientes con responsable y fecha.',
+            'Relación de permisos vigentes y de quién los autorizó, sin contraseñas.',
+            'Las identificaciones y los comprobantes de domicilio quedan fuera de la entrega.',
+        ],
+        'resultados': 'Solicitudes atendidas y pendientes, aclaraciones y autorizaciones por resolver.',
+    },
+    'comunicacion': {
+        'nombre': 'Comunicación',
+        'para_que': 'Prepara y publica la información de las actividades: carteles, textos y cobertura, siempre con datos confirmados y permisos de imagen en regla.',
+        'hace': [
+            'Diseña carteles y redacta los textos de cada actividad autorizada.',
+            'Lleva el calendario de publicaciones en redes y otros medios del equipo.',
+            'Cubre los eventos con fotografías y notas breves.',
+            'Revisa que cada pieza se lea bien en el celular, con buen contraste y texto alternativo en las imágenes.',
+        ],
+        'primer_mes': [
+            'Pide a cada comisión su próxima actividad y el estado de su autorización.',
+            'Arma el calendario de publicaciones del mes.',
+            'Prepara una plantilla de cartel con la tipografía y los logotipos autorizados.',
+            'Prepara un formato de permiso para fotografías y testimonios.',
+            'Haz la lista de cuentas del equipo y de quién administra cada una.',
+            'Publica y guarda el enlace de cada pieza para el reporte.',
+        ],
+        'confirmar_titulo': 'Antes de publicar, confirma',
+        'confirmar': [
+            'Que la actividad esté autorizada.',
+            'Fecha, hora, sede y nombres, con la comisión que organiza.',
+            'Que los logotipos sean los oficiales y su uso esté autorizado.',
+            'El permiso de cada persona que aparece en fotografías o testimonios.',
+        ],
+        'cuida': [
+            'Recibir una imagen no autoriza a publicarla. Sin permiso, no se publica.',
+            'Fotografías de menores de edad, solo con autorización de madre, padre o tutor.',
+            'Música, fotografías y tipografías de terceros requieren licencia o permiso.',
+            'Usa el logotipo del PAN solo desde el archivo oficial; no lo redibujes ni lo alteres.',
+            'Las contraseñas nunca van en reportes, entregas ni chats.',
+        ],
+        'coordina': [
+            ('Comisión que organiza', 'Datos confirmados de la actividad y visto bueno del texto.'),
+            ('Administración', 'Saber si la actividad ya está autorizada.'),
+            ('Tecnología e IA', 'Publicaciones en el sitio y acceso a las cuentas.'),
+            ('Mujeres al frente', 'Testimonios y trayectorias que cada participante haya autorizado.'),
+        ],
+        'relevo': [
+            'Archivos editables y versiones finales.',
+            'Calendario de publicaciones y reglas de uso de la imagen del equipo.',
+            'Lista de cuentas y quién administra cada una. El acceso se transfiere con el administrador del servicio.',
+            'Permisos de imagen vigentes y dónde están guardados.',
+        ],
+        'resultados': 'Piezas publicadas con su enlace, alcance disponible y correcciones.',
+    },
+    'cultura': {
+        'nombre': 'Cultura',
+        'para_que': 'Organiza encuentros y actividades culturales en Tlalnepantla, cada uno con propósito, sede, programa, montaje y presupuesto definidos.',
+        'hace': [
+            'Propone encuentros culturales: presentaciones, proyecciones, lecturas, música o muestras de talento local.',
+            'Coordina el espacio, las personas participantes y los materiales del montaje.',
+            'Calcula el presupuesto y guarda costos de referencia.',
+            'Registra la asistencia total y los resultados de cada actividad.',
+        ],
+        'primer_mes': [
+            'Define qué actividad harás, para quién y con qué propósito.',
+            'Arma el programa y la lista de materiales para el montaje.',
+            'Calcula el presupuesto con costos de referencia.',
+            'Identifica obras, música o materiales de terceros y qué autorización necesitas.',
+            'Consulta la disponibilidad de quienes participarán.',
+            'Llena el Formato de evento (APJ-F01) y envíalo a revisión.',
+        ],
+        'confirmar_titulo': 'Antes de anunciar, confirma',
+        'confirmar': [
+            'El espacio y los horarios, por escrito.',
+            'La disponibilidad de quienes colaboran, antes de anunciar sus nombres.',
+            'Los recursos autorizados, antes de comprometer pagos.',
+            'La autorización para usar obras, música, materiales o instalaciones de terceros, y quién la tramita.',
+        ],
+        'cuida': [
+            'Proyectar una película o poner música grabada en público puede requerir licencia aunque la entrada sea gratuita.',
+            'No prometas pagos ni honorarios sin autorización.',
+            'Si participan menores de edad, pide autorización de madre, padre o tutor.',
+            'Registra la asistencia como total; las listas con nombres no van al archivo compartido.',
+        ],
+        'coordina': [
+            ('Administración', 'Autorización, confirmación del espacio y recursos.'),
+            ('Comunicación', 'Difusión y cobertura.'),
+            ('Gobierno', 'Gestiones con instituciones.'),
+            ('Tecnología e IA', 'Registro de asistentes o transmisión, si los habrá.'),
+        ],
+        'relevo': [
+            'Programas y materiales que puedan reutilizarse.',
+            'Costos de referencia y proveedores consultados.',
+            'Sedes usadas y sus condiciones, por institución, sin datos personales.',
+            'Pendientes con responsable y fecha.',
+        ],
+        'resultados': 'Asistencia total, recursos utilizados y qué ajustar si se repite.',
+    },
+    'tecnologia': {
+        'nombre': 'Tecnología e IA',
+        'para_que': 'Cuida y mejora el sitio, los formularios y los accesos del equipo. Resuelve problemas concretos y deja instrucciones para que cualquiera use las herramientas.',
+        'hace': [
+            'Mantiene el sitio y los formularios, y revisa los accesos autorizados.',
+            'Automatiza tareas administrativas que se repiten y documenta cómo usarlas.',
+            'Apoya el registro digital y la transmisión de eventos.',
+            'Revisa la seguridad y la accesibilidad, y comprueba los resultados de la IA antes de usarlos.',
+        ],
+        'primer_mes': [
+            'Haz el inventario de herramientas y de quién administra cada una.',
+            'Elige un problema concreto y describe cómo se resuelve hoy.',
+            'Propón una mejora y la forma de probarla sin tocar el servicio en uso.',
+            'Prueba con datos ficticios.',
+            'Revisa con Administración los accesos vigentes y los que deben retirarse.',
+            'Escribe las instrucciones de uso de lo que cambies.',
+        ],
+        'confirmar_titulo': 'Antes de cambiar o publicar, confirma',
+        'confirmar': [
+            'La autorización de Administración para cambios de accesos, uso de datos, servicios de pago o publicación.',
+            'Que la prueba se hizo fuera del servicio en uso y funcionó.',
+            'Que hay un respaldo reciente y sabes restaurarlo.',
+            'Quién dará mantenimiento al cambio.',
+        ],
+        'cuida': [
+            'Contraseñas y claves nunca van en documentos, reportes, repositorios ni chats.',
+            'No cargues documentos personales en servicios de IA que no estén autorizados.',
+            'Revisa todo resultado de IA antes de usarlo o publicarlo.',
+            'Ante un acceso indebido o una pérdida de datos, avisa a Administración, limita el acceso y conserva la evidencia.',
+        ],
+        'coordina': [
+            ('Administración', 'Accesos, tratamiento de datos, pagos de servicios e incidencias.'),
+            ('Comunicación', 'Publicaciones en el sitio y cuentas del equipo.'),
+            ('Gobierno y Cultura', 'Registro digital y transmisión de eventos.'),
+            ('Cada comisión', 'Entender qué necesita antes de proponer una herramienta.'),
+        ],
+        'relevo': [
+            'Instrucciones de uso y de mantenimiento.',
+            'Repositorios autorizados y respaldos, con la fecha de la última prueba de restauración.',
+            'Quién administra cada cuenta. Las claves se entregan por un canal seguro, fuera de estos documentos.',
+            'Incidencias abiertas y cambios pendientes.',
+        ],
+        'resultados': 'Cambios, pruebas, incidencias resueltas o abiertas y quién da mantenimiento.',
+    },
+    'mujeres': {
+        'nombre': 'Mujeres al frente',
+        'para_que': 'Organiza encuentros y documenta trayectorias de mujeres de Acción Nacional, con permiso de sus protagonistas, y da seguimiento a los acuerdos que surgen.',
+        'hace': [
+            'Encuentros y conversatorios con mujeres con trayectoria pública o comunitaria.',
+            'Entrevistas y semblanzas autorizadas por cada protagonista.',
+            'Seguimiento de los acuerdos y proyectos de cada encuentro.',
+            'Canalización de solicitudes de orientación al área que corresponde.',
+        ],
+        'primer_mes': [
+            'Define el propósito del encuentro o proyecto.',
+            'Consulta la disponibilidad de las participantes.',
+            'Prepara un formato de autorización que diga qué se puede difundir y dónde.',
+            'Pregunta al Comité a qué área se canalizan las solicitudes de orientación.',
+            'Llena el Formato de evento (APJ-F01) y envíalo a revisión.',
+            'Acuerda cómo se dará seguimiento después del encuentro.',
+        ],
+        'confirmar_titulo': 'Antes de anunciar, confirma',
+        'confirmar': [
+            'Las invitaciones, el espacio y los recursos.',
+            'El permiso por escrito para imágenes, testimonios y datos de cada participante.',
+            'Nombres y cargos, revisados con cada participante.',
+        ],
+        'cuida': [
+            'Esta comisión no sustituye a la Secretaría de las Mujeres ni a los órganos facultados para atender procedimientos.',
+            'Si alguien relata violencia o discriminación, escucha, no investigues ni prometas resultados, y canaliza.',
+            'Publica solo lo que cada participante autorizó.',
+            'Los relatos sensibles no van en reportes generales ni en el archivo compartido.',
+        ],
+        'coordina': [
+            ('Comunicación', 'Difusión de lo que cada participante autorizó.'),
+            ('Administración', 'Autorización, espacio y recursos.'),
+            ('Gobierno', 'Foros e invitaciones institucionales.'),
+            ('Secretaría de las Mujeres', 'Solicitudes de orientación y asuntos que le corresponden.'),
+        ],
+        'relevo': [
+            'Proyectos, acuerdos y su estado.',
+            'Materiales autorizados, cada uno con su permiso.',
+            'Pendientes con responsable y fecha.',
+            'Los testimonios privados y los datos de contacto personales quedan fuera de la entrega.',
+        ],
+        'resultados': 'Actividades, acuerdos y seguimiento; solo lo que cada participante autorizó.',
+    },
+}
