@@ -6,6 +6,7 @@ import "./globals.css";
 import { SITE_DESCRIPTION, SITE_NAME, SITE_URL } from "@/lib/site";
 import SiteFooter from "./SiteFooter";
 import SiteHeader from "./SiteHeader";
+import { enlacesListed, enlacesState } from "@/lib/enlaces";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
@@ -46,6 +47,8 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const nonce = (await headers()).get("x-nonce") ?? undefined;
+  // The entry appears by itself when the convocatoria opens and again with its results.
+  const enlaces = await enlacesState().then(enlacesListed).catch(() => false);
   const structuredData = JSON.stringify({
     "@context": "https://schema.org",
     "@graph": [
@@ -69,7 +72,7 @@ export default async function RootLayout({
           dangerouslySetInnerHTML={{ __html: structuredData }}
         />
         <a className="skip-link" href="#main-content">Saltar al contenido</a>
-        <SiteHeader />
+        <SiteHeader enlaces={enlaces} />
         {children}
         <SiteFooter />
       </body>

@@ -6,9 +6,9 @@ import { contentBlocks, type BlockDef, type FieldSpec, type GroupSpec, type List
 import { siteDocumentHref, siteDocumentList, staticDocumentHref, SITE_DOCUMENT_MAX_BYTES, type SiteDocumentRow, type SiteDocumentSlug } from "@/lib/site-documents";
 
 export type ContentRecord = { key: string; value: Record<string, unknown>; updatedAt: number; updatedBy: string; custom: boolean };
-export type Tab = "comisiones" | "enlaces" | "portada" | "documentos";
+export type Tab = "comisiones" | "portada" | "documentos";
 type Path = Array<string | number>;
-const tabs: Array<[Tab, string]> = [["comisiones", "Comisiones"], ["enlaces", "Enlaces APJ"], ["portada", "Portada y textos"], ["documentos", "Documentos PDF"]];
+const tabs: Array<[Tab, string]> = [["comisiones", "Comisiones"], ["portada", "Portada y textos"], ["documentos", "Documentos PDF"]];
 const stepNames: Record<string, string> = { cuenta: "Paso 1", solicitud: "Paso 2", documentos: "Paso 3", comision: "Paso 4", afiliacion: "Paso 5" };
 
 const clone = <T,>(value: T): T => JSON.parse(JSON.stringify(value)) as T;
@@ -49,7 +49,7 @@ export default function ContentManager({ records, documents, initialTab, storage
         : <>
           <div className="admin-section-heading content-admin-heading">
             <h2>{tabs.find(([key]) => key === tab)?.[1]}</h2>
-            <p>{tab === "comisiones" ? "Nombre, propósito, tareas y resultado de cada comisión, y el orden en que aparecen. Las seis comisiones y sus claves no cambian." : tab === "enlaces" ? "Textos de la convocatoria. Abrirla o cerrarla sigue en Configuración del panel." : "Títulos y párrafos de la portada, de /comisiones y de Participa, y los cinco pasos del proceso."} Cada bloque se guarda por separado.</p>
+            <p>{tab === "comisiones" ? "Nombre, propósito, tareas y resultado de cada comisión, y el orden en que aparecen. Las seis comisiones y sus claves no cambian." : "Títulos y párrafos de la portada, de /comisiones y de Participa, y los cinco pasos del proceso."} Cada bloque se guarda por separado.</p>
           </div>
           {contentBlocks.filter(block => block.tab === tab).map(block => <BlockForm key={block.key} block={block} record={records[block.key]} names={names} />)}
         </>}

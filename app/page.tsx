@@ -10,15 +10,21 @@ import HeroMascot from "./HeroMascot";
 import { leaders, references, cases, standards, conversations } from "./HomeData";
 import { HeadingText, Lines } from "./ContentText";
 import { siteContent } from "@/lib/site-content";
+import { enlacesState } from "@/lib/enlaces";
+import { enlacesDate } from "@/lib/enlaces-shared";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { alternates: { canonical: "/" } };
 
 export default async function Home() {
-  const content = await siteContent(), home = content.home;
+  const [content, enlaces] = await Promise.all([siteContent(), enlacesState().catch(() => null)]), home = content.home;
   return (
     <main id="main-content" className="aj-home">
       <MotionDirector />
+      {enlaces && (enlaces.phase === "open" || enlaces.phase === "results") && <Link className="enl-banner" href="/enlaces">
+        <strong>Enlaces APJ 2027</strong>
+        <span>{enlaces.phase === "open" ? `Convocatoria abierta. Postúlate hasta el ${enlacesDate(enlaces.closesAt)} a las 23:59 horas.` : "Ya están los resultados de la convocatoria."}</span>
+      </Link>}
       <section className="aj-hero aj-hero-integrated aj-wrap" id="inicio">
         <HeroMascot />
         <div className="aj-hero-copy">

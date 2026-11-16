@@ -49,8 +49,7 @@ test('home, Participa and process steps read the edited text', async()=>{const f
  assert.equal((await save(f,'process.steps',{steps})).status,200);
  const home=await page(f,'/');assert.match(home,/Tu energía puede<br\/?><em>cambiar tu colonia\.<\/em>/);assert.doesNotMatch(home,/mover Tlalnepantla\./);
  assert.match(await page(f,'/comisiones'),/Abre tu cuenta/);assert.match(await page(f,'/participacion'),/Abre tu cuenta/);
- assert.equal((await save(f,'enlaces.calendar',{title:'Fechas',emphasis:'de la convocatoria.',items:[{when:'20 de noviembre',what:'Se publica la convocatoria revisada'}]})).status,200);
- const enlaces=await(await f.call('/enlaces','GET',undefined,owner)).text();assert.match(enlaces,/Se publica la convocatoria revisada/);assert.doesNotMatch(enlaces,/Cierran postulaciones a las 23:59/);
+ assert.equal((await save(f,'enlaces.calendar',{title:'Fechas',emphasis:'de la convocatoria.',items:[{when:'20 de noviembre',what:'Otra fecha'}]})).status,400,'the convocatoria text is not an editable block');
  const injected=await save(f,'home.welcome',{title:'<script>alert(1)</script>',text:'Texto'});assert.equal(injected.status,200);
  const escaped=await page(f,'/');assert.doesNotMatch(escaped,/<script>alert\(1\)<\/script>/);assert.match(escaped,/&lt;script&gt;alert\(1\)&lt;\/script&gt;/);
 }finally{f.close();}});
@@ -67,10 +66,6 @@ test('content saves are guarded against stale versions', async()=>{const f=await
 }finally{f.close();}});
 
 test('content is validated strictly', async()=>{const f=await fixture();try{
- const base={eyebrow:'Cómo se selecciona',note:'Evalúan tres personas.'};
- const wrong=await save(f,'enlaces.selection',{...base,criteria:[{label:'Carta de motivos',percent:30},{label:'Entrevista',percent:30}]});
- assert.equal(wrong.status,400);assert.match((await wrong.json()).error,/suman 60\. Deben sumar 100/);
- assert.equal((await save(f,'enlaces.selection',{...base,criteria:[{label:'Carta de motivos',percent:60},{label:'Entrevista',percent:40}]})).status,200);
  assert.equal((await save(f,'commission.gobierno',{...gobierno,tasks:[]})).status,400,'at least one task');
  assert.equal((await save(f,'commission.gobierno',{...gobierno,tasks:Array(9).fill('Tarea')})).status,400,'at most eight tasks');
  assert.equal((await save(f,'commission.gobierno',{...gobierno,name:'x'.repeat(61)})).status,400,'name length');
@@ -79,7 +74,7 @@ test('content is validated strictly', async()=>{const f=await fixture();try{
  assert.equal((await save(f,'commission.nueva',gobierno)).status,400,'commissions cannot be added');
  assert.equal((await save(f,'commissions.order',{order:['gobierno','gobierno','administracion','comunicacion','cultura','tecnologia']})).status,400,'order must keep the six commissions');
  assert.equal((await save(f,'commissions.order',{order:['gobierno','administracion','comunicacion','cultura','tecnologia']})).status,400);
- assert.equal(f.db.prepare("SELECT count(*) n FROM site_content WHERE key<>'enlaces.selection'").get().n,0);
+ assert.equal(f.db.prepare("SELECT count(*) n FROM site_content").get().n,0);
  // A corrupted row never breaks the public page: the default is shown instead.
  f.db.prepare("INSERT INTO site_content(key,value_json,updated_at,updated_by) VALUES('commission.tecnologia','{\"name\":1}',5,?)").run(owner);
  assert.match(await page(f,'/comisiones'),/Cuida y mejora las herramientas digitales del equipo\./);

@@ -1,93 +1,112 @@
 import Link from "next/link";
-import Image from "next/image";
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
-import { enlacesConfiguration } from "@/lib/enlaces";
 import { currentAuthorizedUser } from "@/lib/authz";
-import { siteContent } from "@/lib/site-content";
-import { HeadingText, Lines } from "@/app/ContentText";
+import { commissions } from "@/lib/commissions";
+import { enlacesPublishedResults, enlacesState, type PublishedResult } from "@/lib/enlaces";
+import { convocatoriaBases, convocatoriaIntro, convocatoriaPlace, convocatoriaSignature, convocatoriaTitle, type ConvocatoriaBlock } from "@/lib/enlaces-convocatoria";
+import { enlacesDate } from "@/lib/enlaces-shared";
+import { siteDocumentHref } from "@/lib/site-documents";
 
 export const dynamic = "force-dynamic";
-export const metadata: Metadata = {
-  title: "Enlaces APJ",
-  description: "Convocatoria Enlaces APJ: dos jóvenes por comisión, un año de trabajo con actividades, evidencias y un reporte final.",
-  alternates: { canonical: "/enlaces" },
-};
+
+export async function generateMetadata(): Promise<Metadata> {
+  const state = await enlacesState();
+  const description = state.phase === "before"
+    ? "Convocatoria Enlaces APJ 2027 de Acción Política Juvenil Tlalnepantla, disponible el lunes 23 de noviembre."
+    : "Convocatoria Enlaces APJ 2027. Doce Enlaces de Comisión y Enlaces de Comunidad por universidad y colonia, con un encargo de un año en Tlalnepantla.";
+  return {
+    title: "Enlaces APJ 2027",
+    description,
+    alternates: { canonical: "/enlaces" },
+    openGraph: { title: "Enlaces APJ 2027 · Convocatoria", description, url: "/enlaces" },
+    robots: state.phase === "before" ? { index: false, follow: true } : undefined,
+  };
+}
+
+function Block({ block }: { block: ConvocatoriaBlock }) {
+  if (block.type === "p") return <p>{block.text}</p>;
+  if (block.type === "label") return <h4>{block.text}</h4>;
+  if (block.type === "list") return <ul className="enl-list">{block.items.map(item => <li key={item.text}>{item.lead && <strong>{item.lead} </strong>}{item.text}</li>)}</ul>;
+  if (block.type === "oath") return <blockquote className="enl-oath">{block.lines.map(line => <p key={line}>{line}</p>)}</blockquote>;
+  return <div className="enl-table-wrap"><table className={`enl-table${block.numeric !== undefined ? " enl-table-score" : ""}`}>
+    <thead><tr>{block.head.map(cell => <th key={cell} scope="col">{cell}</th>)}</tr></thead>
+    <tbody>{block.rows.map(row => <tr key={row[0]}>{row.map((cell, index) => index === 0 ? <th key={index} scope="row">{cell}</th> : <td key={index} data-label={block.head[index]}>{cell}</td>)}</tr>)}</tbody>
+    {block.total && <tfoot><tr>{block.total.map((cell, index) => index === 0 ? <th key={index} scope="row">{cell}</th> : <td key={index}>{cell}</td>)}</tr></tfoot>}
+  </table></div>;
+}
+
+function Results({ results }: { results: PublishedResult[] }) {
+  const names = (list: PublishedResult[], status: string) => list.filter(item => item.status === status).map(item => item.name);
+  const byCommission = commissions.map(commission => ({ title: commission.name, list: results.filter(item => item.track === "comision" && item.commission === commission.id) })).filter(group => group.list.length);
+  const communities = [...new Set(results.filter(item => item.track === "comunidad").map(item => item.communityName))].sort((a, b) => a.localeCompare(b, "es"));
+  const byCommunity = communities.map(name => ({ title: name, list: results.filter(item => item.track === "comunidad" && item.communityName === name) }));
+  const Group = ({ title, list }: { title: string; list: PublishedResult[] }) => <article className="enl-result">
+    <h4>{title}</h4>
+    {names(list, "selected").length > 0 && <p><span>Enlaces</span>{names(list, "selected").join(", ")}</p>}
+    {names(list, "substitute").length > 0 && <p><span>Suplentes</span>{names(list, "substitute").join(", ")}</p>}
+  </article>;
+  return <section className="enl-results" id="resultados" aria-labelledby="enl-results-title">
+    <p className="enl-ordinal">Resultados</p>
+    <h2 id="enl-results-title">Generación 2027</h2>
+    {results.length === 0 ? <p>Los resultados ya se comunicaron a cada persona en su cuenta. Aquí aparecen los nombres de quienes autorizaron publicarlos.</p> : <>
+      <p>Aparecen los nombres de quienes autorizaron publicarlos. Cada persona consulta su resultado en su cuenta, con su folio.</p>
+      {byCommission.length > 0 && <><h3>Enlaces de Comisión</h3><div className="enl-result-grid">{byCommission.map(group => <Group key={group.title} {...group} />)}</div></>}
+      {byCommunity.length > 0 && <><h3>Enlaces de Comunidad</h3><div className="enl-result-grid">{byCommunity.map(group => <Group key={group.title} {...group} />)}</div></>}
+    </>}
+  </section>;
+}
 
 export default async function EnlacesPage() {
-  const [config, content] = await Promise.all([enlacesConfiguration(), siteContent()]);
-  const { header, requirements, seats, calendar, selection, duties, apply } = content.enlaces;
-  const preview = !config.open;
-  if (preview) {
-    const user = await currentAuthorizedUser();
-    if (user?.role !== "admin") notFound();
-  }
-  return <main className="enlaces" id="main-content">
-    {preview && <p className="enlaces-preview" role="status"><strong>Vista previa, no publicada.</strong> Esta convocatoria se abre cuando el Comité Directivo Municipal apruebe sus bases y se active en Configuración.</p>}
+  const state = await enlacesState();
+  const admin = state.phase === "before" ? (await currentAuthorizedUser())?.role === "admin" : false;
+  const opening = enlacesDate(state.opensAt), closing = enlacesDate(state.closesAt);
 
-    <section className="enlaces-hero aj-wrap">
-      <div>
-        <p className="aj-eyebrow">{header.eyebrow}</p>
-        <h1><HeadingText title={header.title} emphasis={header.emphasis} /></h1>
-        <p className="enlaces-lead"><Lines text={header.lead} /></p>
-        <div className="aj-actions"><Link className="button button-primary" href="#postular">Postularme</Link><a className="aj-link" href="#bases">Leer las bases</a></div>
-      </div>
-      <figure className="enlaces-figure">
-        <div className="enlaces-arch"><Image src="/images/mascot/cacomixtle-tlalnepantla.webp" alt="" width={1254} height={1254} priority unoptimized sizes="(max-width: 760px) 300px, 420px" /></div>
-        <dl className="enlaces-figures"><div><dt>12</dt><dd>lugares</dd></div><div><dt>6</dt><dd>comisiones</dd></div><div><dt>1</dt><dd>año de trabajo</dd></div></dl>
-      </figure>
-    </section>
+  if (state.phase === "before" && !admin) return <main className="enl enl-teaser" id="main-content">
+    <header className="enl-head">
+      <p className="enl-kicker">Acción Política Juvenil Tlalnepantla</p>
+      <h1>{convocatoriaTitle}</h1>
+      <p className="enl-sub">Convocatoria disponible el {opening}</p>
+    </header>
+  </main>;
 
-    <section className="enlaces-band" id="bases" aria-labelledby="enlaces-requisitos">
-      <div className="aj-wrap enlaces-split">
-        <div>
-          <p className="aj-eyebrow">{requirements.eyebrow}</p>
-          <h2 id="enlaces-requisitos"><HeadingText title={requirements.title} emphasis={requirements.emphasis} /></h2>
-          <p><Lines text={requirements.intro} /></p>
-        </div>
-        <ul className="enlaces-lines">{requirements.items.map((item, index) => <li key={index}>{item}</li>)}</ul>
-      </div>
-    </section>
+  const results = state.phase === "results" ? await enlacesPublishedResults() : [];
+  const actions = state.phase === "open" || state.phase === "before"
+    ? <Link className="button button-primary" href="/cuenta/enlaces">Postularme</Link>
+    : <span className="button enl-closed" aria-disabled="true">Postulaciones cerradas</span>;
 
-    <section className="aj-wrap enlaces-section" aria-labelledby="enlaces-plazas">
-      <p className="aj-eyebrow">{seats.eyebrow}</p>
-      <h2 id="enlaces-plazas"><HeadingText title={seats.title} emphasis={seats.emphasis} /></h2>
-      <div className="enlaces-cards">{content.commissions.map(commission => <article key={commission.id}><h3>{commission.name}</h3><p><Lines text={seats.roles[commission.id]} /></p></article>)}</div>
-    </section>
+  return <main className="enl" id="main-content">
+    {state.phase === "before" && <p className="enl-preview" role="status"><strong>Vista previa de administración.</strong> El público solo ve el título y la fecha. La convocatoria se publica sola el {opening} a las 00:00.</p>}
+    <header className="enl-head">
+      <p className="enl-kicker">Acción Política Juvenil Tlalnepantla</p>
+      <h1>{convocatoriaTitle}</h1>
+      <p className="enl-sub">Convocatoria</p>
+      <p className="enl-org">Acción Política Juvenil Tlalnepantla</p>
+      <div className="enl-actions">
+        {actions}
+        <a className="text-link" href={siteDocumentHref("convocatoria-enlaces-apj-2027")}>Descargar la convocatoria en PDF</a>
+      </div>
+      <p className="enl-deadline">{state.phase === "results" ? "Los resultados están publicados más abajo." : state.phase === "closed" ? <>Las postulaciones cerraron el {closing}. Si te postulaste, <Link href="/cuenta/enlaces">consulta tu estado con tu folio</Link>.</> : `Recibimos postulaciones hasta el ${closing} a las 23:59 horas.`}</p>
+    </header>
 
-    <section className="enlaces-dark" aria-labelledby="enlaces-calendario">
-      <div className="aj-wrap enlaces-section">
-        <p className="aj-eyebrow">{preview ? "Calendario propuesto" : "Calendario"}</p>
-        <h2 id="enlaces-calendario"><HeadingText title={calendar.title} emphasis={calendar.emphasis} /></h2>
-        <ol className="enlaces-timeline">{calendar.items.map(({ when, what }, index) => <li key={index} data-last={index === calendar.items.length - 1}><time>{when}</time><span>{what}</span></li>)}</ol>
-      </div>
-    </section>
+    {state.phase === "results" && <Results results={results} />}
 
-    <section className="aj-wrap enlaces-section enlaces-split" aria-label="Selección y compromisos">
-      <div>
-        <p className="aj-eyebrow">{selection.eyebrow}</p>
-        <ul className="enlaces-weights">{selection.criteria.map(({ label, percent }, index) => <li key={index}><span>{label}</span><strong>{percent} %</strong><meter min={0} max={100} value={percent} aria-hidden="true" /></li>)}</ul>
-        <p className="enlaces-note"><Lines text={selection.note} /></p>
-      </div>
-      <div>
-        <p className="aj-eyebrow">{duties.eyebrow}</p>
-        <ul className="enlaces-duties">{duties.items.map((item, index) => <li key={index}>{item}</li>)}</ul>
-        <p className="enlaces-note"><Lines text={duties.note} /></p>
-      </div>
-    </section>
+    <article className="enl-doc">
+      <p className="enl-intro">{convocatoriaIntro}</p>
+      <p className="enl-bases">Bases</p>
+      {convocatoriaBases.map(base => <section key={base.id} id={base.id} aria-labelledby={`enl-${base.id}`}>
+        <p className="enl-ordinal">{base.ordinal}</p>
+        <h2 id={`enl-${base.id}`}>{base.title}</h2>
+        {base.blocks.map((block, index) => <Block key={index} block={block} />)}
+      </section>)}
+      <footer className="enl-sign">
+        <p>{convocatoriaPlace}</p>
+        <p><strong>{convocatoriaSignature.name}</strong><br />{convocatoriaSignature.organization}</p>
+      </footer>
+    </article>
 
-    <section className="enlaces-apply" id="postular" aria-labelledby="enlaces-pasos">
-      <div className="aj-wrap enlaces-section">
-        <h2 id="enlaces-pasos"><HeadingText title={apply.title} emphasis={apply.emphasis} /></h2>
-        <ol className="enlaces-steps">
-          <li><strong>Crea tu cuenta</strong><span>Confirma tu correo con el enlace que te enviamos.</span></li>
-          <li><strong>Envía tu solicitud</strong><span>Elige tu comisión, marca «Quiero ser Enlace APJ» y escribe qué harías en tu primer mes.</span></li>
-          <li><strong>Sube tus documentos</strong><span>Antes del cierre, en Mi comisión: tus dos cartas y, en Documentos personales, tu INE por ambos lados y un comprobante de domicilio. En PDF, JPG o PNG.</span></li>
-        </ol>
-        <div className="aj-actions"><Link className="button button-primary" href="/crear-cuenta">Crear mi cuenta</Link><Link className="aj-link" href="/participacion#registro">Ya tengo cuenta</Link></div>
-        <p className="enlaces-note"><Lines text={apply.note} /></p>
-        {config.approval && <p className="enlaces-note">Bases aprobadas: {config.approval}</p>}
-      </div>
-    </section>
+    <div className="enl-actions enl-actions-end">
+      {actions}
+      {state.phase !== "open" && state.phase !== "before" ? <Link className="text-link" href="/cuenta/enlaces">Consultar mi postulación</Link> : <Link className="text-link" href="/cuenta/enlaces">Ya empecé mi postulación</Link>}
+    </div>
   </main>;
 }

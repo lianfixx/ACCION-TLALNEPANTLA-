@@ -11,7 +11,7 @@ const navigation = [
   { href: "/agenda", label: "Agenda" },
 ] as const;
 
-export default function SiteHeader() {
+export default function SiteHeader({ enlaces = false }: { enlaces?: boolean }) {
   const menu = useRef<HTMLDetailsElement>(null);
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -32,6 +32,7 @@ export default function SiteHeader() {
         </Link>
         <nav aria-label="Navegación principal" className="desktop-nav">
           {navigation.map((item) => <Link href={item.href} key={item.href}>{item.label}</Link>)}
+          {enlaces && <Link href="/enlaces">Enlaces APJ 2027</Link>}
           <Link href="/participacion" className="nav-cta">Participa</Link>
           <Link href="/mi-comision" className="team-access">Mi comisión</Link>
         </nav>
@@ -50,6 +51,7 @@ export default function SiteHeader() {
           </summary>
           <nav aria-label="Navegación móvil" id="mobile-primary-navigation">
             {navigation.map((item) => <Link href={item.href} key={item.href} onClick={closeMenu}>{item.label}</Link>)}
+            {enlaces && <Link href="/enlaces" onClick={closeMenu}>Enlaces APJ 2027</Link>}
             <Link href="/participacion" onClick={closeMenu}>Participa</Link>
             <Link href="/mi-comision" onClick={closeMenu}>Mi comisión</Link>
           </nav>

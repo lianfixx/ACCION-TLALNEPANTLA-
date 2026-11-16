@@ -3,7 +3,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import CommissionList from "./CommissionList";
 import ProcessSteps from "@/app/ProcessSteps";
-import { enlacesConfiguration } from "@/lib/enlaces";
+import { enlacesState } from "@/lib/enlaces";
 import { siteContent } from "@/lib/site-content";
 import { HeadingText, Lines } from "@/app/ContentText";
 
@@ -15,7 +15,7 @@ export const metadata: Metadata = {
 };
 
 export default async function CommissionsPage() {
-  const [enlaces, content] = await Promise.all([enlacesConfiguration(), siteContent()]);
+  const [enlaces, content] = await Promise.all([enlacesState(), siteContent()]);
   const header = content.comisiones;
   return <main className="commission-guide content-shell commission-page" id="main-content">
     <header className="commission-page-hero">
@@ -32,7 +32,7 @@ export default async function CommissionsPage() {
         <Link className="text-link" href="/mi-comision">Ya tengo cuenta</Link>
         <a className="text-link" href={siteDocumentHref("bases-y-anexos")}>Bases de las comisiones (PDF)</a>
       </div>
-      {enlaces.open && <p className="commission-page-enlaces">¿Quieres coordinar? <Link href="/enlaces">Postúlate como Enlace APJ</Link>: dos lugares por comisión.</p>}
+      {enlaces.phase === "open" && <p className="commission-page-enlaces">La convocatoria Enlaces APJ 2027 está abierta. <Link href="/enlaces">Consulta las bases y postúlate</Link>.</p>}
     </section>
   </main>;
 }

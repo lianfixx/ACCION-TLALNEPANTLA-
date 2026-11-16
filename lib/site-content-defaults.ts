@@ -22,7 +22,7 @@ export type GroupSpec = { type: "group"; label: string; keys: readonly string[];
 export type OrderSpec = { type: "order"; label: string; help?: string };
 export type FieldSpec = TextSpec | NumberSpec | ListSpec | GroupSpec | OrderSpec;
 
-export type ContentTab = "comisiones" | "enlaces" | "portada";
+export type ContentTab = "comisiones" | "portada";
 export type BlockDef = {
   key: string;
   tab: ContentTab;
@@ -52,20 +52,6 @@ export const contentBlocks: BlockDef[] = [
   { key: "commissions.order", tab: "comisiones", title: "Orden de las comisiones", page: "/comisiones", pageLabel: "Comisiones, portada y registro", fields: { order: { type: "order", label: "Orden", help: "Este orden se usa en la portada, en /comisiones y en el registro." } } },
   ...baseCommissions.map((c): BlockDef => ({ key: `commission.${c.id}`, tab: "comisiones", title: c.name, page: `/comisiones#${c.id}`, pageLabel: "Comisiones, portada y registro", fields: commissionFields })),
   { key: "comisiones.header", tab: "comisiones", title: "Encabezado de /comisiones", page: "/comisiones", pageLabel: "/comisiones", fields: { ...heading(), lead: text("Texto de entrada", 300, { rows: 2 }), stepsTitle: text("Título de los pasos", 80) } },
-  { key: "enlaces.header", tab: "enlaces", title: "Encabezado", page: "/enlaces", pageLabel: "/enlaces", fields: { ...heading(), lead: text("Texto de entrada", 400, { rows: 3 }) } },
-  { key: "enlaces.requirements", tab: "enlaces", title: "Requisitos", page: "/enlaces#bases", pageLabel: "/enlaces", fields: { ...heading(), intro: text("Explicación", 400, { rows: 3 }), items: { type: "list", label: "Requisitos", item: text("Requisito", 240, { rows: 2 }), minItems: 1, maxItems: 12, addLabel: "Agregar requisito" } } },
-  { key: "enlaces.seats", tab: "enlaces", title: "Plazas por comisión", page: "/enlaces", pageLabel: "/enlaces", fields: { ...heading(), roles: { type: "group", label: "Qué hace cada plaza", keys: commissionIds, keyLabel: "commission", field: text("Descripción", 200, { rows: 2 }), help: "El nombre de cada comisión sale de la pestaña Comisiones." } } },
-  { key: "enlaces.calendar", tab: "enlaces", title: "Calendario", page: "/enlaces", pageLabel: "/enlaces", fields: { title: text("Título", 90, { rows: 2 }), emphasis: optional("Final destacado del título", 90), items: { type: "list", label: "Fechas", item: { type: "record", fields: { when: text("Fecha", 60), what: text("Qué pasa", 160) } }, minItems: 1, maxItems: 12, addLabel: "Agregar fecha" } } },
-  {
-    key: "enlaces.selection", tab: "enlaces", title: "Criterios de selección", page: "/enlaces", pageLabel: "/enlaces",
-    fields: { eyebrow: text("Antetítulo", 80), criteria: { type: "list", label: "Criterios", item: { type: "record", fields: { label: text("Criterio", 120), percent: { type: "number", label: "Porcentaje", min: 1, max: 100, suffix: "%" } } }, minItems: 1, maxItems: 8, addLabel: "Agregar criterio", help: "Los porcentajes deben sumar 100." }, note: text("Nota", 500, { rows: 3 }) },
-    check: value => {
-      const total = (value.criteria as Array<{ percent: number }>).reduce((sum, item) => sum + item.percent, 0);
-      return total === 100 ? null : `Los porcentajes suman ${total}. Deben sumar 100.`;
-    },
-  },
-  { key: "enlaces.duties", tab: "enlaces", title: "Compromisos durante el año", page: "/enlaces", pageLabel: "/enlaces", fields: { eyebrow: text("Antetítulo", 80), items: { type: "list", label: "Compromisos", item: text("Compromiso", 240, { rows: 2 }), minItems: 1, maxItems: 12, addLabel: "Agregar compromiso" }, note: text("Nota", 500, { rows: 3 }) } },
-  { key: "enlaces.apply", tab: "enlaces", title: "Cierre de la convocatoria", page: "/enlaces#postular", pageLabel: "/enlaces", fields: { title: text("Título", 90, { rows: 2 }), emphasis: optional("Final destacado del título", 90), note: text("Nota final", 500, { rows: 3 }) } },
   { key: "home.hero", tab: "portada", title: "Portada · inicio", page: "/", pageLabel: "Portada", fields: heading() },
   { key: "home.welcome", tab: "portada", title: "Portada · bienvenida", page: "/#comunidad", pageLabel: "Portada", fields: { title: text("Título", 120), text: text("Texto", 500, { rows: 3 }) } },
   { key: "home.history", tab: "portada", title: "Portada · personas y antecedentes", page: "/#identidad", pageLabel: "Portada", fields: { ...heading(false), text: text("Texto", 200, { rows: 2 }) } },
@@ -85,63 +71,6 @@ export const contentDefaults: Record<string, Record<string, unknown>> = {
   "commissions.order": { order: [...commissionIds] },
   ...Object.fromEntries(commissionIds.map(id => [`commission.${id}`, { name: byId[id].name, purpose: byId[id].purpose, tasks: [...byId[id].tasks], result: byId[id].result }])),
   "comisiones.header": { eyebrow: "Acción Política Juvenil Tlalnepantla", title: "Elige tu", emphasis: "comisión.", lead: "Seis equipos con tareas concretas. Elige uno y súmate.", stepsTitle: "Cómo te sumas" },
-  "enlaces.header": { eyebrow: "Convocatoria 2026–2027", title: "Enlaces APJ.", emphasis: "Doce lugares para mover Tlalnepantla.", lead: "Dos jóvenes por comisión, un año de trabajo con actividades, evidencias y un reporte final. Son el equipo que sostiene La ruta." },
-  "enlaces.requirements": {
-    eyebrow: "Quién puede postularse", title: "Lo que necesitas", emphasis: "antes de empezar.",
-    intro: "No se pide afiliación al PAN. La afiliación es un paso distinto y voluntario que el sitio deja al final del registro.",
-    items: [
-      "Tener de 18 a 29 años.",
-      "Vivir, estudiar o trabajar en Tlalnepantla de Baz.",
-      "Crear tu cuenta y enviar tu solicitud a la comisión que elijas.",
-      "Carta de motivos de una cuartilla: por qué esa comisión y qué harías en tu primer mes.",
-      "Carta de recomendación de un docente, empleador o líder comunitario.",
-      "Disponibilidad aproximada de cuatro horas por semana.",
-    ],
-  },
-  "enlaces.seats": {
-    eyebrow: "Plazas", title: "Una persona titular y una de apoyo", emphasis: "por comisión.",
-    roles: {
-      gobierno: "Visita al Ayuntamiento, Escuela Parlamentaria y Parlamento Juvenil.",
-      administracion: "Registros, listas, permisos y seguimiento de cada evento.",
-      comunicacion: "Carteles, redes, fotografía con permiso y Voces 360.",
-      cultura: "Posada Juvenil y Navidad en el hospital.",
-      tecnologia: "Sitio, formularios, registros y códigos QR probados.",
-      mujeres: "Paridad en la convocatoria y espacios seguros en cada evento.",
-    },
-  },
-  "enlaces.calendar": {
-    title: "Del registro", emphasis: "a la toma de protesta.",
-    items: [
-      { when: "16 de noviembre", what: "Se publica la convocatoria" },
-      { when: "30 de noviembre", what: "Cierran postulaciones a las 23:59" },
-      { when: "1 al 4 de diciembre", what: "Entrevistas de 10 minutos, en línea" },
-      { when: "7 de diciembre", what: "Resultados" },
-      { when: "10 de diciembre", what: "Toma de protesta, si el Comité la aprueba" },
-    ],
-  },
-  "enlaces.selection": {
-    eyebrow: "Cómo se selecciona",
-    criteria: [
-      { label: "Carta de motivos", percent: 30 },
-      { label: "Propuesta para el primer mes", percent: 25 },
-      { label: "Participación previa en tu escuela o comunidad", percent: 25 },
-      { label: "Carta de recomendación", percent: 20 },
-    ],
-    note: "Evalúan tres personas: la coordinación general y dos integrantes que designe el Comité. Se busca equilibrio entre mujeres y hombres y entre escuelas, con una lista de suplentes.",
-  },
-  "enlaces.duties": {
-    eyebrow: "Durante el año",
-    items: [
-      "Plan de trabajo de tu comisión en el primer mes.",
-      "Reporte mensual en Mi comisión.",
-      "Participar en al menos tres eventos de La ruta.",
-      "Organizar un evento propio por semestre con el Formato APJ-F01.",
-      "Difundir convocatorias y guardar evidencias.",
-      "Reporte final y cuestionario de salida.",
-    ],
-    note: "Dos reportes mensuales seguidos sin entregar, sin aviso, liberan la plaza para la persona suplente.",
-  },
-  "enlaces.apply": { title: "Postúlate", emphasis: "en tres pasos.", note: "Recibir tu solicitud no significa que fue aceptada. Te avisamos el resultado en tu cuenta. Postularte no te afilia a ningún partido." },
   "home.hero": { eyebrow: "Tlalnepantla, Estado de México", title: "Tu talento puede", emphasis: "mover Tlalnepantla." },
   "home.welcome": { title: "Ven como eres. Crece con los demás.", text: "Estudies en un bachillerato técnico o en una universidad pública o privada, tengas un trabajo u oficio o apenas estés encontrando tu camino, aquí puedes aportar. Para unirte a una comisión necesitas 18 años cumplidos." },
   "home.history": { title: "Personas y", emphasis: "antecedentes.", text: "Archivo de Acción Juvenil." },

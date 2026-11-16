@@ -1,5 +1,7 @@
 import { getRuntimeEnv } from "@/lib/runtime-env";
-import { isSiteDocumentSlug, staticDocumentHref, type SiteDocumentRow } from "@/lib/site-documents";
+import { currentAuthorizedUser } from "@/lib/authz";
+import { enlacesState } from "@/lib/enlaces";
+import { enlacesGatedDocument, isSiteDocumentSlug, staticDocumentHref, type SiteDocumentRow } from "@/lib/site-documents";
 
 export const dynamic = "force-dynamic";
 
@@ -9,7 +11,11 @@ const notFound = () => new Response("Documento no encontrado.", { status: 404, h
 async function serve(request: Request, context: { params: Promise<{ file: string }> }, head: boolean) {
   const slug = /^([a-z0-9-]+)\.pdf$/.exec((await context.params).file)?.[1];
   if (!isSiteDocumentSlug(slug)) return notFound();
-  const original = () => new Response(null, { status: 302, headers: { Location: new URL(staticDocumentHref(slug), request.url).href, "Cache-Control": "public, max-age=60" } });
+  // The convocatoria has no static copy: before it opens only administration can download it.
+  const gated = slug === enlacesGatedDocument;
+  const early = gated && (await enlacesState()).phase === "before";
+  if (early && (await currentAuthorizedUser())?.role !== "admin") return notFound();
+  const original = () => gated ? notFound() : new Response(null, { status: 302, headers: { Location: new URL(staticDocumentHref(slug), request.url).href, "Cache-Control": "public, max-age=60" } });
   const { DB, BUCKET } = getRuntimeEnv();
   if (!DB || !BUCKET) return original();
   try {
@@ -21,7 +27,7 @@ async function serve(request: Request, context: { params: Promise<{ file: string
       "Content-Type": "application/pdf",
       "Content-Length": String(row.size_bytes),
       "Content-Disposition": `attachment; filename="${slug}.pdf"`,
-      "Cache-Control": "public, max-age=60",
+      "Cache-Control": early ? "private, no-store" : "public, max-age=60",
       "ETag": `"${row.sha256}"`,
       "X-Content-Type-Options": "nosniff",
       "Content-Security-Policy": "sandbox; default-src 'none'",

@@ -325,3 +325,47 @@ export const outboundEmails = sqliteTable("outbound_emails", {
   sentBy: text("sent_by").notNull(),
   createdAt: integer("created_at").notNull(),
 }, t => [index("outbound_emails_account_idx").on(t.accountId, t.createdAt), index("outbound_emails_batch_idx").on(t.batchId)]);
+
+/** Enlaces APJ: one live application per account and cycle. Letters and identification live in commission_documents. */
+export const enlacesApplications = sqliteTable("enlaces_applications", {
+  id: text("id").primaryKey(),
+  accountId: text("account_id").notNull().references(() => staffAccounts.id, { onDelete: "cascade" }),
+  cycle: text("cycle").notNull(),
+  track: text("track").notNull().default(""),
+  commission: text("commission").notNull().default(""),
+  communityKind: text("community_kind").notNull().default(""),
+  communityName: text("community_name").notNull().default(""),
+  birthDate: text("birth_date").notNull().default(""),
+  cityTie: text("city_tie").notNull().default(""),
+  cityTieDetail: text("city_tie_detail").notNull().default(""),
+  motivesText: text("motives_text").notNull().default(""),
+  previousParticipation: text("previous_participation").notNull().default(""),
+  proposal: text("proposal").notNull().default(""),
+  publishNameOk: integer("publish_name_ok").notNull().default(0),
+  status: text("status").notNull().default("draft"),
+  referenceCode: text("reference_code").notNull(),
+  noticeVersion: text("notice_version").notNull(),
+  noticeSnapshot: text("notice_snapshot").notNull(),
+  consentAt: integer("consent_at").notNull(),
+  submittedAt: integer("submitted_at"),
+  interviewNote: text("interview_note").notNull().default(""),
+  createdAt: integer("created_at").notNull(),
+  updatedAt: integer("updated_at").notNull(),
+  retentionUntil: integer("retention_until").notNull(),
+}, t => [
+  uniqueIndex("enlaces_reference_unique").on(t.referenceCode),
+  uniqueIndex("enlaces_active_account_unique").on(t.accountId, t.cycle).where(sql`${t.status} <> 'withdrawn'`),
+  index("enlaces_cycle_status_idx").on(t.cycle, t.status, t.createdAt),
+]);
+
+/** One agreed score sheet per application, on the four criteria of the convocatoria. */
+export const enlacesScores = sqliteTable("enlaces_scores", {
+  applicationId: text("application_id").primaryKey().references(() => enlacesApplications.id, { onDelete: "cascade" }),
+  motives: integer("motives").notNull(),
+  proposal: integer("proposal").notNull(),
+  participation: integer("participation").notNull(),
+  recommendation: integer("recommendation").notNull(),
+  total: integer("total").notNull(),
+  scoredBy: text("scored_by").notNull(),
+  updatedAt: integer("updated_at").notNull(),
+});

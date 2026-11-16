@@ -17,7 +17,7 @@ import {workspaceTab} from '@/lib/workspace-navigation';
 
 type Team={id:string;account_id:string;commission:string;role:string;active:number;updated_at:number;name:string;username:string};
 export type Affiliation={account_id:string;folio:string;status:string;note:string;verification_source:string;verified_at:number|null;updated_at:number;retention_until:number;verified_document_id:string|null;verified_document_name:string|null;document_count:number;name?:string;username?:string};
-type Data={actor:{id:string;name:string;admin:boolean};roles:{commission:string;role:string}[];application:{id:string;commission:string;status:string;reference_code:string;enlaces?:number|boolean}|null;enlacesOpen?:boolean;items:WorkItem[];total:number;page:number;team:Team[];teamTotal:number;affiliations:Affiliation[];affiliationTotal:number;consent:boolean;documentsEnabled:boolean;personalDocumentsReady:boolean;noticeToken:string;candidates?:{username:string;name:string;commission:string}[]};
+type Data={actor:{id:string;name:string;admin:boolean};roles:{commission:string;role:string}[];application:{id:string;commission:string;status:string;reference_code:string}|null;enlacesOpen?:boolean;items:WorkItem[];total:number;page:number;team:Team[];teamTotal:number;affiliations:Affiliation[];affiliationTotal:number;consent:boolean;documentsEnabled:boolean;personalDocumentsReady:boolean;noticeToken:string;candidates?:{username:string;name:string;commission:string}[]};
 const date=(n:number)=>new Intl.DateTimeFormat('es-MX',{dateStyle:'medium',timeZone:'America/Mexico_City'}).format(n);
 const moment=(n:number)=>new Intl.DateTimeFormat('es-MX',{dateStyle:'medium',timeStyle:'short',timeZone:'America/Mexico_City'}).format(n);
 const states:Record<string,string>={...membershipStatuses,received:'Recibido',checked:'Archivo revisado',changes:'Necesita una corrección',reported:'En revisión',confirmed:'Afiliación comprobada'};
@@ -60,9 +60,8 @@ export default function Workspace({accountId,adminView=false,initialArea='',init
  const affiliationComplete=Boolean(commissionConfirmed&&data?.personalDocumentsReady&&affiliation?.status==='confirmed'&&affiliation.verified_document_id);
  const readyForAffiliation=Boolean(commissionConfirmed&&data?.personalDocumentsReady);
  const canReceiveAffiliation=Boolean(data?.documentsEnabled&&readyForAffiliation);
- const tabs=admin?[['solicitud','Solicitudes'],['expediente','Documentos personales'],['enlaces','Enlaces APJ'],['afiliacion','Afiliación PAN'],['actividades','Actividades'],['equipo','Equipo'],['archivo','Archivo']]:[
+ const tabs=admin?[['solicitud','Solicitudes'],['expediente','Documentos personales'],['afiliacion','Afiliación PAN'],['actividades','Actividades'],['equipo','Equipo'],['archivo','Archivo']]:[
   ['solicitud','Mi registro'],['expediente','Documentos'],
-  ...(data?.application?.enlaces?[['enlaces','Cartas Enlaces APJ']]:[]),
   ...(commissionConfirmed||data?.affiliations.length?[['afiliacion','Afiliación PAN']]:[]),
   ...(areas.length?[['actividades','Actividades'],['equipo','Mi equipo'],['archivo','Archivo']]:[]),
  ];
@@ -83,7 +82,7 @@ export default function Workspace({accountId,adminView=false,initialArea='',init
       !affiliationComplete?<><h3>Afíliate al PAN</h3><p>Es el último paso. Si ya estás afiliado, solo sube tu comprobante.</p><button className="button button-primary" onClick={()=>changeView('afiliacion')}>Ir a afiliación</button></>:
       <><h3>Todo listo</h3><p>Ya puedes trabajar con tu comisión.</p><button className="button button-primary" onClick={()=>changeView('actividades')}>Ir a actividades</button></>}</div>
      {data.application&&<dl className="workspace-application-summary"><div><dt>Comisión</dt><dd>{commissionName(data.application.commission)}</dd></div><div><dt>Solicitud</dt><dd>{states[data.application.status]||data.application.status}</dd></div><div><dt>Folio</dt><dd>{data.application.reference_code}</dd></div></dl>}
-     {data.application&&<p className="workspace-help"><Link href="/participacion#registro">Ver mi solicitud y las respuestas</Link>{data.application.enlaces?<> · <button className="text-link" onClick={()=>changeView('enlaces')}>Mis cartas de Enlaces APJ</button></>:null}</p>}
+     {data.application&&<p className="workspace-help"><Link href="/participacion#registro">Ver mi solicitud y las respuestas</Link></p>}
     </>}
    </section>}
    {tab==='expediente'&&<section className="workspace-card workspace-personal-docs">
@@ -93,12 +92,6 @@ export default function Workspace({accountId,adminView=false,initialArea='',init
     {!admin&&!data.documentsEnabled&&<p>La recepción está cerrada por ahora. Puedes ver lo que ya entregaste.</p>}
     {admin||data.consent?<Documents admin={admin} categoryOnly="identity" ownerId={data.actor.id} area={area} allowUpload={!admin&&canReceive} onUploaded={()=>setTick(v=>v+1)} act={act} tick={tick}/>:hasEnrollment&&data.documentsEnabled?<Consent key={data.noticeToken} data={data} act={act} busy={busy}/>:null}
      {!admin&&data.personalDocumentsReady&&<div className="workspace-next-action"><p>{readyForAffiliation?'Documentos revisados y comisión confirmada.':'Documentos revisados. Falta que administración confirme tu comisión.'}</p>{readyForAffiliation&&<button className="button button-secondary" onClick={()=>changeView('afiliacion')}>{affiliationComplete?'Ver mi afiliación':'Ir a afiliación'}</button>}</div>}
-   </section>}
-   {tab==='enlaces'&&(admin||Boolean(data.application?.enlaces))&&<section className="workspace-card workspace-enlaces">
-    <h2>{admin?'Cartas de Enlaces APJ':'Tus dos cartas'}</h2>
-    <p>{admin?'Revisa la carta de motivos y la carta de recomendación de cada postulación. Revisar una carta no acepta la postulación: la selección se registra aparte.':'Entrega tu carta de motivos y tu carta de recomendación de un docente, empleador o líder comunitario. Solo tú y la administración autorizada pueden consultarlas.'}</p>
-    {!admin&&!data.enlacesOpen&&<p>La recepción de cartas está cerrada. Puedes consultar lo que ya entregaste.</p>}
-    {admin||data.consent?<Documents admin={admin} categoryOnly="enlaces" ownerId={data.actor.id} area={area} allowUpload={!admin&&canReceive&&Boolean(data.enlacesOpen)} onUploaded={()=>setTick(v=>v+1)} act={act} tick={tick}/>:canReceive?<Consent key={data.noticeToken} data={data} act={act} busy={busy}/>:null}
    </section>}
    {(tab==='actividades'||tab==='archivo')&&<section className="workspace-card">
     {selected?<ItemDetail key={selected} id={selected} admin={admin} actorId={data.actor.id} consent={data.consent} busy={busy} act={act} tick={tick} onBack={()=>setSelected('')}/>:

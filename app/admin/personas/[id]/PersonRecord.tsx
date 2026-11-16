@@ -8,7 +8,6 @@ import ApplicationProfileView from '@/app/ApplicationProfileView';
 import { AffiliationReview, Documents } from '@/app/mi-comision/Workspace';
 import { EmailComposer } from '../PeopleTools';
 import { commissions, commissionName } from '@/lib/commissions';
-import { readMembershipProfile } from '@/lib/membership-profile';
 import { canChangeMembershipStatus, membershipStatuses, type MembershipStatus } from '@/lib/membership-shared';
 import { affiliationLabels, personActionLabels } from '@/lib/people-shared';
 import { docCategories } from '@/lib/workspace-shared';
@@ -31,8 +30,6 @@ export default function PersonRecord({ record, actorId, control, editable, email
   const [busy, setBusy] = useState(false), [message, setMessage] = useState(''), [tick, setTick] = useState(0);
   const [confirmSuspend, setConfirmSuspend] = useState(false), [deleteText, setDeleteText] = useState(''), [note, setNote] = useState(''), [tag, setTag] = useState('');
   const { account, application, members, affiliation, impact } = record;
-  const profile = readMembershipProfile(application?.profileJson);
-  const enlacesSelectedAt = (() => { try { const value = JSON.parse(application?.profileJson ?? '{}').enlacesSelectedAt; return typeof value === 'number' ? value : null; } catch { return null; } })();
   const personPath = `/api/admin/personas/${account.id}`;
   const confirmWord = account.username ?? account.email;
   const activeApplication = application && ['submitted', 'in_review', 'accepted'].includes(application.status) ? application : null;
@@ -73,10 +70,7 @@ export default function PersonRecord({ record, actorId, control, editable, email
         <Panel id="solicitud" title="Solicitud" aside={application && <Chip t={tone(application.status)}>{membershipStatuses[application.status] ?? application.status}</Chip>}>
           {!application ? <p className="people-empty">Sin solicitud vigente.</p> : <>
             <dl className="people-facts"><div><dt>Comisión</dt><dd>{commissionName(application.commission)}</dd></div><div><dt>Folio</dt><dd>{application.referenceCode}</dd></div><div><dt>Recibida</dt><dd>{day(application.createdAt)}</dd></div><div><dt>Se conserva hasta</dt><dd>{day(application.retentionUntil)}</dd></div></dl>
-            <details className="people-more"><summary>Perfil{profile?.enlaces ? ' · Enlaces APJ' : ''}</summary><ApplicationProfileView json={application.profileJson} />{application.note && <p className="request-message">{application.note}</p>}</details>
-            {profile?.enlaces && (enlacesSelectedAt
-              ? <p className="people-note">Seleccionado como Enlace APJ el {day(enlacesSelectedAt)}. Su solicitud, documentos y cartas se conservan hasta el {day(application.retentionUntil)}.</p>
-              : activeApplication && <div className="people-inline-actions"><button type="button" className="button button-secondary" disabled={busy} onClick={() => { if (window.confirm('¿Marcar a esta persona como Enlace APJ seleccionado? Su solicitud, documentos y cartas se conservarán 13 meses y se le avisará en su seguimiento.')) void person('enlaces.select', { expectedUpdatedAt: account.updatedAt, expectedApplicationUpdatedAt: application.updatedAt }); }}>Seleccionado como Enlace APJ</button></div>)}
+            <details className="people-more"><summary>Perfil</summary><ApplicationProfileView json={application.profileJson} />{application.note && <p className="request-message">{application.note}</p>}</details>
             {!['closed', 'withdrawn'].includes(application.status) && <details className="people-more"><summary>Cambiar estado o responder</summary>
               <VersionedForm className="people-form" record={application} onSubmit={async (event, snapshot) => {
                 const values = Object.fromEntries(new FormData(event.currentTarget));
@@ -94,7 +88,6 @@ export default function PersonRecord({ record, actorId, control, editable, email
         <Panel id="documentos" title="Documentos personales" aside={<Chip t={record.documents === 3 ? 'ok' : record.documents ? 'wait' : 'off'}>{`${record.documents} de 3 revisados`}</Chip>}>
           <ul className="people-checklist">{record.identity.map(item => <li key={item.category}><span>{docCategories[item.category]}</span><Chip t={item.status === 'checked' ? 'ok' : item.status === 'missing' ? 'off' : item.status === 'changes' ? 'warn' : 'wait'}>{documentStates[item.status] ?? item.status}</Chip></li>)}</ul>
           <details className="people-more"><summary>Revisar o retirar archivos</summary><div className="workspace people-embedded"><Documents admin categoryOnly="identity" ownerId={actorId} accountFilter={account.id} act={act} tick={tick} /></div></details>
-          {profile?.enlaces && <details className="people-more"><summary>Cartas de Enlaces APJ</summary><div className="workspace people-embedded"><Documents admin categoryOnly="enlaces" ownerId={actorId} accountFilter={account.id} act={act} tick={tick} /></div></details>}
         </Panel>
 
         <Panel id="comision" title="Comisión">

@@ -1,4 +1,4 @@
-/** The eight downloadable PDFs. The static originals stay in public/documentos; replacements live in R2. */
+/** The downloadable PDFs. The static originals stay in public/documentos; replacements live in R2. */
 export const siteDocumentList = [
   { slug: "guia-gobierno", label: "Guía de Gobierno" },
   { slug: "guia-administracion", label: "Guía de Administración" },
@@ -8,9 +8,12 @@ export const siteDocumentList = [
   { slug: "guia-mujeres", label: "Guía de Mujeres al frente" },
   { slug: "formato-evento", label: "Formato de evento APJ-F01" },
   { slug: "bases-y-anexos", label: "Bases y anexos de las comisiones" },
+  { slug: "convocatoria-enlaces-apj-2027", label: "Convocatoria Enlaces APJ 2027" },
 ] as const;
 
 export type SiteDocumentSlug = typeof siteDocumentList[number]["slug"];
+/** Stored only in R2, with no static copy, and hidden from the public until the convocatoria opens. */
+export const enlacesGatedDocument: SiteDocumentSlug = "convocatoria-enlaces-apj-2027";
 export const SITE_DOCUMENT_MAX_BYTES = 15 * 1024 * 1024;
 
 export const isSiteDocumentSlug = (value: unknown): value is SiteDocumentSlug => typeof value === "string" && siteDocumentList.some(item => item.slug === value);

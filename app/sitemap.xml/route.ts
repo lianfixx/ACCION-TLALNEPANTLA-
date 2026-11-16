@@ -1,6 +1,6 @@
 import {publishedPosts} from "@/lib/public-posts";
 import { SITE_URL } from "@/lib/site";
-import { enlacesConfiguration } from "@/lib/enlaces";
+import { enlacesState } from "@/lib/enlaces";
 
 export const dynamic = "force-dynamic";
 
@@ -9,13 +9,13 @@ function escapeXml(value: string) {
 }
 
 export async function GET() {
-  const [{items:activities},enlaces]=await Promise.all([publishedPosts(500),enlacesConfiguration()]);
+  const [{items:activities},enlaces]=await Promise.all([publishedPosts(500),enlacesState()]);
   const urls = [
     { loc: `${SITE_URL}/`, priority: "1.0" },
     { loc: `${SITE_URL}/comisiones`, priority: "0.8" },
     { loc: `${SITE_URL}/participacion`, priority: "0.8" },
     { loc: `${SITE_URL}/agenda`, priority: "0.8" },
-    ...(enlaces.open?[{ loc: `${SITE_URL}/enlaces`, priority: "0.8" }]:[]),
+    ...(enlaces.phase!=="before"?[{ loc: `${SITE_URL}/enlaces`, priority: "0.8" }]:[]),
     { loc: `${SITE_URL}/actualidad`, priority: "0.7" },
     ...activities.map((post) => ({ loc: `${SITE_URL}/actualidad/${encodeURIComponent(post.slug)}`, priority: "0.6", lastmod: new Date(post.updatedAt).toISOString() })),
   ];

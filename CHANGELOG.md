@@ -2,6 +2,21 @@
 
 Lo más reciente arriba. Formato y reglas: `ia/PROTOCOLO.md`, sección 3. Cada entrada lleva la línea `Agente:`.
 
+## 2026-11-16 · Enlaces APJ 2027 (en curso): base, página pública y postulación
+
+- Agente: Claude Code (sesión en la nube)
+- Solicitud: Emi, 16/11/2026: petición «Apartado Enlaces APJ 2027» (preparada en claude.ai el 15/11) con sus instrucciones. Decisiones de Emi en esta sesión: subir avances solo a la rama de trabajo; un puntaje unificado que captura él («decisión colegiada de 3 pero solo yo decido»); resultados con nombre completo; él entrega el PDF oficial.
+- Cambios:
+  - Migración `0017_enlaces_2027`: `enlaces_applications` (una postulación viva por cuenta y ciclo) y `enlaces_scores`.
+  - `lib/enlaces*.ts`: ventana oficial del 23-nov-2026 00:00 al 6-dic-2026 23:59 (America/Mexico_City), fases, aviso propio `enlaces-2027.1`, validación de 18 a 29 años al cierre, texto íntegro de la convocatoria.
+  - `/enlaces`: antes de abrir solo título y fecha (administración ve vista previa); abierta, bases completas, PDF y «Postularme»; cerrada, «Postulaciones cerradas»; bloque de resultados. Entrada en menú y portada solo abierta o con resultados. Sitemap desde la apertura.
+  - `/cuenta/enlaces` y `/api/enlaces`: consentimiento, borrador con guardado automático, documentos (cartas e identificación, reutilizando la que ya exista), envío con folio `ENL27-…`, edición hasta el cierre y retiro. La decisión del comité no se muestra hasta publicar resultados.
+  - El PDF de la convocatoria se sirve por `/archivos/` solo desde R2 y queda privado hasta la apertura.
+  - Se retira el flujo anterior de Enlaces: casilla en la solicitud, ajustes `ENLACES_ENABLED` y `ENLACES_APPROVAL`, bloques editables de `/enlaces`, pestaña de cartas en Mi comisión y botón «Seleccionado como Enlace APJ» de la ficha.
+- Archivos: `db/schema.ts`, `drizzle/0017_enlaces_2027.sql`, `drizzle/meta/`, `lib/enlaces.ts`, `lib/enlaces-shared.ts`, `lib/enlaces-convocatoria.ts`, `lib/enlaces-documents.ts`, `lib/enlaces-view.ts`, `app/enlaces/page.tsx`, `app/cuenta/enlaces/`, `app/api/enlaces/`, `app/archivos/[file]/route.ts`, `lib/site-documents.ts`, `lib/account-paths.ts`, `app/crear-cuenta/`, `app/admin/ingresar/page.tsx`, `app/api/registro-cuenta/route.ts`, `app/SiteHeader.tsx`, `app/layout.tsx`, `app/page.tsx`, `app/comisiones/page.tsx`, `app/sitemap.xml/route.ts`, `app/globals.css`, archivos del flujo retirado, `tests/enlaces.test.mjs`, `tests/site-content.test.mjs`, `tests/people-crm.test.mjs`, este registro.
+- Verificación: typecheck y lint sin avisos; `npm test` → 215 aprobadas (9 nuevas de Enlaces con reloj simulado en las fechas oficiales).
+- Pendiente: panel `/admin/enlaces`, aviso de privacidad general, retención y borrado de cuentas, PDF oficial en R2, capturas en celular, entrega. Nada está publicado.
+
 ## 2026-11-13 · recuperación de la cuenta propietaria y límite del plan gratuito
 
 - Agente: Claude Code (sesión en la nube, operación desde el Box de Emi)

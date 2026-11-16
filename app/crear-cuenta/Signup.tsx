@@ -3,7 +3,7 @@ import { useRef, useState, type FormEvent } from 'react';
 import RegistrationChallenge from './RegistrationChallenge';
 import { useRouter } from 'next/navigation';
 
-export default function Signup({ noticeToken, commission = '', siteKey, nonce }: { noticeToken: string; commission?: string; siteKey: string; nonce?: string }) {
+export default function Signup({ noticeToken, commission = '', destination = '', siteKey, nonce }: { noticeToken: string; commission?: string; destination?: string; siteKey: string; nonce?: string }) {
   const [busy, setBusy] = useState(false), [error, setError] = useState('');
   const [challenge, setChallenge] = useState(''), [resetKey, setResetKey] = useState(0);
   const submitting = useRef(false);
@@ -16,7 +16,7 @@ export default function Signup({ noticeToken, commission = '', siteKey, nonce }:
     if (!challenge) { setError('Completa la verificación antiabuso.'); return; }
     submitting.current = true; setBusy(true); setError('');
     try {
-      const response = await fetch('/api/registro-cuenta', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: fields.get('name'), email: fields.get('email'), username: fields.get('username'), password: fields.get('password'), adult: fields.has('adult'), consent: fields.has('consent'), noticeToken, commission, 'cf-turnstile-response': challenge }) });
+      const response = await fetch('/api/registro-cuenta', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: fields.get('name'), email: fields.get('email'), username: fields.get('username'), password: fields.get('password'), adult: fields.has('adult'), consent: fields.has('consent'), noticeToken, commission, destination, 'cf-turnstile-response': challenge }) });
       const result = await response.json() as { error?: string; requestId?: string };
       if (!response.ok) { setError((result.error || 'No pudimos crear la cuenta. Inténtalo de nuevo.') + (result.requestId ? ` Referencia: ${result.requestId}` : '')); return; }
       router.push('/confirmar-correo');

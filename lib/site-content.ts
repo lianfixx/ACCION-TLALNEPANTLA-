@@ -39,15 +39,6 @@ export type SiteContent = {
   home: { hero: Heading; welcome: { title: string; text: string }; history: { title: string; emphasis: string; text: string }; commissions: Heading & { text: string }; combination: Heading; team: { name: string; role: string; note: string } };
   comisiones: Heading & { lead: string; stepsTitle: string };
   participacion: Heading & { lead: string };
-  enlaces: {
-    header: Heading & { lead: string };
-    requirements: Heading & { intro: string; items: string[] };
-    seats: Heading & { roles: Record<CommissionId, string> };
-    calendar: { title: string; emphasis: string; items: Array<{ when: string; what: string }> };
-    selection: { eyebrow: string; criteria: Array<{ label: string; percent: number }>; note: string };
-    duties: { eyebrow: string; items: string[]; note: string };
-    apply: { title: string; emphasis: string; note: string };
-  };
 };
 
 /** Public text for the pages. Never throws: without D1 the defaults are returned. */
@@ -64,7 +55,6 @@ export async function siteContent(): Promise<SiteContent> {
     home: { hero: v("home.hero"), welcome: v("home.welcome"), history: v("home.history"), commissions: v("home.commissions"), combination: v("home.combination"), team: v("home.team") },
     comisiones: v("comisiones.header"),
     participacion: v("participacion.intro"),
-    enlaces: { header: v("enlaces.header"), requirements: v("enlaces.requirements"), seats: v("enlaces.seats"), calendar: v("enlaces.calendar"), selection: v("enlaces.selection"), duties: v("enlaces.duties"), apply: v("enlaces.apply") },
   };
 }
 

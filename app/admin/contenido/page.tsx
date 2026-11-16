@@ -12,7 +12,7 @@ import ContentManager, { type Tab } from "./ContentManager";
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Contenido del sitio", robots: { index: false, follow: false, noarchive: true } };
 
-const tabKeys: Tab[] = ["comisiones", "enlaces", "portada", "documentos"];
+const tabKeys: Tab[] = ["comisiones", "portada", "documentos"];
 
 export default async function ContentPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const actor = await currentAuthorizedUser();

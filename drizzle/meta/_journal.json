@@ -120,6 +120,13 @@
       "when": 1794595680885,
       "tag": "0016_panel_crm",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "6",
+      "when": 1794795096932,
+      "tag": "0017_enlaces_2027",
+      "breakpoints": true
     }
   ]
 }

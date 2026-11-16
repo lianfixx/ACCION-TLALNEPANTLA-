@@ -32,7 +32,7 @@ export async function POST(r:Request){const error=(s:string,n=400)=>membershipJs
   const quota=await db.prepare('SELECT count FROM rate_limits WHERE id=?').bind(quotaId).first<{count:number}>();
   return quota&&quota.count>=100?error('La recepción de cuentas alcanzó su límite temporal. Inténtalo más tarde.',429):unavailable();
  }
- await sendRegistrationConfirmation(id,isCommission(x.commission)?`/participacion?comision=${x.commission}#registro`:'/participacion#registro');
+ await sendRegistrationConfirmation(id,x.destination==='enlaces'?'/cuenta/enlaces':isCommission(x.commission)?`/participacion?comision=${x.commission}#registro`:'/participacion#registro');
  return membershipJson({redirect:'/confirmar-correo',requiresEmailConfirmation:true,message:'Tu cuenta está pendiente de confirmar el correo. Revisa tu bandeja de entrada.'},{status:201});
  }catch(e){if(e instanceof StaffCapacityError)return error('Espera unos segundos e inténtalo de nuevo.',429);if(e instanceof RegistrationServiceError&&e.stage==='email')return accountFailure('registration','email','Tu cuenta quedó pendiente. No pudimos enviar el correo. Usa Solicitar otro correo de confirmación para intentarlo de nuevo.');return accountFailure('registration',e instanceof RegistrationServiceError?e.stage:'account-creation');}
 }
