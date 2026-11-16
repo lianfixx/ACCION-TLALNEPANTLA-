@@ -15,7 +15,8 @@ const DETAIL_FIELDS: Record<string, Record<string, number>> = {
 };
 
 function createReferenceCode(now: number) {
-  const year = new Date(now).getUTCFullYear();
+  // The folio carries the year in Mexico City, not in UTC.
+  const year = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Mexico_City", year: "numeric" }).format(now);
   const random = crypto.randomUUID().replaceAll("-", "").slice(0, 8).toUpperCase();
   return `AJT-${year}-${random}`;
 }

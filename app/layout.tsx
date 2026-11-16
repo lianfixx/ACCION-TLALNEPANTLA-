@@ -1,3 +1,4 @@
+import { getStaffIdentity } from "@/lib/staff-auth";
 import type { Metadata } from "next";
 import { headers } from "next/headers";
 import "@fontsource-variable/source-sans-3";
@@ -46,6 +47,8 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // Start reading the session now: the page asks for it after the header and footer have loaded their texts.
+  void getStaffIdentity();
   const nonce = (await headers()).get("x-nonce") ?? undefined;
   // The entry appears by itself when the convocatoria opens and again with its results.
   const enlaces = await enlacesState().then(enlacesListed).catch(() => false);

@@ -51,6 +51,9 @@ export default function ContactForm({ enabled, siteKey, nonce }: { enabled: bool
         } catch {
           // The request is already recorded; a widget reset must not replace its acknowledgement.
         }
+      } else {
+        // The verification token is single use: a rejected attempt needs a fresh one.
+        try { window.turnstile?.reset(); } catch { /* The next attempt shows its own error. */ }
       }
     } catch {
       setMessage("No fue posible enviar la solicitud. Revisa tu conexión e intenta de nuevo.");

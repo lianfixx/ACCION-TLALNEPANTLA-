@@ -20,14 +20,18 @@ export default async function ContentPage({ searchParams }: { searchParams: Prom
   if (actor.role !== "admin") redirect("/admin");
   const { DB, BUCKET } = getRuntimeEnv();
   const live = adminWriteGuard(actor, ["admin"]);
-  if (!DB || !await DB.prepare("SELECT 1 WHERE " + live.sql).bind(...live.values).first()) redirect("/admin/ingresar");
+  if (!DB) redirect("/admin/ingresar");
   const requested = (await searchParams).tab;
   const tab = tabKeys.find(key => key === requested) ?? "comisiones";
-  const records = await readContentRecords();
   let documents: SiteDocumentRow[] = [];
   let storageReady = Boolean(BUCKET);
-  try { documents = (await DB.prepare("SELECT slug, object_key, file_name, size_bytes, sha256, uploaded_at, uploaded_by FROM site_documents").all<SiteDocumentRow>()).results ?? []; }
-  catch { storageReady = false; }
+  const [stillLive, records, documentRows] = await Promise.all([
+    DB.prepare("SELECT 1 WHERE " + live.sql).bind(...live.values).first(),
+    readContentRecords(),
+    DB.prepare("SELECT slug, object_key, file_name, size_bytes, sha256, uploaded_at, uploaded_by FROM site_documents").all<SiteDocumentRow>().catch(() => null),
+  ]);
+  if (!stillLive) redirect("/admin/ingresar");
+  if (documentRows) documents = documentRows.results ?? []; else storageReady = false;
   return <main className="admin-shell" id="main-content">
     <AdminHeader current="contenido" email={actor.email} role={actor.role} accountId={actor.accountId} />
     <div className="admin-intro">

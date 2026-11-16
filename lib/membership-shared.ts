@@ -5,7 +5,7 @@ import { parseMembershipProfile } from "./membership-profile";
 export const membershipStatuses = { submitted: "Recibida", in_review: "En revisión", accepted: "Solicitud aceptada", closed: "Cerrada", withdrawn: "Retirada" } as const;
 export type MembershipStatus = keyof typeof membershipStatuses;
 export { workspaceConsent as membershipConsent } from "./workspace-shared";
-export type MembershipApplication = { id: string; ownerEmail: string; name: string; commission: string; note: string; profileJson?:string; referenceCode: string; status: MembershipStatus; noticeVersion: string; consentAt: number; createdAt: number; updatedAt: number; retentionUntil: number };
+export type MembershipApplication = { id: string; ownerEmail: string; name: string; commission: string; note: string; profileJson?:string; referenceCode: string; status: MembershipStatus; noticeVersion: string; consentAt: number; createdAt: number; updatedAt: number; retentionUntil: number; noticeCurrent?: boolean };
 export type MembershipEvent = { id: string; kind: string; body: string; createdAt: number; actorType: string; actorEmail?: string };
 export type MembershipNotice = { controller: string; address: string; email: string; version: string; regime: string; legalBasis: string; rightsProcedure: string; retentionDays: number; audience: string };
 export function parseMembershipFields(input: Record<string, unknown>) {

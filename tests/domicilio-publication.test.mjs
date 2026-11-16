@@ -19,7 +19,7 @@ test('the requested photograph and post appear in Actualidad, the API, sitemap a
   const posts=(await(await f.call('/api/posts','GET',undefined,null)).json()).posts;
   assert.equal(posts[0].id,id);assert.ok(posts.some(post=>post.id==='apj-encuentro-comite-2026'));
   assert.match(await(await f.call('/sitemap.xml','GET',undefined,null)).text(),new RegExp(slug));
-  const panel=(await(await f.call('/admin?section=publicaciones&q=Sond%C3%B3n')).text()).replace(/<!--[\s\S]*?-->/g,'');assert.match(panel,/1 registros/);assert.match(panel,/Mi cambio de domicilio/);
+  const panel=(await(await f.call('/admin?section=publicaciones&q=Sond%C3%B3n')).text()).replace(/<!--[\s\S]*?-->/g,'');assert.match(panel,/1 registro ·/);assert.match(panel,/Mi cambio de domicilio/);
   assert.equal(f.db.prepare('SELECT count(*) n FROM posts').get().n,0,'reading a supplied publication does not invent a database author');
  }finally{f.close();}
 });

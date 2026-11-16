@@ -2,6 +2,7 @@
 import { handleImageOptimization, isImageOptimizationPath, parseImageParams, DEFAULT_DEVICE_SIZES, DEFAULT_IMAGE_SIZES } from "vinext/server/image-optimization";
 import handler from "vinext/server/app-router-entry";
 import { purgeExpiredData } from "@/lib/retention";
+import { withRequestScope } from "@/lib/request-memo";
 
 interface Env {
   ASSETS: Fetcher;
@@ -79,7 +80,9 @@ const worker = {
       return secureResponse(securedRequest, imageResponse, imageResponse.headers.get("Content-Security-Policy") ?? contentSecurityPolicy);
     }
 
-    return secureResponse(securedRequest, await handler.fetch(securedRequest, env, ctx), contentSecurityPolicy);
+    // One scope per page view, so settings and editable texts are read once per request.
+    const rendered = await withRequestScope(["GET", "HEAD"].includes(request.method), () => handler.fetch(securedRequest, env, ctx));
+    return secureResponse(securedRequest, rendered, contentSecurityPolicy);
   },
 
   async scheduled(controller: ScheduledController, env: Env, ctx: ExecutionContext): Promise<void> {

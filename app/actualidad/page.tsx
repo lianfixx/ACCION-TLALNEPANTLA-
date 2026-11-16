@@ -14,7 +14,7 @@ export const metadata: Metadata = {
 
 function formatDate(value: number | null) {
   return value
-    ? new Date(value).toLocaleDateString("es-MX", { day: "2-digit", month: "long", year: "numeric", timeZone: "America/Mexico_City" })
+    ? new Date(value).toLocaleDateString("es-MX", { day: "numeric", month: "long", year: "numeric", timeZone: "America/Mexico_City" })
     : "";
 }
 

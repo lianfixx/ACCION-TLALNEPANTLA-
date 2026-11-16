@@ -984,7 +984,7 @@ body { background: #fff; }
 .action-portal { perspective: 1300px; padding-bottom: 42px; }
 .portal-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 24px; }
 .portal-heading p { color: var(--muted); font-size: 17px; }
-.portal-stage { position: relative; display: grid; grid-template-columns: repeat(3,1fr); gap: 22px; align-items: center; padding: 76px 20px 50px; transform-style: preserve-3d; transform: rotateY(var(--pointer-x,0deg)) rotateX(var(--pointer-y,0deg)); transition: transform .3s ease-out; }
+.portal-stage { position: relative; display: grid; grid-template-columns: repeat(3,1fr); gap: 36px; align-items: center; padding: 76px 20px 50px; transform-style: preserve-3d; transform: rotateY(var(--pointer-x,0deg)) rotateX(var(--pointer-y,0deg)); transition: transform .3s ease-out; }
 .portal-depth { position: absolute; inset: 32px 5% 0; transform: translateZ(-360px) rotateX(64deg); transform-style: preserve-3d; pointer-events: none; z-index: -1; }
 .portal-depth span { position: absolute; inset: 0; border: 1px solid #a5bddf60; border-radius: 42px; background: linear-gradient(135deg,#f3f7fd,#dce8f560); }
 .portal-depth span:nth-child(2) { transform: translateZ(-36px); opacity: .65; }
@@ -2129,3 +2129,87 @@ body { background: #fff; }
 .enl-score label small { color: var(--muted); font-size: 13px; font-weight: 400; }
 .enl-score input { text-align: right; }
 .enl-admin-back { padding: 0 0 64px; }
+
+/* Panel: immediate feedback while the next section loads. */
+html[data-admin-loading] body::before {
+  animation: admin-loading 1.1s ease-in-out infinite;
+  background: var(--orange);
+  content: "";
+  height: 3px;
+  left: 0;
+  position: fixed;
+  top: 0;
+  transform-origin: left;
+  width: 100%;
+  z-index: 1000;
+}
+html[data-admin-loading] .admin-shell { cursor: progress; opacity: .55; transition: opacity .15s ease .12s; }
+@keyframes admin-loading { 0% { transform: scaleX(0); } 60% { transform: scaleX(.8); } 100% { transform: scaleX(1); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) {
+  html[data-admin-loading] body::before { animation: none; transform: none; }
+  html[data-admin-loading] .admin-shell { transition: none; }
+}
+
+/* ===== Auditoría de interfaz, 16-nov-2026 ===== */
+
+/* Panel: the page title is a compact band, not a landing hero. */
+.admin-shell > .admin-intro, .admin-shell .content-hero {
+  background: transparent;
+  border-bottom: 1px solid var(--line);
+  color: var(--ink);
+  padding: 28px max(24px, calc((100vw - 1240px) / 2)) 22px;
+}
+.admin-shell > .admin-intro h1, .admin-shell .content-hero h1 { font-size: clamp(32px, 4vw, 46px); letter-spacing: -.035em; line-height: 1.02; margin-top: 8px; }
+.admin-shell > .admin-intro .section-kicker, .admin-shell .content-hero .section-kicker, .admin-shell .content-hero .admin-label { color: var(--blue); }
+.admin-shell > .admin-intro a, .admin-shell .content-hero a { color: var(--blue); }
+.admin-shell > .admin-intro .admin-document-link { display: inline-block; margin-top: 12px; }
+
+/* Panel: one row of sections that scrolls sideways on a phone instead of three stacked rows. */
+@media (max-width: 760px) {
+  .admin-header-nav { flex-wrap: nowrap; margin-inline: -18px; overflow-x: auto; padding-inline: 18px; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+  .admin-header-nav::-webkit-scrollbar { display: none; }
+  .admin-header-nav a { flex: none; white-space: nowrap; }
+  .admin-header > div { gap: 4px 16px; width: 100%; }
+  .admin-header > div > .admin-header-nav { flex-basis: 100%; }
+  .admin-sidebar { flex-wrap: nowrap; gap: 0 18px; margin-inline: -24px; overflow-x: auto; padding-inline: 24px; scrollbar-width: none; }
+  .admin-sidebar::-webkit-scrollbar { display: none; }
+  .admin-sidebar .admin-label { display: none; }
+  .admin-sidebar button { flex: none; white-space: nowrap; }
+}
+
+/* Panel lists: search and filter fields look like fields, aligned with their button. */
+.admin-field { color: var(--ink); display: grid; font-size: 14px; font-weight: 650; gap: 6px; }
+.admin-field input, .admin-field select { background: #fff; border: 1px solid #ccd7e5; border-radius: 10px; color: var(--ink); font: 400 16px var(--sans); min-height: 46px; min-width: 0; padding: 10px 12px; width: 100%; }
+.admin-field input:focus-visible, .admin-field select:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+.admin-collection-controls form { align-items: end; }
+.admin-collection-controls form > .button { min-height: 46px; }
+.admin-collection-controls form:has(> label:only-of-type) { grid-template-columns: minmax(0, 1fr) auto; }
+@media (max-width: 760px) { .admin-collection-controls form:has(> label:only-of-type) { grid-template-columns: 1fr; } }
+
+/* Account settings keep the page margins on a phone. */
+.staff-settings { padding-inline: max(18px, calc((100vw - 1000px) / 2)); }
+@media (min-width: 1040px) { .staff-settings { padding-inline: 0; } }
+
+/* Secondary links in the access pages read as links. */
+.staff-form > a, .staff-access-card > a, .staff-access-card > section > a {
+  align-self: start; color: var(--blue); display: inline-block; font-weight: 650; margin-top: 4px; min-height: 44px; padding: 10px 0;
+  text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 4px;
+}
+.staff-form .staff-check { align-items: flex-start; }
+.staff-form .staff-check input { margin-top: 3px; }
+
+/* Commission workspace: the actions next to the title share one size and are easy to tap. */
+.workspace-header .workspace-actions a, .workspace-header .workspace-actions button { align-items: center; display: inline-flex; font-size: 14px; min-height: 44px; }
+.workspace-header-admin { align-items: end; }
+.workspace-header-admin h1 { margin-top: 6px; }
+.workspace-header-admin .text-link { font-size: 14px; }
+
+
+/* Enlaces form: the start button does not touch the consent text. */
+.enl-card .enl-check + .button { margin-top: 18px; }
+@media (max-width: 760px) {
+  .admin-shell > .admin-intro, .admin-shell .content-hero { padding-inline: 18px; }
+}
+.workspace-header-admin .text-link { display: inline-block; justify-self: start; width: auto; }
+/* Participa: the title sits beside the steps, not below them. */
+.participation-compact .registration-intro { align-items: center; }

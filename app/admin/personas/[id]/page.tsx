@@ -17,15 +17,20 @@ export default async function PersonPage({ params }: { params: Promise<{ id: str
   if (!actor) redirect('/admin/ingresar');
   if (actor.role !== 'admin') redirect('/admin');
   const { id } = await params;
-  const record = /^[A-Za-z0-9-]{1,80}$/.test(id) ? await personRecord(id) : null;
-  if (!record) notFound();
-  // Recheck the live session and role after the private reads, as the other panels do.
   const live = adminWriteGuard(actor, ['admin']);
-  if (!await getRuntimeEnv().DB!.prepare('SELECT 1 WHERE ' + live.sql).bind(...live.values).first()) redirect('/admin/ingresar');
+  const db = getRuntimeEnv().DB!;
+  // The record, the tag list and the live session check are read together.
+  const [record, stillLive, tagRows] = await Promise.all([
+    /^[A-Za-z0-9-]{1,80}$/.test(id) ? personRecord(id) : Promise.resolve(null),
+    db.prepare('SELECT 1 WHERE ' + live.sql).bind(...live.values).first(),
+    db.prepare('SELECT DISTINCT tag FROM person_tags ORDER BY tag LIMIT 200').all<{ tag: string }>(),
+  ]);
+  if (!stillLive) redirect('/admin/ingresar');
+  if (!record) notFound();
   const owner = isConfiguredOwner(record.account.email);
   const control = record.account.id === actor.accountId ? 'Es tu propia cuenta: no puedes suspenderla ni borrarla desde aquí.'
     : record.account.role && !isConfiguredOwner(actor.email) ? 'Esta cuenta tiene permisos del panel. Solo la cuenta propietaria puede suspenderla, cambiarla o borrarla.' : '';
-  const tags = (await getRuntimeEnv().DB!.prepare('SELECT DISTINCT tag FROM person_tags ORDER BY tag LIMIT 200').all<{ tag: string }>()).results.map(row => row.tag);
+  const tags = tagRows.results.map(row => row.tag);
   return <main className="admin-shell" id="main-content">
     <AdminHeader current="personas" email={actor.email} role={actor.role} accountId={actor.accountId} />
     <AdminSessionBoundary key={actor.accountId} accountId={actor.accountId}>

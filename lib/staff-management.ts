@@ -5,13 +5,13 @@ import { isConfiguredOwner } from './authz';
 import { cleanEmail, cleanText, noStoreJson } from './security';
 import { cleanUsername, hashPassword, passwordValid } from './staff-auth';
 
-type Account={password_hash:string|null;id:string;username:string|null;name:string;updated_at:number;credential_version:number;disabled_at:number|null};
+type Account={password_hash:string|null;id:string;username:string|null;name:string;updated_at:number;credential_version:number;disabled_at:number|null;email_verification_required?:number;email_verified_at?:number|null};
 type Role={role:string;version:number;revokedAt:number|null};
 const reply=(error:string,status=400)=>noStoreJson({error},{status});
 export async function manageStaffAccess(action:string,input:Record<string,unknown>,actorEmail:string,actorVersion:number,actor:StaffIdentity) {
   const db=getRuntimeEnv().DB!,email=cleanEmail(input.email);
   if(!email||isConfiguredOwner(email))return reply('La cuenta propietaria se administra desde su propio acceso.');
-  const account=await db.prepare('SELECT id,username,name,password_hash,updated_at,credential_version,disabled_at FROM staff_accounts WHERE email=?').bind(email).first<Account>();
+  const account=await db.prepare('SELECT id,username,name,password_hash,updated_at,credential_version,disabled_at,email_verification_required,email_verified_at FROM staff_accounts WHERE email=?').bind(email).first<Account>();
   const roleRow=await db.prepare('SELECT role,COALESCE(updated_at,created_at) AS version,revoked_at AS revokedAt FROM user_roles WHERE email=?').bind(email).first<Role>();
   const accountVersion=account?.updated_at??null,roleVersion=roleRow?.version??null;
   if(account||roleRow||Object.hasOwn(input,'expectedAccountUpdatedAt')||Object.hasOwn(input,'expectedRoleUpdatedAt')) {
@@ -58,5 +58,5 @@ export async function manageStaffAccess(action:string,input:Record<string,unknow
   statements.push(db.prepare(`DELETE FROM staff_sessions WHERE account_id IN (SELECT id FROM staff_accounts WHERE email=?) AND ${marker}`).bind(email,operation));
   const [result]=await db.batch(statements);
   if(!result.meta.changes)return reply('La cuenta cambió mientras guardabas. Actualiza la página antes de continuar.',409);
-  return noStoreJson({message:action==='revoke'?'Acceso revocado. Sus sesiones quedaron cerradas.':action==='create'?'Cuenta creada. Comparte el usuario y la contraseña de forma privada.':action==='reset'?'Contraseña restablecida. Las sesiones anteriores quedaron cerradas.':'Permisos actualizados. La persona deberá volver a entrar.'});
+  return noStoreJson({message:action==='revoke'?'Acceso revocado. Sus sesiones quedaron cerradas.':action==='create'?'Cuenta creada. Comparte el usuario y la contraseña de forma privada.':action==='reset'?(account&&account.email_verification_required&&!account.email_verified_at?'Contraseña restablecida. Esta cuenta aún no confirma su correo: podrá entrar cuando lo confirme.':'Contraseña restablecida. Las sesiones anteriores quedaron cerradas.'):'Permisos actualizados. La persona deberá volver a entrar.'});
 }

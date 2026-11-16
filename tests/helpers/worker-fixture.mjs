@@ -100,6 +100,7 @@ export async function createWorkerFixture(overrides = {}) {
     const login=await fixture.call('/api/admin/access/login','POST',{username:payload.username,password:payload.password},null);
     assert.equal(login.status,200,await login.clone().text());return login;
   };
+  fixture.env = env;
   fixture.close = () => { globalThis.fetch=priorFetch; db.close(); };
   fixture.scheduled = async scheduledTime => {
     const pending=[];

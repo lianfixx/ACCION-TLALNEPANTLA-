@@ -18,11 +18,14 @@ export default async function EnlacesRecordPage({ params }: { params: Promise<{ 
   if (!actor) redirect("/admin/ingresar");
   if (actor.role !== "admin") redirect("/admin");
   const live = adminWriteGuard(actor, ["admin"]);
-  if (!await getRuntimeEnv().DB!.prepare("SELECT 1 WHERE " + live.sql).bind(...live.values).first()) redirect("/admin/ingresar");
   const { id } = await params;
-  const record = /^[0-9a-f-]{36}$/.test(id) ? await enlacesRecord(id) : null;
+  const [stillLive, record, state] = await Promise.all([
+    getRuntimeEnv().DB!.prepare("SELECT 1 WHERE " + live.sql).bind(...live.values).first(),
+    /^[0-9a-f-]{36}$/.test(id) ? enlacesRecord(id) : Promise.resolve(null),
+    enlacesState(),
+  ]);
+  if (!stillLive) redirect("/admin/ingresar");
   if (!record) notFound();
-  const state = await enlacesState();
   return <main className="admin-shell" id="main-content">
     <AdminHeader current="enlaces" email={actor.email} role={actor.role} accountId={actor.accountId} />
     <AdminSessionBoundary key={actor.accountId} accountId={actor.accountId}>

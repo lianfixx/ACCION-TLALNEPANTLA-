@@ -24,12 +24,17 @@ export default async function EnlacesAdminPage({ searchParams }: { searchParams:
   if (!actor) redirect("/admin/ingresar");
   if (actor.role !== "admin") redirect("/admin");
   const live = adminWriteGuard(actor, ["admin"]);
-  if (!await getRuntimeEnv().DB!.prepare("SELECT 1 WHERE " + live.sql).bind(...live.values).first()) redirect("/admin/ingresar");
   const filters = parseEnlacesFilters(params);
   const requestedPage = typeof params.page === "string" && /^\d{1,6}$/.test(params.page) ? Number(params.page) : 1;
-  const state = await enlacesState();
   let result: { rows: EnlacesListRow[]; total: number; page: number; pages: number } = { rows: [], total: 0, page: 1, pages: 1 }, counts: Partial<Record<EnlacesStatus, number>> = {}, communities: string[] = [], unavailable = false;
-  try { [result, counts, communities] = await Promise.all([listEnlaces(filters, requestedPage), enlacesCounts(), enlacesCommunities()]); } catch { unavailable = true; }
+  // Everything the page needs, together with the session check, in parallel.
+  const [stillLive, state, loaded] = await Promise.all([
+    getRuntimeEnv().DB!.prepare("SELECT 1 WHERE " + live.sql).bind(...live.values).first(),
+    enlacesState(),
+    Promise.all([listEnlaces(filters, requestedPage), enlacesCounts(), enlacesCommunities()]).catch(() => null),
+  ]);
+  if (!stillLive) redirect("/admin/ingresar");
+  if (loaded) [result, counts, communities] = loaded; else unavailable = true;
   const filtered = Object.values(filters).some(Boolean);
   const received = listedStatuses.filter(status => status !== "withdrawn").reduce((sum, status) => sum + (counts[status] ?? 0), 0);
   const undecided = (counts.submitted ?? 0) + (counts.in_review ?? 0) + (counts.interview ?? 0);

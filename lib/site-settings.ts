@@ -1,3 +1,4 @@
+import { perRequest } from "./request-memo";
 import { getRuntimeEnv, type SiteRuntimeEnv } from "./runtime-env";
 import { cleanEmail, cleanText } from "./security";
 
@@ -39,7 +40,8 @@ export async function readSettingsRecord(): Promise<SettingsRecord> {
   const env = getRuntimeEnv();
   const values = Object.fromEntries(editableSettingKeys.map(key => [key, String(env[key] ?? membershipSettingDefaults[key as keyof typeof membershipSettingDefaults] ?? "")])) as EditableSettings;
   if (!env.DB) return { values, updatedAt: 0 };
-  const row = await env.DB.prepare("SELECT values_json, updated_at FROM site_settings WHERE id = 'public'").first<{ values_json: string; updated_at: number }>();
+  const db = env.DB;
+  const row = await perRequest("site_settings", () => db.prepare("SELECT values_json, updated_at FROM site_settings WHERE id = 'public'").first<{ values_json: string; updated_at: number }>());
   return row ? { values: parseSettings(JSON.parse(row.values_json)), updatedAt: row.updated_at } : { values, updatedAt: 0 };
 }
 

@@ -3,7 +3,7 @@ import { useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { useAdminFetch } from "../AdminSessionBoundary";
 import { contentBlocks, type BlockDef, type FieldSpec, type GroupSpec, type ListSpec, type NumberSpec, type RecordSpec, type TextSpec } from "@/lib/site-content-defaults";
-import { siteDocumentHref, siteDocumentList, staticDocumentHref, SITE_DOCUMENT_MAX_BYTES, type SiteDocumentRow, type SiteDocumentSlug } from "@/lib/site-documents";
+import { enlacesGatedDocument, siteDocumentHref, siteDocumentList, staticDocumentHref, SITE_DOCUMENT_MAX_BYTES, type SiteDocumentRow, type SiteDocumentSlug } from "@/lib/site-documents";
 
 export type ContentRecord = { key: string; value: Record<string, unknown>; updatedAt: number; updatedBy: string; custom: boolean };
 export type Tab = "comisiones" | "portada" | "documentos";
@@ -225,7 +225,7 @@ function DocumentRow({ slug, label, record, disabled }: { slug: SiteDocumentSlug
       </fieldset>
       <div className="record-actions content-block-actions">
         <button className="button button-primary" disabled={busy || disabled || !file}>{busy ? "Subiendo…" : "Subir versión nueva"}</button>
-        <button type="button" className="button button-secondary" disabled={busy || disabled || !doc} onClick={() => void reset()}>Volver al original</button>
+        {slug !== enlacesGatedDocument && <button type="button" className="button button-secondary" disabled={busy || disabled || !doc} onClick={() => void reset()}>Volver al original</button>}
       </div>
       <p role="status" aria-live="polite" className="content-block-message">{message}</p>
     </form>

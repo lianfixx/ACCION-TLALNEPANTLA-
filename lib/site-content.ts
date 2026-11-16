@@ -1,4 +1,5 @@
 import { getRuntimeEnv } from "./runtime-env";
+import { perRequest } from "./request-memo";
 import type { CommissionId } from "./commissions";
 import { commissionIds, contentBlocks, contentDefaults, parseContentBlock, processStepKeys, type CommissionContent, type ProcessStep, type ProcessStepKey } from "./site-content-defaults";
 
@@ -13,7 +14,7 @@ export async function readContentRecords(): Promise<Record<string, ContentRecord
   const db = getRuntimeEnv().DB;
   if (!db) return records;
   let rows: Row[] = [];
-  try { rows = (await db.prepare("SELECT key, value_json, updated_at, updated_by FROM site_content").all<Row>()).results ?? []; }
+  try { rows = (await perRequest("site_content", () => db.prepare("SELECT key, value_json, updated_at, updated_by FROM site_content").all<Row>())).results ?? []; }
   catch { return records; }
   for (const row of rows) {
     const record = records[row.key];

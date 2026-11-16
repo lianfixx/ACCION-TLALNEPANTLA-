@@ -97,7 +97,9 @@ export async function personAction(actor: Actor, id: string, input: Input) {
     const audit = auditFirst(actor, 'person.confirmation_resent', id, {}, now);
     const [recorded] = await db.batch([audit.statement]);
     if (!recorded.meta.changes) return fail('Tu acceso cambió. Vuelve a entrar.', 403);
-    try { await sendRegistrationConfirmation(id, '/participacion#registro'); }
+    // Keep where the person was going when the account was created (for example, Enlaces APJ).
+    const previous = await db.prepare('SELECT return_to AS returnTo FROM staff_email_verifications WHERE account_id=?').bind(id).first<{ returnTo: string }>();
+    try { await sendRegistrationConfirmation(id, previous?.returnTo || '/participacion#registro'); }
     catch (error) {
       if (!(error instanceof RegistrationServiceError)) throw error;
       await db.prepare("UPDATE audit_logs SET action='person.confirmation_failed' WHERE id=?").bind(audit.id).run();

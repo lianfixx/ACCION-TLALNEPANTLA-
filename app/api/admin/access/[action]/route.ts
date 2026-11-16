@@ -9,12 +9,13 @@ import { cleanEmail, jsonBodyErrorResponse, noStoreJson, readJsonBody, requestHa
 import { consumeRateLimit, requestNetworkIdentity } from '@/lib/rate-limit';
 import { cleanUsername, getStaffIdentity, createStaffSession, hashPassword, passwordValid, secretHash, sessionToken, setSessionCookie, verifyPassword, StaffCapacityError } from '@/lib/staff-auth';
 
-type Account = { id:string;email:string;username:string|null;name:string;password_hash:string|null;credential_version:number;disabled_at:number|null;updated_at:number;activation_hash:string|null;activation_expires_at:number|null;email_verification_required:number;email_verified_at:number|null };
+type Account = { id:string;email:string;username:string|null;name:string;password_hash:string|null;credential_version:number;disabled_at:number|null;updated_at:number;activation_hash:string|null;activation_expires_at:number|null;email_verification_required:number;email_verified_at:number|null;self_registered?:number };
 type Context={params:Promise<{action:string}>};
 const reply=(error:string,status=400)=>noStoreJson({error},{status});
 const denied=()=>reply('No tienes acceso a esta función.',403);
-async function landing(email:string) {
-  const role=isConfiguredOwner(email)||await getRuntimeEnv().DB!.prepare('SELECT 1 FROM user_roles WHERE email=? AND revoked_at IS NULL').bind(email).first();
+/** Same rule as the panel: a self-registered account never becomes the owner by its email alone. */
+async function landing(email:string,selfRegistered=false) {
+  const role=(isConfiguredOwner(email)&&!selfRegistered)||await getRuntimeEnv().DB!.prepare('SELECT 1 FROM user_roles WHERE email=? AND revoked_at IS NULL').bind(email).first();
   return role?'/admin':'/mi-comision';
 }
 export async function POST(request:Request,{params}:Context) {
@@ -49,7 +50,7 @@ export async function POST(request:Request,{params}:Context) {
         stage='login-session';
         const token=await createStaffSession(account.id,account.credential_version);
         await audit(account.email,'staff.login',account.id);
-        return setSessionCookie(noStoreJson({redirect:safeReturnTo(input.returnTo)||await landing(account.email)}),token);
+        return setSessionCookie(noStoreJson({redirect:safeReturnTo(input.returnTo)||await landing(account.email,Boolean(account.self_registered))}),token);
       }
       if(typeof input.token!=='string'||!/^[a-f0-9]{64}$/.test(input.token))return reply('Falta el código de activación. Vuelve a abrir el enlace privado completo.');
       if(!cleanUsername(input.username))return reply('Elige un usuario de 3 a 40 letras, números, puntos o guiones.');

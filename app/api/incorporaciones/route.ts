@@ -15,9 +15,10 @@ export async function GET(request:Request) {
   if (!user || !email) return membershipJson({error:"Inicia sesión para consultar tus solicitudes."},{status:401});
   if(!matchesExpectedAccount(request,user.accountId))return membershipJson({error:"La sesión corresponde a otra cuenta. Vuelve a entrar con la cuenta de este formulario."},{status:412});
   try {
-    const result = await getRuntimeEnv().DB!.prepare(`SELECT ${membershipColumns} FROM membership_applications WHERE owner_email=? AND retention_until>? ORDER BY created_at DESC,id DESC LIMIT 25`).bind(email,Date.now()).all<MembershipApplication>();
+    const [result, config] = await Promise.all([getRuntimeEnv().DB!.prepare(`SELECT ${membershipColumns},notice_snapshot AS noticeSnapshot FROM membership_applications WHERE owner_email=? AND retention_until>? ORDER BY created_at DESC,id DESC LIMIT 25`).bind(email,Date.now()).all<MembershipApplication & { noticeSnapshot: string }>(), membershipConfiguration()]);
     if (!await membershipReadIsCurrent(user, result.results.map(application => application.id))) return membershipJson({error:"Tu sesión o el acceso a las solicitudes cambió. Vuelve a entrar para consultarlas."},{status:403});
-    return membershipJson({ applications:result.results });
+    // A correction is accepted only under the very notice the person consented to, not just the same version label.
+    return membershipJson({ applications:result.results.map(({ noticeSnapshot, ...application }) => ({ ...application, noticeCurrent: noticeSnapshot === config.snapshot })) });
   } catch { return membershipJson({error:"No pudimos consultar el registro. Intenta de nuevo."},{status:503}); }
 }
 

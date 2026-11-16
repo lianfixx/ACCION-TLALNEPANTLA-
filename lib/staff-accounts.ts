@@ -19,8 +19,11 @@ export async function listStaffAccounts(q: string, requestedPage: number) {
   const term=`%${q.replace(/[\\%_]/g,x=>`\\${x}`)}%`;
   const where=` WHERE (e.email LIKE ? ESCAPE '\\' OR a.name LIKE ? ESCAPE '\\' OR a.username LIKE ? ESCAPE '\\')${ownerEmails.length?` AND e.email NOT IN (${ownerEmails.map(()=>'?').join(',')})`:''}`;
   const args=[term,term,term,...ownerEmails];
-  const total=Number((await db.prepare(`SELECT count(*) AS n FROM (${base}${where})`).bind(...args).first<{n:number}>())?.n??0);
-  const pages=Math.max(1,Math.ceil(total/25)),page=Math.min(Math.max(1,requestedPage),pages);
-  const accounts=(await db.prepare(`${base}${where} ORDER BY e.email LIMIT 25 OFFSET ?`).bind(...args,(page-1)*25).all<StaffAccountView>()).results;
+  const wanted=Math.max(1,requestedPage),list=(page:number)=>db.prepare(`${base}${where} ORDER BY e.email LIMIT 25 OFFSET ?`).bind(...args,(page-1)*25);
+  // Count and page in one round trip; a page past the end is asked again.
+  const [counted,listed]=await db.batch<Record<string,unknown>>([db.prepare(`SELECT count(*) AS n FROM (${base}${where})`).bind(...args),list(wanted)]);
+  const total=Number(counted.results?.[0]?.n??0);
+  const pages=Math.max(1,Math.ceil(total/25)),page=Math.min(wanted,pages);
+  const accounts=((page===wanted?listed:await list(page).all<StaffAccountView>()).results as unknown as StaffAccountView[]);
   return {accounts,total,pages,page};
 }

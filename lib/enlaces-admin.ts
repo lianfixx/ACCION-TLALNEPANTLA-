@@ -35,11 +35,13 @@ function query(filters: EnlacesFilters) {
 }
 
 export async function listEnlaces(filters: EnlacesFilters, requestedPage: number) {
-  const db = getRuntimeEnv().DB!, q = query(filters);
-  const total = Number((await db.prepare(`SELECT count(*) AS n FROM (${q.sql})`).bind(...q.values).first<{ n: number }>())?.n ?? 0);
-  const pages = Math.max(1, Math.ceil(total / 30)), page = Math.min(Math.max(1, requestedPage), pages);
+  const db = getRuntimeEnv().DB!, q = query(filters), wanted = Math.max(1, requestedPage);
   // Highest score first within each place, so the ranking of the convocatoria is visible at a glance.
-  const rows = (await db.prepare(`${q.sql} ORDER BY e.track,e.commission,e.community_name COLLATE NOCASE,s.total DESC,e.submitted_at LIMIT 30 OFFSET ?`).bind(...q.values, (page - 1) * 30).all<Raw>()).results.map(readEnlacesRow) as EnlacesListRow[];
+  const list = (page: number) => db.prepare(`${q.sql} ORDER BY e.track,e.commission,e.community_name COLLATE NOCASE,s.total DESC,e.submitted_at LIMIT 30 OFFSET ?`).bind(...q.values, (page - 1) * 30);
+  const [counted, listed] = await db.batch<Record<string, unknown>>([db.prepare(`SELECT count(*) AS n FROM (${q.sql})`).bind(...q.values), list(wanted)]);
+  const total = Number(counted.results?.[0]?.n ?? 0);
+  const pages = Math.max(1, Math.ceil(total / 30)), page = Math.min(wanted, pages);
+  const rows = ((page === wanted ? listed : await list(page).all<Raw>()).results as Raw[]).map(readEnlacesRow) as EnlacesListRow[];
   return { rows, total, page, pages };
 }
 export async function allEnlaces(filters: EnlacesFilters, limit: number) {

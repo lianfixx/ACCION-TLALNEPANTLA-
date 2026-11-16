@@ -1,5 +1,6 @@
 import { membershipConfiguration } from "./membership";
 import { getRuntimeEnv } from "./runtime-env";
+import { perRequest } from "./request-memo";
 import { enlacesConsent, enlacesCycle, enlacesNoticeVersion, enlacesPublishConsent, type EnlacesApplication, type EnlacesPhase } from "./enlaces-shared";
 
 /**
@@ -38,7 +39,7 @@ export async function enlacesResultsPublishedAt() {
   const db = getRuntimeEnv().DB;
   if (!db) return null;
   try {
-    const row = await db.prepare("SELECT value_json FROM site_content WHERE key=?").bind(resultsKey).first<{ value_json: string }>();
+    const row = await perRequest("enlaces_results", () => db.prepare("SELECT value_json FROM site_content WHERE key=?").bind(resultsKey).first<{ value_json: string }>());
     const value = row ? Number(JSON.parse(row.value_json).publishedAt) : NaN;
     return Number.isFinite(value) && value > 0 ? value : null;
   } catch { return null; }

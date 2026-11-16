@@ -34,7 +34,7 @@ test('admin finds records beyond 100 and reports global counts independently of 
  const insert=f.db.prepare('INSERT INTO posts (id,slug,title,excerpt,body,status,author_email,created_at,updated_at,published_at) VALUES (?,?,?,?,?,?,?,?,?,?)');
  for(let i=0;i<107;i++)insert.run(`post-${String(i).padStart(3,'0')}`,`post-${i}`,`Registro_${i}`,'Resumen de prueba para comprobar la búsqueda','Contenido de prueba','published','owner@example.test',1,1,1);
  const fifth=visibleHTML(await(await f.call('/admin?section=publicaciones&page=5')).text());assert.match(fifth,/109 registros/);assert.match(fifth,/página 5 de 5/);assert.match(fifth,/Registro_0/);
- const filtered=visibleHTML(await(await f.call('/admin?section=publicaciones&q=Registro_106')).text());assert.match(filtered,/1 registros/);assert.match(filtered,/Registro_106/);assert.doesNotMatch(filtered,/Registro_105/);
+ const filtered=visibleHTML(await(await f.call('/admin?section=publicaciones&q=Registro_106')).text());assert.match(filtered,/1 registro ·/);assert.match(filtered,/Registro_106/);assert.doesNotMatch(filtered,/Registro_105/);
  const summary=await(await f.call('/admin')).text();assert.match(summary,/>109<\/strong>/);
  const literal=visibleHTML(await(await f.call('/admin?section=publicaciones&q=%25')).text());assert.match(literal,/0 registros/);
  const existing=f.db.prepare("SELECT count(*) n FROM posts").get().n;assert.equal(existing,107);

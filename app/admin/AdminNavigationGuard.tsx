@@ -1,5 +1,6 @@
 'use client';
 import { useEffect } from 'react';
+import { usePathname, useSearchParams } from 'next/navigation';
 
 const hasDraft=()=>Boolean(document.querySelector('form[data-dirty="true"]'));
 let skipUnload=false;
@@ -8,7 +9,17 @@ export function confirmAdminExit() {
   return !hasDraft()||window.confirm('Hay cambios sin guardar. ¿Quieres salir de este borrador?');
 }
 
+/** A thin bar and a dimmed page while the next section loads, so a click never looks ignored. */
+function startLoading(){
+  document.documentElement.dataset.adminLoading='true';
+  window.clearTimeout(loadingTimer);loadingTimer=window.setTimeout(stopLoading,15000);
+}
+function stopLoading(){window.clearTimeout(loadingTimer);delete document.documentElement.dataset.adminLoading;}
+let loadingTimer=0;
+
 export default function AdminNavigationGuard() {
+  const pathname=usePathname(),search=useSearchParams()?.toString();
+  useEffect(()=>{stopLoading();},[pathname,search]);
   useEffect(()=>{
     function click(event:MouseEvent) {
       if(event.defaultPrevented||event.button!==0||event.metaKey||event.ctrlKey||event.shiftKey||event.altKey)return;
@@ -17,19 +28,20 @@ export default function AdminNavigationGuard() {
       const target=new URL(link.href,location.href),current=new URL(location.href);
       if(!['http:','https:'].includes(target.protocol)||target.origin===current.origin&&target.pathname===current.pathname&&target.search===current.search)return;
       if(!confirmAdminExit()){event.preventDefault();event.stopPropagation();}
-      else {skipUnload=true;setTimeout(()=>{skipUnload=false;},1000);}
+      else {skipUnload=true;setTimeout(()=>{skipUnload=false;},1000);if(target.origin===current.origin&&!/^\/(?:api|archivos|documentos)\//.test(target.pathname))startLoading();}
     }
     function submit(event:Event) {
       const form=event.target as HTMLFormElement;
       if(form.getAttribute('method')?.toLowerCase()!=='get')return;
       if(!confirmAdminExit()){event.preventDefault();event.stopPropagation();}
-      else {skipUnload=true;setTimeout(()=>{skipUnload=false;},1000);}
+      else {skipUnload=true;setTimeout(()=>{skipUnload=false;},1000);startLoading();}
     }
+    window.addEventListener('pageshow',stopLoading);
     function unload(event:BeforeUnloadEvent){if(!skipUnload&&hasDraft()){event.preventDefault();event.returnValue='';}}
     const navigation=(window as unknown as {navigation?:EventTarget}).navigation;
     function traverse(event:Event){if((event as Event&{navigationType?:string}).navigationType==='traverse'&&event.cancelable&&!confirmAdminExit())event.preventDefault();}
     document.addEventListener('click',click,true);document.addEventListener('submit',submit,true);window.addEventListener('beforeunload',unload);navigation?.addEventListener('navigate',traverse);
-    return()=>{document.removeEventListener('click',click,true);document.removeEventListener('submit',submit,true);window.removeEventListener('beforeunload',unload);navigation?.removeEventListener('navigate',traverse);skipUnload=false;};
+    return()=>{document.removeEventListener('click',click,true);document.removeEventListener('submit',submit,true);window.removeEventListener('beforeunload',unload);navigation?.removeEventListener('navigate',traverse);window.removeEventListener('pageshow',stopLoading);stopLoading();skipUnload=false;};
   },[]);
   return null;
 }

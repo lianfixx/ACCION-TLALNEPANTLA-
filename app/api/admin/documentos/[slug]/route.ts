@@ -2,7 +2,7 @@ import { adminWriteGuard } from "@/lib/admin-write-guard";
 import { canHandleRequests, currentAuthorizedUser } from "@/lib/authz";
 import { getRuntimeEnv } from "@/lib/runtime-env";
 import { cleanText, jsonBodyErrorResponse, matchesExpectedAccount, noStoreJson, readBodyBytes, readJsonBody, requestHasJsonContentType, requestIsSameOrigin } from "@/lib/security";
-import { isSiteDocumentSlug, SITE_DOCUMENT_MAX_BYTES, type SiteDocumentRow } from "@/lib/site-documents";
+import { enlacesGatedDocument, isSiteDocumentSlug, SITE_DOCUMENT_MAX_BYTES, type SiteDocumentRow } from "@/lib/site-documents";
 
 type Context = { params: Promise<{ slug: string }> };
 const changedElsewhere = "Este documento cambió mientras lo revisabas. Actualiza la página antes de continuar.";
@@ -81,6 +81,8 @@ export async function DELETE(request: Request, context: Context) {
   if (!requestHasJsonContentType(request)) return noStoreJson({ error: "Tipo de contenido no permitido." }, { status: 415 });
   const slug = (await context.params).slug;
   if (!isSiteDocumentSlug(slug)) return noStoreJson({ error: "Ese documento no existe." }, { status: 404 });
+  // The Enlaces convocatoria has no static original: removing it would leave the link without a file.
+  if (slug === enlacesGatedDocument) return noStoreJson({ error: "La convocatoria de Enlaces no tiene una versión original en el sitio. Para cambiarla, sube el PDF nuevo." }, { status: 409 });
   let payload: { expectedUploadedAt?: unknown };
   try { payload = await readJsonBody(request, 2_000); }
   catch (error) { return jsonBodyErrorResponse(error); }

@@ -1,6 +1,7 @@
 import { headers } from 'next/headers';
 import { scryptAsync } from '@noble/hashes/scrypt.js';
 import { getRuntimeEnv } from './runtime-env';
+import { perRequest } from "./request-memo";
 
 export const staffCookie = '__Host-apjt_session';
 export const sessionLifetime = 8 * 60 * 60 * 1000;
@@ -51,7 +52,12 @@ export function cleanUsername(value: unknown) {
 }
 export type StaffIdentity = { selfRegistered?: boolean; username: string | null; accountId: string; email: string; displayName: string; credentialVersion: number; sessionHash: string; authMethod: 'password'; fullName: string };
 
-export async function getStaffIdentity(): Promise<StaffIdentity | null> {
+/** The signed-in account. Read once per page view, however many parts of the page ask. */
+export function getStaffIdentity(): Promise<StaffIdentity | null> {
+  return perRequest("staff_identity", readStaffIdentity);
+}
+
+async function readStaffIdentity(): Promise<StaffIdentity | null> {
   const token = sessionToken((await headers()).get('cookie'));
   if (!token) return null;
   const db = getRuntimeEnv().DB; if (!db) return null;

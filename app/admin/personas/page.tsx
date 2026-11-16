@@ -27,12 +27,15 @@ export default async function PeoplePage({ searchParams }: { searchParams: Promi
   const filters = parsePeopleFilters(params);
   const requestedPage = typeof params.page === 'string' && /^\d{1,7}$/.test(params.page) ? Number(params.page) : 1;
   let result: { rows: PersonRow[]; total: number; page: number; pages: number } = { rows: [], total: 0, page: 1, pages: 1 }, tags: string[] = [], unavailable = false;
-  try {
-    result = await listPeople(filters, requestedPage);
-    tags = (await getRuntimeEnv().DB!.prepare('SELECT DISTINCT tag FROM person_tags ORDER BY tag LIMIT 200').all<{ tag: string }>()).results.map(row => row.tag);
-  } catch { unavailable = true; }
   const live = adminWriteGuard(actor, ['admin']);
-  if (!await getRuntimeEnv().DB!.prepare('SELECT 1 WHERE ' + live.sql).bind(...live.values).first()) redirect('/admin/ingresar');
+  const db = getRuntimeEnv().DB!;
+  // The list, the tags and the session check go out together.
+  const [loaded, stillLive] = await Promise.all([
+    Promise.all([listPeople(filters, requestedPage), db.prepare('SELECT DISTINCT tag FROM person_tags ORDER BY tag LIMIT 200').all<{ tag: string }>()]).catch(() => null),
+    db.prepare('SELECT 1 WHERE ' + live.sql).bind(...live.values).first(),
+  ]);
+  if (!stillLive) redirect('/admin/ingresar');
+  if (loaded) { result = loaded[0]; tags = loaded[1].results.map(row => row.tag); } else unavailable = true;
   const filtered = Object.values(filters).some(Boolean);
   const pageLink = (page: number) => `/admin/personas?${peopleSearchParams(filters, page)}`;
 

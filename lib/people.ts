@@ -65,9 +65,13 @@ const readRow = ({ tagsJson, ...row }: RawRow): PersonRow => {
 
 export async function listPeople(filters: PeopleFilters, requestedPage: number) {
   const db = getRuntimeEnv().DB!, query = peopleQuery(filters);
-  const total = Number((await db.prepare(`SELECT count(*) AS n FROM (${query.sql})`).bind(...query.values).first<{ n: number }>())?.n ?? 0);
-  const pages = Math.max(1, Math.ceil(total / peoplePageSize)), page = Math.min(Math.max(1, requestedPage), pages);
-  const rows = (await db.prepare(`${query.sql} ORDER BY p.createdAt DESC,p.id DESC LIMIT ? OFFSET ?`).bind(...query.values, peoplePageSize, (page - 1) * peoplePageSize).all<RawRow>()).results.map(readRow);
+  const list = (page: number) => db.prepare(`${query.sql} ORDER BY p.createdAt DESC,p.id DESC LIMIT ? OFFSET ?`).bind(...query.values, peoplePageSize, (page - 1) * peoplePageSize);
+  const wanted = Math.max(1, requestedPage);
+  // One round trip for the count and the page; a page past the end is asked again.
+  const [counted, listed] = await db.batch<Record<string, unknown>>([db.prepare(`SELECT count(*) AS n FROM (${query.sql})`).bind(...query.values), list(wanted)]);
+  const total = Number(counted.results?.[0]?.n ?? 0);
+  const pages = Math.max(1, Math.ceil(total / peoplePageSize)), page = Math.min(wanted, pages);
+  const rows = ((page === wanted ? listed : await list(page).all<RawRow>()).results as RawRow[]).map(readRow);
   return { rows, total, page, pages };
 }
 
@@ -118,29 +122,36 @@ export async function personRecord(id: string) {
   const db = getRuntimeEnv().DB!, now = Date.now();
   const account = await personAccount(id);
   if (!account) return null;
-  const application = await db.prepare(`SELECT ${membershipColumns} FROM membership_applications WHERE owner_email=? AND retention_until>? ORDER BY created_at DESC,id DESC LIMIT 1`).bind(account.email, now).first<MembershipApplication>();
-  const history: { events: MembershipEvent[]; pagination: { total: number; pages: number; page: number } } = application ? await membershipHistory(application.id, true, 1) : { events: [], pagination: { total: 0, pages: 1, page: 1 } };
   const count = reviewedIdentityCount('?', now);
-  const documents = Number((await db.prepare('SELECT ' + count.sql + ' AS n').bind(id, ...count.values).first<{ n: number }>())?.n ?? 0);
-  const latest = (await db.prepare("SELECT category,status FROM commission_documents WHERE owner_id=? AND item_id IS NULL AND category IN ('ine_front','ine_back','address') AND status IN ('received','checked','changes') AND retention_until>? ORDER BY created_at DESC,id DESC").bind(id, now).all<{ category: string; status: string }>()).results;
-  const identity = (['ine_front', 'ine_back', 'address'] as const).map(category => ({ category, status: latest.find(row => row.category === category)?.status ?? 'missing' }));
-  const members = (await db.prepare('SELECT id,commission,role,active,updated_at AS updatedAt FROM commission_members WHERE account_id=? ORDER BY commission').bind(id).all<{ id: string; commission: string; role: string; active: number; updatedAt: number }>()).results;
-  const affiliationRow = await db.prepare(`SELECT f.*,a.name,a.username,vd.name AS verified_document_name,vd.id AS current_document_id,
+  // The record is read in parallel: the page waits for the slowest query, not for all of them in a row.
+  const [application, documentsRow, latestRows, memberRows, affiliationRow, noteRows, tagRows, emailRows, auditRows, impact] = await Promise.all([
+    db.prepare(`SELECT ${membershipColumns} FROM membership_applications WHERE owner_email=? AND retention_until>? ORDER BY created_at DESC,id DESC LIMIT 1`).bind(account.email, now).first<MembershipApplication>(),
+    db.prepare('SELECT ' + count.sql + ' AS n').bind(id, ...count.values).first<{ n: number }>(),
+    db.prepare("SELECT category,status FROM commission_documents WHERE owner_id=? AND item_id IS NULL AND category IN ('ine_front','ine_back','address') AND status IN ('received','checked','changes') AND retention_until>? ORDER BY created_at DESC,id DESC").bind(id, now).all<{ category: string; status: string }>(),
+    db.prepare('SELECT id,commission,role,active,updated_at AS updatedAt FROM commission_members WHERE account_id=? ORDER BY commission').bind(id).all<{ id: string; commission: string; role: string; active: number; updatedAt: number }>(),
+    db.prepare(`SELECT f.*,a.name,a.username,vd.name AS verified_document_name,vd.id AS current_document_id,
     (SELECT count(*) FROM commission_documents d WHERE d.owner_id=f.account_id AND d.category IN ('affiliation','affiliation_receipt') AND d.status IN ('received','checked','changes') AND d.retention_until>?) AS document_count
     FROM commission_affiliations f JOIN staff_accounts a ON a.id=f.account_id
     LEFT JOIN commission_documents vd ON vd.id=f.verified_document_id AND vd.owner_id=f.account_id AND vd.category='affiliation' AND vd.status IN ('received','checked') AND vd.retention_until>?
-    WHERE f.account_id=? AND f.retention_until>?`).bind(now, now, id, now).first<PersonAffiliation & { current_document_id: string | null }>();
+    WHERE f.account_id=? AND f.retention_until>?`).bind(now, now, id, now).first<PersonAffiliation & { current_document_id: string | null }>(),
+    db.prepare('SELECT id,body,author_email AS authorEmail,created_at AS createdAt FROM person_notes WHERE account_id=? ORDER BY created_at DESC,id DESC LIMIT 100').bind(id).all<{ id: string; body: string; authorEmail: string; createdAt: number }>(),
+    db.prepare('SELECT tag FROM person_tags WHERE account_id=? ORDER BY tag').bind(id).all<{ tag: string }>(),
+    db.prepare('SELECT id,batch_id AS batchId,subject,status,sent_by AS sentBy,created_at AS createdAt FROM outbound_emails WHERE account_id=? ORDER BY created_at DESC,id DESC LIMIT 50').bind(id).all<{ id: string; batchId: string; subject: string; status: string; sentBy: string; createdAt: number }>(),
+    db.prepare(`SELECT id,actor_email AS actorEmail,action,entity_type AS entityType,created_at AS createdAt FROM audit_logs
+    WHERE entity_id=? OR entity_id IN (SELECT d.id FROM commission_documents d WHERE d.owner_id=?) OR entity_id IN (SELECT ma.id FROM membership_applications ma WHERE ma.owner_email=?) OR actor_email=?
+    ORDER BY created_at DESC,id DESC LIMIT 60`).bind(id, id, account.email, account.email).all<{ id: string; actorEmail: string; action: string; entityType: string; createdAt: number }>(),
+    deletionImpact(id, account.email),
+  ]);
+  const history: { events: MembershipEvent[]; pagination: { total: number; pages: number; page: number } } = application ? await membershipHistory(application.id, true, 1) : { events: [], pagination: { total: 0, pages: 1, page: 1 } };
+  const documents = Number(documentsRow?.n ?? 0);
+  const latest = latestRows.results;
+  const identity = (['ine_front', 'ine_back', 'address'] as const).map(category => ({ category, status: latest.find(row => row.category === category)?.status ?? 'missing' }));
+  const members = memberRows.results;
   // Same rule as the commission workspace: a confirmation without its current document is no longer valid.
   const affiliation = affiliationRow && affiliationRow.status === 'confirmed' && !affiliationRow.current_document_id
     ? { ...affiliationRow, status: 'changes', note: 'El comprobante ya no está disponible. Adjunta uno vigente para una nueva revisión.', verified_at: null, verified_document_id: null, verification_source: '' }
     : affiliationRow;
-  const notes = (await db.prepare('SELECT id,body,author_email AS authorEmail,created_at AS createdAt FROM person_notes WHERE account_id=? ORDER BY created_at DESC,id DESC LIMIT 100').bind(id).all<{ id: string; body: string; authorEmail: string; createdAt: number }>()).results;
-  const tags = (await db.prepare('SELECT tag FROM person_tags WHERE account_id=? ORDER BY tag').bind(id).all<{ tag: string }>()).results.map(row => row.tag);
-  const emails = (await db.prepare('SELECT id,batch_id AS batchId,subject,status,sent_by AS sentBy,created_at AS createdAt FROM outbound_emails WHERE account_id=? ORDER BY created_at DESC,id DESC LIMIT 50').bind(id).all<{ id: string; batchId: string; subject: string; status: string; sentBy: string; createdAt: number }>()).results;
-  const audit = (await db.prepare(`SELECT id,actor_email AS actorEmail,action,entity_type AS entityType,created_at AS createdAt FROM audit_logs
-    WHERE entity_id=? OR entity_id IN (SELECT d.id FROM commission_documents d WHERE d.owner_id=?) OR entity_id IN (SELECT ma.id FROM membership_applications ma WHERE ma.owner_email=?) OR actor_email=?
-    ORDER BY created_at DESC,id DESC LIMIT 60`).bind(id, id, account.email, account.email).all<{ id: string; actorEmail: string; action: string; entityType: string; createdAt: number }>()).results;
-  const impact = await deletionImpact(id, account.email);
+  const notes = noteRows.results, tags = tagRows.results.map(row => row.tag), emails = emailRows.results, audit = auditRows.results;
   return { account, application, history: history.events, documents, identity, members, affiliation, notes, tags, emails, audit, impact };
 }
 

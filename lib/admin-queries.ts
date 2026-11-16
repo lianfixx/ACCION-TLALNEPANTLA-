@@ -39,23 +39,39 @@ export async function adminCollection(query: AdminQuery, allowed: boolean) {
   if (query.q) { clauses.push(`(${s.search.map(column => `${column} LIKE ? ESCAPE '\\'`).join(" OR ")})`); const term = `%${query.q.replace(/[\\%_]/g, "\\$&")}%`; args.push(...s.search.map(() => term)); }
   if (s.filters.some(([value]) => value === query.state)) { clauses.push(`${s.status} = ?`); args.push(query.state); }
   const where = clauses.length ? ` WHERE ${clauses.join(" AND ")}` : "";
-  const total = (await db.prepare(`SELECT count(*) AS total FROM ${table}${where}`).bind(...args).first<{total:number}>())?.total ?? 0;
+  const list = (page: number) => db.prepare(`SELECT ${s.columns} FROM ${table}${where} ORDER BY ${s.order} LIMIT 25 OFFSET ?`).bind(...args,(page-1)*25);
+  // The count and the requested page travel together. A page past the end is asked again, which is rare.
+  const [counted, listed] = await db.batch<Record<string, unknown>>([db.prepare(`SELECT count(*) AS total FROM ${table}${where}`).bind(...args), list(query.page)]);
+  const total = Number(counted.results?.[0]?.total ?? 0);
   const pages = Math.max(1,Math.ceil(total / 25)), page = Math.min(query.page,pages);
-  const rows = await db.prepare(`SELECT ${s.columns} FROM ${table}${where} ORDER BY ${s.order} LIMIT 25 OFFSET ?`).bind(...args,(page-1)*25).all();
+  const rows = page === query.page ? listed : await list(page).all();
   return { rows: rows.results, total, page, pages, filters: s.filters.map(([value,label]) => ({ value, label })) };
 }
 
 export async function adminMetrics(permissions: PanelData["permissions"]): Promise<PanelData["metrics"]> {
-  const db = getRuntimeEnv().DB!;
-  const count = async (sql: string, ...args: number[]) => Number((await db.prepare(sql).bind(...args).first<{n:number}>())?.n ?? 0);
+  const db = getRuntimeEnv().DB!, now = Date.now();
+  // Every counter in a single round trip to the database; the panel waits for one answer, not eight.
+  const [counts, editorial] = await Promise.all([
+    db.prepare(`SELECT
+      (SELECT count(*) FROM activities WHERE status='published' AND ends_at >= ?) AS activities,
+      (SELECT count(*) FROM posts WHERE status='published') AS publishedPosts,
+      (SELECT count(*) FROM posts WHERE status <> 'published') AS otherPosts,
+      (SELECT count(*) FROM comments WHERE status='pending' AND retention_until > ?) AS pendingComments,
+      (SELECT count(*) FROM contact_requests WHERE status <> 'closed' AND retention_until > ?) AS openRequests,
+      (SELECT count(*) FROM membership_applications WHERE status IN ('submitted','in_review') AND retention_until > ?) AS openMemberships,
+      (SELECT count(*) FROM media) AS media,
+      (SELECT count(*) FROM media WHERE visibility='private') AS privateMedia`).bind(now, now, now, now).first<Record<string, number>>(),
+    permissions.content ? availableEditorialPosts() : Promise.resolve([]),
+  ]);
+  const n = (key: string, allowed: boolean) => allowed ? Number(counts?.[key] ?? 0) : 0;
   return {
-    activities: permissions.content ? await count("SELECT count(*) n FROM activities WHERE status='published' AND ends_at >= ?",Date.now()) : 0,
-    publishedPosts: permissions.content ? await count("SELECT count(*) n FROM posts WHERE status='published'") + (await availableEditorialPosts()).length : 0,
-    otherPosts: permissions.content ? await count("SELECT count(*) n FROM posts WHERE status <> 'published'") : 0,
-    pendingComments: permissions.moderation ? await count("SELECT count(*) n FROM comments WHERE status='pending' AND retention_until > ?",Date.now()) : 0,
-    openRequests: permissions.requests ? await count("SELECT count(*) n FROM contact_requests WHERE status <> 'closed' AND retention_until > ?",Date.now()) : 0,
-    openMemberships: permissions.requests ? await count("SELECT count(*) n FROM membership_applications WHERE status IN ('submitted','in_review') AND retention_until > ?",Date.now()) : 0,
-    media: permissions.content ? await count("SELECT count(*) n FROM media") : 0,
-    privateMedia: permissions.content ? await count("SELECT count(*) n FROM media WHERE visibility='private'") : 0,
+    activities: n("activities", permissions.content),
+    publishedPosts: permissions.content ? n("publishedPosts", true) + editorial.length : 0,
+    otherPosts: n("otherPosts", permissions.content),
+    pendingComments: n("pendingComments", permissions.moderation),
+    openRequests: n("openRequests", permissions.requests),
+    openMemberships: n("openMemberships", permissions.requests),
+    media: n("media", permissions.content),
+    privateMedia: n("privateMedia", permissions.content),
   };
 }

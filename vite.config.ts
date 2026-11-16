@@ -21,6 +21,9 @@ const localBindingConfig = {
   main: "./worker/index.ts",
   compatibility_flags: ["nodejs_compat"],
   images: { binding: "IMAGES" },
+  // Pages make several reads to D1 (eastern North America). Smart Placement runs the Worker near the
+  // database when that is faster; static files are still served from the nearest location.
+  placement: { mode: "smart" as const },
   // Cloudflare Cron uses UTC. 10:17 UTC is 04:17 in Mexico City.
   triggers: { crons: ["17 10 * * *"] },
   d1_databases: d1
