@@ -2,6 +2,14 @@
 
 Lo más reciente arriba. Formato y reglas: `ia/PROTOCOLO.md`, sección 3. Cada entrada lleva la línea `Agente:`.
 
+## 2026-11-16 · entrega de Enlaces APJ 2027
+
+- Agente: Claude Code (sesión en la nube)
+- Solicitud: Emi, 16/11/2026: entrega con el formato de `ia/plantillas/ENTREGA.md`.
+- Cambios: `docs/entrega-enlaces-apj-2027.md` con SHA de base y HEAD, cambios de plan, archivos, verificación, lo no probado, riesgos y dudas.
+- Archivos: `docs/entrega-enlaces-apj-2027.md`, este registro.
+- Verificación: los comandos y resultados que cita la entrega se ejecutaron sobre `51cd4d9`.
+
 ## 2026-11-16 · Enlaces APJ 2027: ensayo en celular, documentación y ajustes
 
 - Agente: Claude Code (sesión en la nube)
