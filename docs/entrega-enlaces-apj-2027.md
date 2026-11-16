@@ -102,3 +102,7 @@ La entrega anterior describe el commit `51cd4d9`. Después se agregaron dos camb
   - El aviso menciona el puntaje, la nota de entrevista y a Resend. El enlace al PDF solo aparece si el PDF está subido. El historial se borra con la postulación.
 - **Verificación sobre el árbol corregido:** typecheck y lint sin avisos; `npm test` → 223 de 223 (17 del módulo); recorrido en Chromium a 375 px con 26 capturas, 0 px de desborde y sin errores de página.
 - **Sigue sin probarse:** el funcionamiento en producción y la apertura real del 23 de noviembre.
+
+## Publicación del 16-nov-2026
+
+Emi autorizó publicar. Se aplicaron las migraciones `0017` a `0019` en la base real, se desplegó el commit `d787481` y se subió el PDF oficial al almacenamiento privado. Comprobado en `https://acciontlalnepantla.site` el 16-nov-2026 a las 14:24, hora de Ciudad de México: `/enlaces` muestra solo el título y «Convocatoria disponible el lunes 23 de noviembre»; no hay entrada en la portada ni en el sitemap; el PDF responde 404 al público. Falta la comprobación del 23 de noviembre con la convocatoria abierta, y Workers Paid sigue sin activarse.

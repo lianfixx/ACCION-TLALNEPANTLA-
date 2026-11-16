@@ -2,6 +2,15 @@
 
 Lo más reciente arriba. Formato y reglas: `ia/PROTOCOLO.md`, sección 3. Cada entrada lleva la línea `Agente:`.
 
+## 2026-11-16 · Enlaces APJ 2027 publicado, a la espera de la apertura
+
+- Agente: Claude Code (sesión en la nube)
+- Solicitud: Emi, 16/11/2026: «Apruebo su publicación tras previo análisis, razonamiento y auditoría completa».
+- Cambios: sin cambios de código. Migraciones `0017`, `0018` y `0019` aplicadas en la base real; Worker desplegado desde el commit `d787481` (versión `fd4d8d76`); PDF oficial de la convocatoria subido al almacenamiento privado y registrado en `site_documents` (4.2 MB, registro de auditoría `document.replace`).
+- Archivos: este registro, `docs/entrega-enlaces-apj-2027.md`.
+- Verificación: en `https://acciontlalnepantla.site`, el 16/11/2026 a las 14:24 y 14:25, hora de Ciudad de México: `/enlaces` responde 200 con solo el título y «Convocatoria disponible el lunes 23 de noviembre», sin «Postularme», sin bases y con `noindex`; la portada y el sitemap no enlazan a `/enlaces`; `/cuenta/enlaces` lleva a `/ingresar`; `/api/enlaces` responde 401; el PDF responde 404 al público y no tiene copia estática; portada, comisiones, privacidad, términos, alta de cuenta y bases siguen en 200. Antes de publicar se comprobó en la base real que no quedaban cartas del módulo anterior, que las variables de ensayo no están definidas y que el responsable, su domicilio y el correo de privacidad están capturados.
+- Pendiente: Emi activa Workers Paid antes del 23/11; el 23/11 por la mañana, comprobar en producción que la página muestra las bases, el PDF abre y «Postularme» lleva al formulario, y registrarlo aquí. No se probó con sesión real en producción.
+
 ## 2026-11-16 · Enlaces APJ 2027: correcciones de la auditoría
 
 - Agente: Claude Code (sesión en la nube)
