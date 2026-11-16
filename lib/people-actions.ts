@@ -178,7 +178,7 @@ async function deletePerson(actor: Actor, target: PersonAccount, input: Input, e
   const statements = [audit.statement,
     // References kept in other records lose the link to this person.
     then('UPDATE audit_logs SET actor_email=? WHERE actor_email=? AND id<>?', reference, email, audit.id),
-    then(`UPDATE audit_logs SET entity_id=? WHERE id<>? AND (entity_id=? OR entity_id IN (SELECT id FROM membership_applications WHERE owner_email=?) OR entity_id IN (SELECT id FROM commission_documents WHERE owner_id=? OR item_id IN (${owned})) OR entity_id IN (${owned}))`, reference, audit.id, id, email, id, id, id),
+    then(`UPDATE audit_logs SET entity_id=? WHERE id<>? AND (entity_id=? OR entity_id IN (SELECT id FROM enlaces_applications WHERE account_id=?) OR entity_id IN (SELECT id FROM membership_applications WHERE owner_email=?) OR entity_id IN (SELECT id FROM commission_documents WHERE owner_id=? OR item_id IN (${owned})) OR entity_id IN (${owned}))`, reference, audit.id, id, id, email, id, id, id),
     // Handover notes in activities that stay with other people name both people in their text.
     then("UPDATE commission_messages SET body=replace(body,?,'una persona cuya cuenta se eliminó') WHERE body LIKE 'Relevo de %' AND instr(body,?)>0", target.name, target.name),
     then('UPDATE commission_members SET updated_by=? WHERE updated_by=?', reference, id),
@@ -210,6 +210,7 @@ async function deletePerson(actor: Actor, target: PersonAccount, input: Input, e
     then('DELETE FROM request_entries WHERE request_id IN (SELECT id FROM contact_requests WHERE email=?)', email),
     then('DELETE FROM contact_requests WHERE email=?', email),
     then('DELETE FROM user_roles WHERE email=?', email),
+    then('DELETE FROM enlaces_applications WHERE account_id=?', id),
     then('DELETE FROM staff_sessions WHERE account_id=?', id),
     then('DELETE FROM staff_email_verifications WHERE account_id=?', id),
     then('DELETE FROM person_notes WHERE account_id=?', id),

@@ -3,7 +3,7 @@ import type {StaffIdentity} from './staff-auth';
 import { purgeWorkspace } from "./workspace-documents";
 import { and,lte,sql } from "drizzle-orm";
 import { getDb } from "@/db";
-import { auditLogs, comments, contactRequests, rateLimits, membershipApplications } from "@/db/schema";
+import { auditLogs, comments, contactRequests, enlacesApplications, rateLimits, membershipApplications } from "@/db/schema";
 
 export async function purgeExpiredData(actorEmail: string, trigger: "manual" | "scheduled", cutoff = Date.now(),actor?:StaffIdentity) {
   const db = getDb();
@@ -16,6 +16,8 @@ export async function purgeExpiredData(actorEmail: string, trigger: "manual" | "
     db.delete(membershipApplications).where(and(lte(membershipApplications.retentionUntil, cutoff),guard)),
     db.delete(rateLimits).where(and(lte(rateLimits.expiresAt, cutoff),guard)),
     db.insert(auditLogs).select(sql`SELECT ${crypto.randomUUID()},${actorEmail},${`retention.purge.${trigger}`},'system','expired-data',${JSON.stringify({cutoff,trigger})},${cutoff} WHERE ${guard}`).returning({id:auditLogs.id}),
+    // Enlaces APJ applications and their score sheets (deleted by cascade) expire like the rest.
+    db.delete(enlacesApplications).where(and(lte(enlacesApplications.retentionUntil, cutoff),guard)),
   ]);
   if(actor&&!result[4].length)throw new PurgeAuthorizationError();
   return { cutoff, trigger };

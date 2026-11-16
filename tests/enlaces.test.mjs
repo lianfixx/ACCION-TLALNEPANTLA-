@@ -167,3 +167,139 @@ test('no text of the module mentions affiliation',async()=>{const f=await fixtur
  await start(f,ana);pages.push(main((await page(f,'/cuenta/enlaces',ana)).html));
  for(const text of pages)assert.doesNotMatch(text,/afilia|militan/i);
 }finally{done(f);}});
+
+// Panel de administración.
+const admin=(f,body,actor=owner)=>f.call('/api/admin/enlaces','POST',body,actor);
+const row=(f,email)=>f.db.prepare('SELECT e.* FROM enlaces_applications e JOIN staff_accounts a ON a.id=e.account_id WHERE a.email=? ORDER BY e.created_at DESC').get(email);
+const act=async(f,email,body)=>{const r=row(f,email);return admin(f,{...body,id:r.id,expectedUpdatedAt:r.updated_at});};
+const score=(f,email,values)=>act(f,email,{action:'score',...values});
+const full={motives:28,proposal:22,participation:20,recommendation:18};
+async function ok(response){assert.ok(response.ok,`${response.status} ${await response.clone().text()}`);return response.json();}
+
+test('only administration reaches the panel, the list hides drafts and filters work',async()=>{const f=await fixture(during);try{
+ account(f,ana,'Ana Prueba');account(f,beto,'Beto Prueba');account(f,'caro@example.test','Caro Prueba');account(f,'editor@example.test');
+ f.db.prepare("INSERT INTO user_roles(email,role,created_at,created_by) VALUES('editor@example.test','editor',1,?)").run(owner);
+ await submitted(f,ana);await submitted(f,beto,{track:'comunidad',commission:'',communityKind:'universidad',communityName:'CUDEC'});await start(f,'caro@example.test');
+ for(const actor of [ana,'editor@example.test',null]){
+  assert.equal((await f.call('/admin/enlaces','GET',undefined,actor)).status,307);
+  assert.equal((await f.call('/admin/enlaces/'+row(f,ana).id,'GET',undefined,actor)).status,307);
+  assert.equal((await admin(f,{action:'publish'},actor)).status,403);
+  assert.equal((await f.call('/api/admin/enlaces/exportar','POST',{filters:{}},actor)).status,403);
+ }
+ const names=async query=>{const html=await(await f.call('/admin/enlaces'+query,'GET',undefined,owner)).text();return ['Ana Prueba','Beto Prueba','Caro Prueba'].filter(name=>html.includes(name));};
+ assert.deepEqual(await names(''),['Ana Prueba','Beto Prueba'],'a draft is not listed');
+ assert.deepEqual(await names('?track=comunidad'),['Beto Prueba']);assert.deepEqual(await names('?commission=gobierno'),['Ana Prueba']);
+ assert.deepEqual(await names('?community=cudec'),['Beto Prueba']);assert.deepEqual(await names('?status=interview'),[]);
+ const detail=await(await f.call('/admin/enlaces/'+row(f,ana).id,'GET',undefined,owner)).text();
+ for(const text of ['Ana Prueba','Carta de recomendación','Organicé dos foros','Guardar puntaje','/api/espacio/documentos/'])assert.ok(detail.includes(text),text);
+ assert.equal((await f.call('/admin/enlaces/'+row(f,'caro@example.test').id,'GET',undefined,owner)).status,404,'a draft has no detail page');
+ assert.equal((await f.call('/api/admin/enlaces','POST',{action:'publish'},owner,{origin:'https://evil.example'})).status,403);
+}finally{done(f);}});
+
+test('one agreed score per application, with the four criteria of the convocatoria',async()=>{const f=await fixture(during);try{
+ account(f,ana);await submitted(f,ana);
+ for(const [values,pattern] of [[{...full,motives:31},/Carta de motivos va de 0 a 30/],[{...full,proposal:26},/de 0 a 25/],[{...full,participation:-1},/de 0 a 25/],[{...full,recommendation:20.5},/de 0 a 20/],[{motives:10},/de 0 a 25/]]){
+  const r=await score(f,ana,values);assert.equal(r.status,400);assert.match((await r.json()).error,pattern);
+ }
+ assert.match((await ok(await score(f,ana,full))).message,/Total 88 de 100/);
+ assert.match((await ok(await score(f,ana,{motives:30,proposal:25,participation:25,recommendation:20}))).message,/Total 100 de 100/);
+ const stored=f.db.prepare('SELECT * FROM enlaces_scores').all();assert.equal(stored.length,1,'a single sheet');assert.equal(stored[0].total,100);assert.equal(stored[0].scored_by,owner);
+ const stale=await admin(f,{action:'score',...full,id:row(f,ana).id,expectedUpdatedAt:1});assert.equal(stale.status,409);
+ assert.equal((await ok(await act(f,ana,{action:'note',note:'  Entrevista el 8 de diciembre. Clara y puntual. '}))).message,'Nota de entrevista guardada.');
+ assert.equal(row(f,ana).interview_note,'Entrevista el 8 de diciembre. Clara y puntual.');
+ assert.doesNotMatch(JSON.stringify(await view(f,ana)),/Clara y puntual|"total"/,'the applicant never sees the note or the score');
+ assert.deepEqual(f.db.prepare("SELECT action FROM audit_logs WHERE actor_email=? AND entity_type='enlaces' ORDER BY created_at,rowid").all(owner).map(r=>r.action),['enlaces.scored','enlaces.scored','enlaces.interview_note']);
+}finally{done(f);}});
+
+test('selection follows the places and the minimum of the convocatoria and keeps the file for the year',async()=>{const f=await fixture(during);try{
+ const people=['ana','beto','caro'].map(name=>name+'@example.test');const ids=people.map(email=>account(f,email));
+ for(const email of people)await submitted(f,email);
+ account(f,'dora@example.test');await submitted(f,'dora@example.test',{track:'comunidad',commission:'',communityKind:'colonia',communityName:'San Javier'});
+ let r=await act(f,ana,{action:'status',status:'selected'});assert.equal(r.status,409);assert.match((await r.json()).error,/Captura el puntaje/);
+ for(const email of people)await ok(await score(f,email,full));
+ await ok(await act(f,ana,{action:'status',status:'interview'}));
+ await ok(await act(f,ana,{action:'status',status:'selected'}));await ok(await act(f,beto,{action:'status',status:'selected'}));
+ r=await act(f,'caro@example.test',{action:'status',status:'selected'});assert.equal(r.status,409);assert.match((await r.json()).error,/ya tiene sus dos Enlaces/);
+ await ok(await act(f,'caro@example.test',{action:'status',status:'substitute'}));
+ await ok(await score(f,'dora@example.test',{motives:20,proposal:15,participation:14,recommendation:10}));
+ r=await act(f,'dora@example.test',{action:'status',status:'selected'});assert.equal(r.status,409);assert.match((await r.json()).error,/mínimo de 60 puntos\. Esta postulación tiene 59/);
+ await ok(await score(f,'dora@example.test',{motives:20,proposal:15,participation:15,recommendation:10}));await ok(await act(f,'dora@example.test',{action:'status',status:'selected'}));
+ const year=Date.parse('2028-01-17T06:00:00Z'),standard=Date.parse('2026-12-07T05:59:59Z')+90*86400000;
+ assert.equal(row(f,ana).retention_until,year);assert.equal(row(f,'caro@example.test').retention_until,year,'substitutes are kept as well');
+ assert.equal(f.db.prepare('SELECT min(retention_until) m FROM commission_documents WHERE owner_id=?').get(ids[0]).m,year,'documents follow the application');
+ await ok(await act(f,beto,{action:'status',status:'not_selected'}));
+ assert.equal(row(f,beto).retention_until,standard);assert.equal(f.db.prepare("SELECT max(retention_until) m FROM commission_documents WHERE owner_id=? AND category='recommendation_letter'").get(ids[1]).m,standard);
+ assert.equal((await act(f,beto,{action:'status',status:'draft'})).status,400);assert.equal((await act(f,beto,{action:'status',status:'not_selected'})).status,400,'same status');
+ // The decision stays hidden from the applicant until the results are published.
+ assert.equal((await view(f,ana)).application.status,'in_review');assert.equal((await view(f,beto)).application.status,'in_review');
+ assert.match(JSON.stringify(f.db.prepare("SELECT metadata_json FROM audit_logs WHERE action='enlaces.status' ORDER BY created_at DESC,rowid DESC").get()),/not_selected/);
+}finally{done(f);}});
+
+test('results are published by hand after the close, with authorized names only',async()=>{const f=await fixture(during);try{
+ account(f,ana,'Ana Prueba Ruiz');account(f,beto,'Beto Reservado');account(f,'caro@example.test','Caro Suplente');account(f,'dora@example.test','Dora Colonia');
+ await submitted(f,ana);await submitted(f,beto,{publishNameOk:false});await submitted(f,'caro@example.test');
+ await submitted(f,'dora@example.test',{track:'comunidad',commission:'',communityKind:'colonia',communityName:'San Javier'});
+ for(const email of [ana,beto,'caro@example.test','dora@example.test'])await ok(await score(f,email,full));
+ await ok(await act(f,ana,{action:'status',status:'selected'}));await ok(await act(f,beto,{action:'status',status:'selected'}));
+ await ok(await act(f,'caro@example.test',{action:'status',status:'substitute'}));await ok(await act(f,'dora@example.test',{action:'status',status:'not_selected'}));
+ let r=await admin(f,{action:'publish'});assert.equal(r.status,409);assert.match((await r.json()).error,/después del cierre/);
+ advance(f,after);
+ assert.doesNotMatch(main((await page(f,'/enlaces')).html),/Generación 2027|Ana Prueba Ruiz/);
+ r=await api(f,'dora@example.test',{action:'delete-documents'});assert.equal(r.status,409,'not before the results');
+ await ok(await admin(f,{action:'publish'}));
+ const body=main((await page(f,'/enlaces')).html);
+ assert.match(body,/Generación 2027/);assert.match(body,/Gobierno/);assert.match(body,/Ana Prueba Ruiz/);assert.match(body,/Caro Suplente/);
+ assert.doesNotMatch(body,/Beto Reservado|Dora Colonia/,'no name without authorization, and none for people not selected');
+ assert.match(body,/Postulaciones cerradas/);assert.match(body,/Objeto/,'the convocatoria stays visible');
+ assert.match((await page(f,'/')).html,/href="\/enlaces"/,'the entry returns with the results');
+ assert.equal((await view(f,ana)).application.status,'selected');assert.equal((await view(f,'caro@example.test')).application.status,'substitute');
+ assert.match(main((await page(f,'/cuenta/enlaces',ana)).html),/Fuiste seleccionado como Enlace APJ 2027/);
+ assert.match(main((await page(f,'/cuenta/enlaces','dora@example.test')).html),/Borrar mis documentos/);
+ r=await api(f,ana,{action:'withdraw',expectedUpdatedAt:row(f,ana).updated_at});assert.equal(r.status,409,'a result is not withdrawn from the account');
+ const dora=f.db.prepare('SELECT id FROM staff_accounts WHERE email=?').get('dora@example.test').id;
+ await ok(await api(f,'dora@example.test',{action:'delete-documents'}));
+ assert.equal(f.db.prepare('SELECT count(*) n FROM commission_documents WHERE owner_id=?').get(dora).n,0);
+ await ok(await admin(f,{action:'unpublish'}));
+ assert.doesNotMatch(main((await page(f,'/enlaces')).html),/Generación 2027/);assert.equal((await view(f,ana)).application.status,'in_review');
+ assert.deepEqual(f.db.prepare("SELECT action FROM audit_logs WHERE action LIKE 'enlaces.results%' ORDER BY created_at,rowid").all().map(r=>r.action),['enlaces.results_published','enlaces.results_unpublished']);
+}finally{done(f);}});
+
+test('the export is a concentrate without documents or letters, and it is recorded',async()=>{const f=await fixture(during);try{
+ account(f,ana,'=Ana Fórmula');account(f,beto,'Beto Prueba');
+ await submitted(f,ana);await submitted(f,beto,{track:'comunidad',commission:'',communityKind:'universidad',communityName:'EBC',publishNameOk:false});
+ await ok(await score(f,ana,full));
+ const response=await f.call('/api/admin/enlaces/exportar','POST',{filters:{}},owner);assert.equal(response.status,200,await response.clone().text());
+ assert.match(response.headers.get('content-disposition'),/^attachment; filename="enlaces-apj-2027-\d{4}-\d{2}-\d{2}\.csv"$/);
+ const bytes=new Uint8Array(await response.arrayBuffer());assert.deepEqual([...bytes.slice(0,3)],[0xef,0xbb,0xbf]);
+ const text=new TextDecoder().decode(bytes.slice(3)),lines=text.trimEnd().split('\r\n');assert.equal(lines.length,3);
+ assert.match(lines[0],/^"Folio","Nombre","Usuario","Correo","Modalidad","Comisión"/);
+ assert.ok(text.includes('"\'=Ana Fórmula"'),'formulas are neutralized');assert.ok(text.includes('"Enlace de Comisión","Gobierno"'));assert.ok(text.includes('"28","22","20","18","88","Sí"'));
+ assert.ok(text.includes('"Enlace de Comunidad","","Universidad","EBC","22"'));assert.ok(text.includes('"","","","","","No"'),'no score yet');
+ assert.doesNotMatch(text,/Quiero ser Enlace|Organicé dos foros|2004-05-10|private\/commission/,'no letters, texts, birth dates or files');
+ const only=await f.call('/api/admin/enlaces/exportar','POST',{filters:{track:'comunidad'}},owner);assert.equal(new TextDecoder().decode(await only.arrayBuffer()).trimEnd().split('\r\n').length,2);
+ assert.deepEqual(JSON.parse(f.db.prepare("SELECT metadata_json FROM audit_logs WHERE action='enlaces.export' ORDER BY created_at DESC,rowid DESC").get().metadata_json),{filters:{track:'comunidad'},rows:1});
+}finally{done(f);}});
+
+test('a withdrawn application is closed for the panel, and expired ones are purged',async()=>{const f=await fixture(during);try{
+ const id=account(f,ana);const app=await submitted(f,ana);await ok(await score(f,ana,full));
+ await ok(await api(f,ana,{action:'withdraw',expectedUpdatedAt:row(f,ana).updated_at}));
+ assert.equal(f.db.prepare('SELECT count(*) n FROM enlaces_scores').get().n,0,'the score leaves with the application');
+ const r=await admin(f,{action:'status',status:'in_review',id:app.id,expectedUpdatedAt:row(f,ana).updated_at});assert.equal(r.status,409);assert.match((await r.json()).error,/retirada/);
+ advance(f,'2027-04-01T12:00:00Z');
+ await f.scheduled(Date.now());
+ assert.equal(f.db.prepare('SELECT count(*) n FROM enlaces_applications WHERE account_id=?').get(id).n,0);
+}finally{done(f);}});
+
+test('the PDF of the convocatoria lives only in private storage and opens with the convocatoria',async()=>{const f=await fixture(before);try{
+ const key='site-documents/convocatoria-enlaces-apj-2027/abc.pdf';await f.bucket.put(key,pdf);
+ f.db.prepare("INSERT INTO site_documents(slug,object_key,file_name,size_bytes,sha256,uploaded_at,uploaded_by) VALUES('convocatoria-enlaces-apj-2027',?,'Convocatoria.pdf',?,'abc',1,?)").run(key,pdf.byteLength,owner);
+ const path='/archivos/convocatoria-enlaces-apj-2027.pdf';
+ assert.equal((await f.call(path,'GET',undefined,null)).status,404,'private before the opening');
+ const preview=await f.call(path,'GET',undefined,owner);assert.equal(preview.status,200);assert.equal(preview.headers.get('cache-control'),'private, no-store');
+ assert.equal((await f.call('/documentos/convocatoria-enlaces-apj-2027.pdf','GET',undefined,null)).status,404,'there is no static copy');
+ advance(f,during);
+ const open=await f.call(path,'GET',undefined,null);assert.equal(open.status,200);assert.equal(open.headers.get('content-type'),'application/pdf');
+ assert.match(open.headers.get('content-disposition'),/convocatoria-enlaces-apj-2027\.pdf/);
+ f.db.prepare("DELETE FROM site_documents").run();
+ assert.equal((await f.call(path,'GET',undefined,null)).status,404,'without the file there is no redirect to a public folder');
+}finally{done(f);}});

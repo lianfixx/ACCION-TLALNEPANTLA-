@@ -78,8 +78,8 @@ CUERPO = [
     ('h1', 'Incorporación y afiliación'),
     ('h2', 'Cuenta y solicitud'),
     ('p', 'Cada persona crea su usuario y contraseña, completa su solicitud y elige una comisión. Consulta el folio, '
-          'el estado y las respuestas desde su cuenta. Quien quiera coordinar se postula a Enlaces APJ desde la '
-          'misma solicitud.'),
+          'el estado y las respuestas desde su cuenta. Quien quiera coordinar se postula a Enlaces APJ en la '
+          'convocatoria del sitio.'),
     ('h2', 'Documentos personales'),
     ('p', 'Después de la solicitud, la persona entrega su INE por ambos lados y un comprobante de domicilio en '
           'Documentos personales, con un aviso y un consentimiento propios. Puede ocultar consumos, saldos y números '

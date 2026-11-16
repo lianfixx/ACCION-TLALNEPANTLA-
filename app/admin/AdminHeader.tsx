@@ -5,6 +5,7 @@ const sections = [
   { key: "panel", href: "/admin", label: "Panel" },
   { key: "personas", href: "/admin/personas", label: "Personas", admin: true },
   { key: "comisiones", href: "/admin/comisiones", label: "Comisiones y expedientes", admin: true },
+  { key: "enlaces", href: "/admin/enlaces", label: "Enlaces APJ", admin: true },
   { key: "contenido", href: "/admin/contenido", label: "Contenido del sitio", admin: true },
   { key: "cuenta", href: "/admin/cuenta", label: "Usuarios y contraseñas" },
 ] as const;

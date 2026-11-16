@@ -2,6 +2,20 @@
 
 Lo más reciente arriba. Formato y reglas: `ia/PROTOCOLO.md`, sección 3. Cada entrada lleva la línea `Agente:`.
 
+## 2026-11-16 · Enlaces APJ 2027 (en curso): panel, avisos y conservación
+
+- Agente: Claude Code (sesión en la nube)
+- Solicitud: Emi, 16/11/2026: petición «Apartado Enlaces APJ 2027», secciones 3.3 a 3.5.
+- Cambios:
+  - `/admin/enlaces`: lista con filtros por modalidad, comisión, comunidad y estado (sin borradores), conteos, exportación CSV del concentrado y publicación manual de resultados después del cierre.
+  - `/admin/enlaces/[id]`: respuestas, documentos con descarga autenticada, hoja de puntaje única (30, 25, 25, 20), cambio de estado, nota de entrevista e historial.
+  - Reglas de selección de la convocatoria en el servidor: puntaje antes de seleccionar, mínimo de 60 en Comunidad, dos plazas por comisión y una por universidad o colonia. Seleccionadas y suplentes se conservan hasta el 17-ene-2028; las demás, 90 días después del cierre.
+  - Cada acción del panel queda en `audit_logs` (`enlaces.scored`, `enlaces.status`, `enlaces.interview_note`, `enlaces.results_published`, `enlaces.results_unpublished`, `enlaces.export`).
+  - Borrado diario y borrado de cuenta incluyen las postulaciones. Aviso del registro en versión `-panel-2026-11-16`, sin el flujo anterior de Enlaces; `/privacidad` publica el aviso de la convocatoria desde la apertura; términos del 16-nov-2026.
+- Archivos: `lib/enlaces-admin.ts`, `app/admin/enlaces/`, `app/api/admin/enlaces/`, `app/admin/AdminHeader.tsx`, `lib/retention.ts`, `lib/people-actions.ts`, `lib/membership-notice.ts`, `lib/membership.ts`, `app/privacidad/page.tsx`, `app/terminos/page.tsx`, `scripts/documentos/bases.py`, `app/globals.css`, `tests/enlaces.test.mjs`, `tests/rendered-html.test.mjs`, este registro.
+- Verificación: typecheck y lint sin avisos; `npm test` → 222 aprobadas (16 de Enlaces).
+- Pendiente: PDF oficial en R2 (no se versiona: el repositorio es público y la convocatoria se publica el 23-nov), capturas en celular, documentación y entrega. Nada está publicado.
+
 ## 2026-11-16 · Enlaces APJ 2027 (en curso): base, página pública y postulación
 
 - Agente: Claude Code (sesión en la nube)
