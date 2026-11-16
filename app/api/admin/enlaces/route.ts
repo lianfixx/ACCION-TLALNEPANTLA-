@@ -1,6 +1,6 @@
 import { adminWriteGuard } from "@/lib/admin-write-guard";
 import { enlacesResultsKey, enlacesRetentionAfterClose, enlacesSelectedRetention, enlacesState } from "@/lib/enlaces";
-import { communityMinimumScore, enlacesCycle, enlacesLimits, enlacesSeats, enlacesStatuses, parseEnlacesScore, type EnlacesSeat, type EnlacesStatus } from "@/lib/enlaces-shared";
+import { communityKey, communityMinimumScore, enlacesCycle, enlacesLimits, enlacesSeats, enlacesStatuses, parseEnlacesScore, type EnlacesSeat, type EnlacesStatus } from "@/lib/enlaces-shared";
 import { membershipJson } from "@/lib/membership";
 import { openPeopleRequest, peopleError as fail } from "@/lib/people-route";
 import { getRuntimeEnv } from "@/lib/runtime-env";
@@ -8,7 +8,10 @@ import { cleanText } from "@/lib/security";
 
 const changed = "La postulación cambió mientras trabajabas. Actualiza la página antes de continuar.";
 const targets: readonly EnlacesStatus[] = ["submitted", "in_review", "interview", "selected", "substitute", "not_selected"];
-type Row = { id: string; accountId: string; status: EnlacesStatus; seat: string; track: string; commission: string; communityName: string; updatedAt: number; total: number | null };
+type Row = { id: string; accountId: string; status: EnlacesStatus; seat: string; track: string; commission: string; communityKind: string; communityName: string; updatedAt: number; total: number | null };
+const letters = "('motivation_letter','recommendation_letter')", identification = "('ine_front','ine_back')", liveDocument = "item_id IS NULL AND status IN ('received','checked','changes')";
+
+const takenSeat = (seat: string) => `Esa comisión ya tiene ${seat === "titular" ? "titular" : "apoyo"}. Cambia primero a esa persona o elige la otra plaza.`;
 
 /** Every change is written together with its audit row, under the live administrator session. */
 export async function POST(request: Request) {
@@ -22,27 +25,44 @@ export async function POST(request: Request) {
     if (action === "publish" || action === "unpublish") {
       const state = await enlacesState(now);
       if (action === "publish" && (state.phase === "before" || state.phase === "open")) return fail("Los resultados se publican después del cierre de postulaciones.", 409);
+      // Selected people and substitutes are kept for the whole term only once the results are public:
+      // before that, a longer date would give the decision away. Withdrawing the results undoes it.
+      const ordinary = state.closesAt + enlacesRetentionAfterClose;
+      const chosen = "SELECT account_id FROM enlaces_applications WHERE cycle=? AND status IN ('selected','substitute') AND retention_until>?";
+      const done = action === "publish" ? "EXISTS (SELECT 1 FROM site_content WHERE key=? AND updated_at=?)" : "NOT EXISTS (SELECT 1 FROM site_content WHERE key=?)";
+      const doneValues = action === "publish" ? [enlacesResultsKey, now] : [enlacesResultsKey];
       const [written] = await db.batch([
         action === "publish"
           ? db.prepare(`INSERT INTO site_content(key,value_json,updated_at,updated_by) SELECT ?,?,?,? WHERE ${guard.sql} ON CONFLICT(key) DO UPDATE SET value_json=excluded.value_json,updated_at=excluded.updated_at,updated_by=excluded.updated_by`).bind(enlacesResultsKey, JSON.stringify({ publishedAt: now }), now, actor.email, ...guard.values)
           : db.prepare(`DELETE FROM site_content WHERE key=? AND ${guard.sql}`).bind(enlacesResultsKey, ...guard.values),
         audit(action === "publish" ? "enlaces.results_published" : "enlaces.results_unpublished", enlacesCycle, {}, now),
+        ...(action === "publish" ? [
+          db.prepare(`UPDATE commission_documents SET retention_until=MAX(retention_until,?) WHERE ${liveDocument} AND category IN ('motivation_letter','recommendation_letter','ine_front','ine_back') AND retention_until>? AND owner_id IN (${chosen}) AND ${done}`).bind(enlacesSelectedRetention, now, enlacesCycle, now, ...doneValues),
+          db.prepare(`UPDATE enlaces_applications SET retention_until=? WHERE cycle=? AND status IN ('selected','substitute') AND retention_until>? AND ${done}`).bind(enlacesSelectedRetention, enlacesCycle, now, ...doneValues),
+        ] : ordinary <= now ? [] : [
+          db.prepare(`UPDATE commission_documents SET retention_until=? WHERE ${liveDocument} AND category IN ${letters} AND retention_until>? AND owner_id IN (${chosen}) AND ${done}`).bind(ordinary, ordinary, enlacesCycle, now, ...doneValues),
+          db.prepare(`UPDATE enlaces_applications SET retention_until=? WHERE cycle=? AND status IN ('selected','substitute') AND retention_until>? AND ${done}`).bind(ordinary, enlacesCycle, ordinary, ...doneValues),
+        ]),
       ]);
       if (!written.meta.changes) return fail(action === "publish" ? "Tu acceso cambió. Vuelve a entrar." : "Los resultados no estaban publicados.", 409);
       return membershipJson({ message: action === "publish" ? "Resultados publicados. Cada persona ya ve su resultado en su cuenta." : "Resultados retirados de la página." });
     }
 
     const id = cleanText(body.id, 80);
-    const row = await db.prepare("SELECT e.id,e.account_id AS accountId,e.status,e.seat,e.track,e.commission,e.community_name AS communityName,e.updated_at AS updatedAt,s.total FROM enlaces_applications e LEFT JOIN enlaces_scores s ON s.application_id=e.id WHERE e.id=? AND e.cycle=? AND e.retention_until>?").bind(id, enlacesCycle, now).first<Row>();
+    const row = await db.prepare("SELECT e.id,e.account_id AS accountId,e.status,e.seat,e.track,e.commission,e.community_kind AS communityKind,e.community_name AS communityName,e.updated_at AS updatedAt,s.total FROM enlaces_applications e LEFT JOIN enlaces_scores s ON s.application_id=e.id WHERE e.id=? AND e.cycle=? AND e.retention_until>?").bind(id, enlacesCycle, now).first<Row>();
     if (!row || row.status === "draft") return fail("No encontramos esa postulación.", 404);
     if (row.status === "withdrawn") return fail("Esta postulación fue retirada por la persona y ya no admite cambios.", 409);
     if (Number(body.expectedUpdatedAt) !== row.updatedAt) return fail(changed, 409);
+    // Until the closing minute the person may still change answers and documents, so nothing is evaluated before.
+    const state = await enlacesState(now);
+    if (state.phase === "before" || state.phase === "open") return fail("La evaluación se abre al cierre de postulaciones. Hasta entonces cada persona puede cambiar su postulación.", 409);
     const at = Math.max(now, row.updatedAt + 1);
     const touch = (sets: string, values: unknown[]) => db.prepare(`UPDATE enlaces_applications SET ${sets},updated_at=? WHERE id=? AND updated_at=? AND status NOT IN ('draft','withdrawn') AND ${guard.sql}`).bind(...values, at, row.id, row.updatedAt, ...guard.values);
 
     if (action === "score") {
       let score;
       try { score = parseEnlacesScore(body); } catch (error) { return fail((error as Error).message); }
+      if (row.status === "selected" && row.track === "comunidad" && score.total < communityMinimumScore) return fail(`Esta persona ya está seleccionada y en Comunidad se necesita un mínimo de ${communityMinimumScore} puntos. Cambia primero su estado.`, 409);
       const [saved] = await db.batch([
         touch("status=status", []),
         db.prepare("INSERT INTO enlaces_scores(application_id,motives,proposal,participation,recommendation,total,scored_by,updated_at) SELECT ?,?,?,?,?,?,?,? WHERE changes()>0 ON CONFLICT(application_id) DO UPDATE SET motives=excluded.motives,proposal=excluded.proposal,participation=excluded.participation,recommendation=excluded.recommendation,total=excluded.total,scored_by=excluded.scored_by,updated_at=excluded.updated_at").bind(row.id, score.motives, score.proposal, score.participation, score.recommendation, score.total, actor.email, at),
@@ -70,19 +90,31 @@ export async function POST(request: Request) {
         if (row.track === "comunidad" && row.total < communityMinimumScore) return fail(`En Comunidad se necesita un mínimo de ${communityMinimumScore} puntos. Esta postulación tiene ${row.total}.`, 409);
         // The convocatoria gives a titular and an apoyo per commission and one place per university or colonia.
         const taken = seated
-          ? await db.prepare("SELECT 1 FROM enlaces_applications WHERE cycle=? AND status='selected' AND track='comision' AND commission=? AND seat=? AND id<>? AND retention_until>?").bind(enlacesCycle, row.commission, seat, row.id, now).first()
-          : await db.prepare("SELECT 1 FROM enlaces_applications WHERE cycle=? AND status='selected' AND track='comunidad' AND community_name=? COLLATE NOCASE AND id<>? AND retention_until>?").bind(enlacesCycle, row.communityName, row.id, now).first();
-        if (taken) return fail(seated ? `Esa comisión ya tiene ${seat === "titular" ? "titular" : "apoyo"}. Cambia primero a esa persona o elige la otra plaza.` : "Esa universidad o colonia ya tiene su Enlace seleccionado. Cámbialo primero.", 409);
+          ? Boolean(await db.prepare("SELECT 1 FROM enlaces_applications WHERE cycle=? AND status='selected' AND track='comision' AND commission=? AND seat=? AND id<>? AND retention_until>?").bind(enlacesCycle, row.commission, seat, row.id, now).first())
+          // Accents, capitals and spaces do not make a different university or colonia.
+          : (await db.prepare("SELECT community_kind AS kind,community_name AS name FROM enlaces_applications WHERE cycle=? AND status='selected' AND track='comunidad' AND id<>? AND retention_until>?").bind(enlacesCycle, row.id, now).all<{ kind: string; name: string }>()).results.some(other => communityKey(other.kind, other.name) === communityKey(row.communityKind, row.communityName));
+        if (taken) return fail(seated ? takenSeat(seat) : "Esa universidad o colonia ya tiene su Enlace seleccionado. Cámbialo primero.", 409);
       }
-      const { closesAt } = await enlacesState(now);
-      const retention = status === "selected" || status === "substitute" ? enlacesSelectedRetention : closesAt + enlacesRetentionAfterClose;
-      const [saved] = await db.batch([
-        touch("status=?,seat=?,retention_until=?", [status, seat, retention]),
+      const statements = [
+        touch("status=?,seat=?", [status, seat]),
         audit("enlaces.status", row.id, { from: row.status, to: status, ...(seat ? { seat } : {}) }, at),
-        // Letters and identification follow the application they belong to.
-        db.prepare("UPDATE commission_documents SET retention_until=? WHERE owner_id=? AND item_id IS NULL AND category IN ('motivation_letter','recommendation_letter') AND status IN ('received','checked','changes') AND retention_until>? AND EXISTS (SELECT 1 FROM enlaces_applications WHERE id=? AND updated_at=?)").bind(retention, row.accountId, now, row.id, at),
-        db.prepare("UPDATE commission_documents SET retention_until=MAX(retention_until,?) WHERE owner_id=? AND item_id IS NULL AND category IN ('ine_front','ine_back') AND status IN ('received','checked','changes') AND retention_until>? AND EXISTS (SELECT 1 FROM enlaces_applications WHERE id=? AND updated_at=?)").bind(retention, row.accountId, now, row.id, at),
-      ]);
+      ];
+      if (state.phase === "results") {
+        // With the results public, the application and its documents follow the decision.
+        const kept = status === "selected" || status === "substitute", ordinary = state.closesAt + enlacesRetentionAfterClose, retention = kept ? enlacesSelectedRetention : ordinary;
+        const applied = "EXISTS (SELECT 1 FROM enlaces_applications WHERE id=? AND updated_at=?)";
+        statements.push(
+          db.prepare(`UPDATE enlaces_applications SET retention_until=? WHERE id=? AND updated_at=?`).bind(retention, row.id, at),
+          db.prepare(`UPDATE commission_documents SET retention_until=? WHERE owner_id=? AND ${liveDocument} AND category IN ${letters} AND retention_until>? AND ${applied}`).bind(retention, row.accountId, now, row.id, at),
+          kept
+            ? db.prepare(`UPDATE commission_documents SET retention_until=MAX(retention_until,?) WHERE owner_id=? AND ${liveDocument} AND category IN ${identification} AND retention_until>? AND ${applied}`).bind(retention, row.accountId, now, row.id, at)
+            // An identification that was extended only for this application goes back to the ordinary date.
+            : db.prepare(`UPDATE commission_documents SET retention_until=? WHERE owner_id=? AND ${liveDocument} AND category IN ${identification} AND retention_until=? AND ${applied}`).bind(ordinary, row.accountId, enlacesSelectedRetention, row.id, at),
+        );
+      }
+      let saved;
+      // The database also refuses a second titular or apoyo in the same commission.
+      try { [saved] = await db.batch(statements); } catch (error) { if (seated && /UNIQUE/i.test(String((error as Error)?.message))) return fail(takenSeat(seat), 409); throw error; }
       return saved.meta.changes ? membershipJson({ message: `Estado actualizado a «${enlacesStatuses[status]}${seat ? ", " + enlacesSeats[seat].toLowerCase() : ""}».` }) : fail(changed, 409);
     }
     return fail("Esta acción no está disponible.", 404);

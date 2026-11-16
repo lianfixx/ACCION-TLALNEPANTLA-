@@ -33,6 +33,8 @@ export async function POST(request: Request) {
     if (!bucket) return fail("No pudimos conectar con el archivo.", 503);
     const category = new URL(request.url).searchParams.get("category") ?? "";
     if (!isEnlacesDocumentCategory(category)) return fail("Elige qué documento subes.");
+    // An identification the administration already checked in Mi comisión is used as it is.
+    if ((category === "ine_front" || category === "ine_back") && await db.prepare("SELECT 1 FROM commission_documents WHERE owner_id=? AND item_id IS NULL AND category=? AND status='checked' AND retention_until>?").bind(user.accountId, category, Date.now()).first()) return fail("Tu identificación ya fue revisada en tu cuenta y se usa tal cual. Si necesitas cambiarla, escríbenos.", 409);
     if (!await consumeRateLimit("enlaces-upload", user.accountId, 30, 60 * 60_000)) return fail("Has subido varios archivos. Espera antes de subir otro.", 429);
     let mime = (request.headers.get("content-type") ?? "").split(";")[0];
     if (!["", "application/octet-stream", "application/pdf", "image/jpeg", "image/png"].includes(mime)) return fail("Sube un PDF, JPG o PNG.", 415);
@@ -47,17 +49,23 @@ export async function POST(request: Request) {
     const name = cleanText(filename, 140).replace(/[\\/<>"\r\n]/g, "_") || "documento";
     id = crypto.randomUUID(); key = "private/commission/" + id;
     const now = Date.now(), session = sessionWriteGuard(user, now);
+    // A new file is always later than the ones it replaces, also within the same millisecond.
+    const last = await db.prepare("SELECT max(created_at) AS at FROM commission_documents WHERE owner_id=? AND item_id IS NULL AND category=?").bind(user.accountId, category).first<{ at: number | null }>();
+    const createdAt = Math.max(now, Number(last?.at ?? 0) + 1);
     const editable = "EXISTS (SELECT 1 FROM enlaces_applications WHERE id=? AND account_id=? AND status IN ('draft','submitted') AND retention_until>?)";
     const [created] = await db.batch([db.prepare(`INSERT INTO commission_documents(id,owner_id,item_id,category,object_key,name,mime,size,status,notice_snapshot,created_at,updated_at,retention_until) SELECT ?,?,NULL,?,?,?,?,?,'uploading',(SELECT notice_snapshot FROM enlaces_applications WHERE id=?),?,?,? WHERE ${session.sql} AND ${editable} AND (SELECT count(*) FROM commission_documents WHERE owner_id=?)<60`)
-      .bind(id, user.accountId, category, key, name, mime, bytes.byteLength, application.id, now, now, now + 3_600_000, ...session.values, application.id, user.accountId, now, user.accountId)]);
+      .bind(id, user.accountId, category, key, name, mime, bytes.byteLength, application.id, createdAt, now, now + 3_600_000, ...session.values, application.id, user.accountId, now, user.accountId)]);
     if (!created.meta.changes) return fail("Tu sesión cambió o tu cuenta ya tiene 60 archivos. Borra los que no necesites.", 409);
     tracked = true;
     await bucket.put(key, bytes, { httpMetadata: { contentType: mime } });
     const finalizedAt = Date.now(), live = sessionWriteGuard(user, finalizedAt);
     const [received] = await db.batch([db.prepare(`UPDATE commission_documents SET status='received',retention_until=? WHERE id=? AND status='uploading' AND ${live.sql} AND ${editable}`).bind(application.retentionUntil, id, ...live.values, application.id, user.accountId, finalizedAt)]);
     if (!received.meta.changes) { await bucket.delete(key); await db.prepare("DELETE FROM commission_documents WHERE id=?").bind(id).run(); return fail("Tu postulación cambió antes de terminar la carga. El archivo no se guardó.", 409); }
-    // The previous file of the same kind is no longer needed.
-    const previous = (await db.prepare("SELECT id,object_key AS objectKey FROM commission_documents WHERE owner_id=? AND item_id IS NULL AND category=? AND id<>? AND status<>'uploading'").bind(user.accountId, category, id).all<{ id: string; objectKey: string }>()).results;
+    // Older files of the same kind are no longer needed. A file that arrived later is never touched,
+    // so two uploads at the same time cannot delete each other.
+    const older = "owner_id=? AND item_id IS NULL AND category=? AND status<>'uploading' AND (created_at<? OR (created_at=? AND id<?))";
+    await db.prepare(`UPDATE commission_documents SET status='removed',retention_until=? WHERE ${older}`).bind(finalizedAt, user.accountId, category, createdAt, createdAt, id).run();
+    const previous = (await db.prepare(`SELECT id,object_key AS objectKey FROM commission_documents WHERE ${older}`).bind(user.accountId, category, createdAt, createdAt, id).all<{ id: string; objectKey: string }>()).results;
     for (const old of previous) { try { await bucket.delete(old.objectKey); await db.prepare("DELETE FROM commission_documents WHERE id=? AND owner_id=?").bind(old.id, user.accountId).run(); } catch { /* The daily purge retries. */ } }
     return membershipJson({ id, category, label: enlacesDocumentCategories[category] }, { status: 201 });
   } catch (error) {

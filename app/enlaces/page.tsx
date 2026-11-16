@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import { currentAuthorizedUser } from "@/lib/authz";
 import { commissions } from "@/lib/commissions";
-import { enlacesPublishedResults, enlacesState, type PublishedResult } from "@/lib/enlaces";
+import { enlacesPdfReady, enlacesPublishedResults, enlacesState, type PublishedResult } from "@/lib/enlaces";
 import { convocatoriaBases, convocatoriaIntro, convocatoriaPlace, convocatoriaSignature, convocatoriaTitle, type ConvocatoriaBlock } from "@/lib/enlaces-convocatoria";
-import { enlacesDate } from "@/lib/enlaces-shared";
+import { communityKey, enlacesDate } from "@/lib/enlaces-shared";
 import { siteDocumentHref } from "@/lib/site-documents";
 
 export const dynamic = "force-dynamic";
@@ -37,8 +37,10 @@ function Block({ block }: { block: ConvocatoriaBlock }) {
 function Results({ results }: { results: PublishedResult[] }) {
   const names = (list: PublishedResult[], status: string) => list.filter(item => item.status === status).map(item => item.name);
   const byCommission = commissions.map(commission => ({ title: commission.name, list: results.filter(item => item.track === "comision" && item.commission === commission.id) })).filter(group => group.list.length);
-  const communities = [...new Set(results.filter(item => item.track === "comunidad").map(item => item.communityName))].sort((a, b) => a.localeCompare(b, "es"));
-  const byCommunity = communities.map(name => ({ title: name, list: results.filter(item => item.track === "comunidad" && item.communityName === name) }));
+  // The same university or colonia written with other capitals or accents is one group.
+  const communities = new Map<string, PublishedResult[]>();
+  for (const item of results) if (item.track === "comunidad") { const key = communityKey(item.communityKind, item.communityName); communities.set(key, [...(communities.get(key) ?? []), item]); }
+  const byCommunity = [...communities.values()].map(list => ({ title: (list.find(item => item.status === "selected") ?? list[0]).communityName, list })).sort((a, b) => a.title.localeCompare(b.title, "es"));
   const Group = ({ title, list }: { title: string; list: PublishedResult[] }) => <article className="enl-result">
     <h4>{title}</h4>
     {(["titular", "apoyo"] as const).map(seat => { const seated = list.filter(item => item.status === "selected" && item.seat === seat).map(item => item.name); return seated.length > 0 ? <p key={seat}><span>{seat === "titular" ? "Titular" : "Apoyo"}</span>{seated.join(", ")}</p> : null; })}
@@ -51,7 +53,7 @@ function Results({ results }: { results: PublishedResult[] }) {
     {results.length === 0 ? <p>Los resultados ya se comunicaron a cada persona en su cuenta. Aquí aparecen los nombres de quienes autorizaron publicarlos.</p> : <>
       <p>Aparecen los nombres de quienes autorizaron publicarlos. Cada persona consulta su resultado en su cuenta, con su folio.</p>
       {byCommission.length > 0 && <><h3>Enlaces de Comisión</h3><div className="enl-result-grid">{byCommission.map(group => <Group key={group.title} {...group} />)}</div></>}
-      {byCommunity.length > 0 && <><h3>Enlaces de Comunidad</h3><div className="enl-result-grid">{byCommunity.map(group => <Group key={group.title} {...group} />)}</div></>}
+      {byCommunity.length > 0 && <><h3>Enlaces de Comunidad</h3><div className="enl-result-grid">{byCommunity.map((group, index) => <Group key={index} {...group} />)}</div></>}
     </>}
   </section>;
 }
@@ -69,7 +71,7 @@ export default async function EnlacesPage() {
     </header>
   </main>;
 
-  const results = state.phase === "results" ? await enlacesPublishedResults() : [];
+  const [results, pdf] = await Promise.all([state.phase === "results" ? enlacesPublishedResults() : [], enlacesPdfReady()]);
   const actions = state.phase === "open" || state.phase === "before"
     ? <a className="button button-primary" href="/cuenta/enlaces">Postularme</a>
     : <span className="button enl-closed" aria-disabled="true">Postulaciones cerradas</span>;
@@ -83,7 +85,7 @@ export default async function EnlacesPage() {
       <p className="enl-org">Acción Política Juvenil Tlalnepantla</p>
       <div className="enl-actions">
         {actions}
-        <a className="text-link" href={siteDocumentHref("convocatoria-enlaces-apj-2027")}>Descargar la convocatoria en PDF</a>
+        {pdf && <a className="text-link" href={siteDocumentHref("convocatoria-enlaces-apj-2027")}>Descargar la convocatoria en PDF</a>}
       </div>
       <p className="enl-deadline">{state.phase === "results" ? "Los resultados están publicados más abajo." : state.phase === "closed" ? <>Las postulaciones cerraron el {closing}. Si te postulaste, <a href="/cuenta/enlaces">consulta tu estado con tu folio</a>.</> : `Recibimos postulaciones hasta el ${closing} a las 23:59 horas.`}</p>
     </header>

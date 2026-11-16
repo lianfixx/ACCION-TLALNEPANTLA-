@@ -2,6 +2,15 @@
 
 Lo más reciente arriba. Formato y reglas: `ia/PROTOCOLO.md`, sección 3. Cada entrada lleva la línea `Agente:`.
 
+## 2026-11-16 · Enlaces APJ 2027: correcciones de la auditoría
+
+- Agente: Claude Code (sesión en la nube)
+- Solicitud: Emi, 16/11/2026: «Apruebo su publicación tras previo análisis, razonamiento y auditoría completa».
+- Cambios: límites separados para el guardado automático y para enviar o retirar, y guardado cada 4 segundos; la conservación larga se aplica al publicar los resultados, se deshace al retirarlos y la fecha no sale del servidor; puntaje, estado y nota solo desde el cierre; no se puede bajar de 60 a una persona ya seleccionada en Comunidad; una plaza por universidad o colonia sin importar acentos o mayúsculas e índice único para titular y apoyo (migración `0019_enlaces_plaza_unica`); los documentos de una postulación enviada no se quitan desde Mi comisión, una identificación revisada no se reemplaza, los archivos se ocultan antes de borrarse y dos cargas simultáneas no se borran entre sí; la autorización de nombre dice con qué datos se publica y la persona puede quitarla; las cuentas suspendidas no salen en resultados; el aviso menciona puntaje, nota de entrevista y Resend; el enlace al PDF aparece solo si el PDF está subido; el historial se borra con la postulación; el retiro borra también modalidad, comisión y comunidad; Mi cuenta enlaza a la postulación; sesión vencida se renueva en otra pestaña sin perder lo escrito; `/cuenta/…` y `/api/enlaces` nunca se guardan en caché.
+- Archivos: `app/api/enlaces/`, `app/api/admin/enlaces/route.ts`, `app/api/espacio/documentos/[id]/route.ts`, `app/cuenta/`, `app/enlaces/page.tsx`, `app/admin/enlaces/[id]/EnlacesReview.tsx`, `app/globals.css`, `lib/enlaces*.ts`, `lib/retention.ts`, `lib/people-actions.ts`, `worker/index.ts`, `db/schema.ts`, `drizzle/0019_enlaces_plaza_unica.sql`, `drizzle/meta/`, `tests/enlaces.test.mjs`, `tests/rendered-html.test.mjs`, `docs/enlaces-apj.md`, `docs/entrega-enlaces-apj-2027.md`, `docs/panel-administracion.md`, este registro.
+- Verificación: typecheck y lint sin avisos; `npm test` → 223 aprobadas; recorrido en Chromium a 375 px contra el Worker compilado, 26 capturas, 0 px de desborde, sin errores de página.
+- Pendiente: publicación (migraciones 0017 a 0019, PDF oficial y despliegue) y comprobación en producción.
+
 ## 2026-11-16 · Enlaces APJ 2027: titular y apoyo, y aviso de contacto
 
 - Agente: Claude Code (sesión en la nube)

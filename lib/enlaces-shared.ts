@@ -47,7 +47,7 @@ export type EnlacesDocumentCategory = keyof typeof enlacesDocumentCategories;
 export const isEnlacesDocumentCategory = (value: string): value is EnlacesDocumentCategory => Object.hasOwn(enlacesDocumentCategories, value);
 
 export const enlacesConsent = "Tengo de 18 a 29 años y presento esta postulación por mí. Autorizo el uso de mis datos, mis cartas y mi identificación oficial para el proceso de selección de Enlaces APJ 2027 y, si resulto seleccionado, para la operación del programa. Sé que esta información puede revelar una vinculación política.";
-export const enlacesPublishConsent = "Autorizo que mi nombre completo se publique en los resultados si resulto seleccionado o suplente.";
+export const enlacesPublishConsent = "Autorizo que mi nombre completo se publique en los resultados, junto con la comisión y la plaza o con la universidad o colonia, si resulto seleccionado o suplente.";
 
 export type EnlacesFields = {
   track: EnlacesTrack | "";
@@ -75,6 +75,9 @@ export type EnlacesApplication = EnlacesFields & {
 };
 
 export type EnlacesPhase = "before" | "open" | "closed" | "results";
+
+/** One place per university or colonia: «Tec CEM», «tec  cem» and «Téc CEM» are the same community. */
+export const communityKey = (kind: string, name: string) => `${kind}:${name.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/\s+/g, " ").trim()}`;
 
 /** Completed years on a calendar date. Both arguments are YYYY-MM-DD. */
 export function ageOn(birthDate: string, reference: string) {

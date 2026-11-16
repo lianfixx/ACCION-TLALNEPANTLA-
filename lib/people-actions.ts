@@ -197,6 +197,7 @@ async function deletePerson(actor: Actor, target: PersonAccount, input: Input, e
     then('UPDATE person_notes SET author_email=? WHERE author_email=?', reference, email),
     then('UPDATE person_tags SET created_by=? WHERE created_by=?', reference, email),
     then('UPDATE outbound_emails SET sent_by=? WHERE sent_by=?', reference, email),
+    then('UPDATE enlaces_scores SET scored_by=? WHERE scored_by=?', reference, email),
     // The person's own records. Foreign keys without cascade are removed explicitly, children first.
     then(`DELETE FROM commission_messages WHERE (author_id=? OR item_id IN (${owned}))`, id, id),
     then(`DELETE FROM commission_documents WHERE (owner_id=? OR item_id IN (${owned}))`, id, id),

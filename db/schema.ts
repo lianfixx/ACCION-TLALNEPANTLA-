@@ -358,6 +358,8 @@ export const enlacesApplications = sqliteTable("enlaces_applications", {
   uniqueIndex("enlaces_reference_unique").on(t.referenceCode),
   uniqueIndex("enlaces_active_account_unique").on(t.accountId, t.cycle).where(sql`${t.status} <> 'withdrawn'`),
   index("enlaces_cycle_status_idx").on(t.cycle, t.status, t.createdAt),
+  // One titular and one apoyo per commission, also when two changes arrive at once.
+  uniqueIndex("enlaces_seat_unique").on(t.cycle, t.commission, t.seat).where(sql`${t.status} = 'selected' AND ${t.track} = 'comision'`),
 ]);
 
 /** One agreed score sheet per application, on the four criteria of the convocatoria. */

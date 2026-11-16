@@ -259,7 +259,7 @@ test("scheduled retention queues a D1 purge through waitUntil", async () => {
       return { bind: (...params) => ({ query, params, all: async()=>({results:[]}) }) };
     },
     async batch(statements) {
-      assert.ok([2,6].includes(statements.length));
+      assert.ok([2,7].includes(statements.length));
       return statements.map(() => ({ success: true, results: [], meta: {} }));
     },
   };
@@ -275,6 +275,7 @@ test("scheduled retention queues a D1 purge through waitUntil", async () => {
   assert.ok(sql.some((query) => /delete from "membership_applications"/i.test(query)));
   assert.ok(sql.some((query) => /delete from "rate_limits"/i.test(query)));
   assert.ok(sql.some((query) => /delete from "enlaces_applications"/i.test(query)));
+  assert.ok(sql.some((query) => /delete from "audit_logs"[^;]*enlaces/i.test(query)), "the history of purged Enlaces applications goes too");
   assert.ok(sql.some((query) => /insert into "audit_logs"/i.test(query)));
 });
 

@@ -1,7 +1,7 @@
 import {adminWriteGuard,adminWriteCondition} from './admin-write-guard';
 import type {StaffIdentity} from './staff-auth';
 import { purgeWorkspace } from "./workspace-documents";
-import { and,lte,sql } from "drizzle-orm";
+import { and,eq,lte,sql } from "drizzle-orm";
 import { getDb } from "@/db";
 import { auditLogs, comments, contactRequests, enlacesApplications, rateLimits, membershipApplications } from "@/db/schema";
 
@@ -18,6 +18,8 @@ export async function purgeExpiredData(actorEmail: string, trigger: "manual" | "
     db.insert(auditLogs).select(sql`SELECT ${crypto.randomUUID()},${actorEmail},${`retention.purge.${trigger}`},'system','expired-data',${JSON.stringify({cutoff,trigger})},${cutoff} WHERE ${guard}`).returning({id:auditLogs.id}),
     // Enlaces APJ applications and their score sheets (deleted by cascade) expire like the rest.
     db.delete(enlacesApplications).where(and(lte(enlacesApplications.retentionUntil, cutoff),guard)),
+    // The history of an application goes with it. Entries about the results and anonymized ones stay.
+    db.delete(auditLogs).where(and(eq(auditLogs.entityType,'enlaces'),sql`${auditLogs.entityId} LIKE '________-____-____-____-____________'`,sql`${auditLogs.entityId} NOT IN (SELECT id FROM enlaces_applications)`,guard)),
   ]);
   if(actor&&!result[4].length)throw new PurgeAuthorizationError();
   return { cutoff, trigger };

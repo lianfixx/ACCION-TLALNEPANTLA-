@@ -34,4 +34,4 @@ Migración `0016_panel_crm`: `site_content`, `site_documents`, `person_notes`, `
 
 ## Enlaces APJ 2027 (`/admin/enlaces`)
 
-Desde el 16-nov-2026 la convocatoria tiene su propio módulo: postulaciones, puntaje, selección, resultados y exportación. Ver `docs/enlaces-apj.md`.
+Desde el 16-nov-2026 la convocatoria tiene su propio módulo: postulaciones, puntaje, selección (titular y apoyo), resultados y exportación. Mientras la convocatoria está abierta el panel solo permite leer; el puntaje, el estado y la nota se capturan a partir del cierre. Publicar los resultados es lo que amplía la conservación de seleccionadas y suplentes. Ver `docs/enlaces-apj.md`.

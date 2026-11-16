@@ -26,13 +26,16 @@ export function missingEnlacesDocuments(documents: EnlacesDocument[], motivesTex
 
 /**
  * Removes the letters of an application and, when the account has no registration that needs it,
- * the identification as well. Files go first; a row is deleted only after its file is gone.
+ * the identification as well. The rows are hidden at once; a row is deleted only after its file is gone,
+ * and the daily purge retries whatever could not be deleted here.
  */
 export async function removeEnlacesDocuments(accountId: string, email: string) {
   const env = getRuntimeEnv(), db = env.DB!, now = Date.now();
   const keepsIdentity = Boolean(await db.prepare("SELECT 1 WHERE EXISTS (SELECT 1 FROM membership_applications WHERE owner_email=? AND status IN ('submitted','in_review','accepted') AND retention_until>?) OR EXISTS (SELECT 1 FROM commission_members WHERE account_id=? AND active=1)").bind(email, now, accountId).first());
   const categories = keepsIdentity ? ["motivation_letter", "recommendation_letter"] : ["motivation_letter", "recommendation_letter", "ine_front", "ine_back"];
-  const files = (await db.prepare(`SELECT id,object_key AS objectKey FROM commission_documents WHERE owner_id=? AND item_id IS NULL AND category IN (${categories.map(() => "?").join(",")})`).bind(accountId, ...categories).all<{ id: string; objectKey: string }>()).results;
+  const marks = categories.map(() => "?").join(",");
+  await db.prepare(`UPDATE commission_documents SET status='removed',retention_until=? WHERE owner_id=? AND item_id IS NULL AND category IN (${marks})`).bind(now, accountId, ...categories).run();
+  const files = (await db.prepare(`SELECT id,object_key AS objectKey FROM commission_documents WHERE owner_id=? AND item_id IS NULL AND category IN (${marks})`).bind(accountId, ...categories).all<{ id: string; objectKey: string }>()).results;
   let failed = 0;
   for (const file of files) {
     try { await env.BUCKET!.delete(file.objectKey); await db.prepare("DELETE FROM commission_documents WHERE id=? AND owner_id=?").bind(file.id, accountId).run(); }

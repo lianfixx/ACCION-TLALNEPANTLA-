@@ -35,7 +35,9 @@ export async function POST(request: Request) {
   if (!body || typeof body !== "object" || Array.isArray(body)) return fail("Revisa los datos enviados.");
   try {
     const db = getRuntimeEnv().DB!, action = String(body.action ?? ""), now = Date.now();
-    if (!await consumeRateLimit("enlaces-form", user.accountId, 240, 60 * 60_000)) return fail("Has guardado muchas veces seguidas. Espera unos minutos.", 429);
+    // Saving a draft while typing must never use up the allowance for sending or withdrawing.
+    const allowed = action === "save" ? await consumeRateLimit("enlaces-save", user.accountId, 1500, 60 * 60_000) : await consumeRateLimit("enlaces-action", user.accountId, 60, 60 * 60_000);
+    if (!allowed) return fail(action === "save" ? "Has guardado muchas veces seguidas. Espera unos minutos." : "Hiciste demasiados intentos seguidos. Espera unos minutos.", 429);
     const [state, application] = await Promise.all([enlacesState(now), ownEnlacesApplication(user.accountId)]);
     const session = sessionWriteGuard(user, now);
     const name = user.fullName || user.displayName;
@@ -95,21 +97,33 @@ export async function POST(request: Request) {
       if (state.phase === "results" && ["selected", "substitute", "not_selected"].includes(application.status)) return fail("Tu postulación ya tiene resultado y no puede retirarse desde aquí.", 409);
       if (expected !== application.updatedAt) return fail(changed, 409);
       const [withdrawn] = await db.batch([
-        db.prepare(`UPDATE enlaces_applications SET status='withdrawn',seat='',motives_text='',previous_participation='',proposal='',city_tie_detail='',birth_date='',publish_name_ok=0,interview_note='',updated_at=?,retention_until=MIN(retention_until,?) WHERE id=? AND account_id=? AND updated_at=? AND ${session.sql}`).bind(at, at + 30 * 86_400_000, application.id, user.accountId, application.updatedAt, ...session.values),
+        db.prepare(`UPDATE enlaces_applications SET status='withdrawn',seat='',track='',commission='',community_kind='',community_name='',motives_text='',previous_participation='',proposal='',city_tie_detail='',birth_date='',publish_name_ok=0,interview_note='',updated_at=?,retention_until=MIN(retention_until,?) WHERE id=? AND account_id=? AND updated_at=? AND ${session.sql}`).bind(at, at + 30 * 86_400_000, application.id, user.accountId, application.updatedAt, ...session.values),
         audit("enlaces.withdrawn", application.id),
         db.prepare("DELETE FROM enlaces_scores WHERE application_id=? AND EXISTS (SELECT 1 FROM enlaces_applications WHERE id=? AND status='withdrawn')").bind(application.id, application.id),
       ]);
       if (!withdrawn.meta.changes) return fail(changed, 409);
-      const removal = await removeEnlacesDocuments(user.accountId, user.email);
-      return membershipJson({ ...await view(user.accountId, name), message: removal.failed ? "Postulación retirada. Algunos archivos se borrarán en la limpieza de mañana." : "Postulación retirada. Tus cartas se borraron." });
+      await removeEnlacesDocuments(user.accountId, user.email);
+      return membershipJson({ ...await view(user.accountId, name), message: "Postulación retirada. Tus cartas se borraron." });
+    }
+
+    if (action === "unpublish-name") {
+      // The authorization can be taken back at any time, also after the results are public.
+      if (!application.publishNameOk) return fail("Tu nombre ya no está autorizado para publicarse.", 409);
+      if (expected !== application.updatedAt) return fail(changed, 409);
+      const [saved] = await db.batch([
+        db.prepare(`UPDATE enlaces_applications SET publish_name_ok=0,updated_at=? WHERE id=? AND account_id=? AND updated_at=? AND status<>'withdrawn' AND ${session.sql}`).bind(at, application.id, user.accountId, application.updatedAt, ...session.values),
+        audit("enlaces.name_unpublished", application.id),
+      ]);
+      if (!saved.meta.changes) return fail(changed, 409);
+      return membershipJson({ ...await view(user.accountId, name), message: "Listo. Tu nombre no aparece en los resultados." });
     }
 
     if (action === "delete-documents") {
       if (state.phase !== "results" || application.status !== "not_selected") return fail("Esta opción estará disponible cuando se publiquen los resultados.", 409);
       const [recorded] = await db.batch([db.prepare(`INSERT INTO audit_logs(id,actor_email,action,entity_type,entity_id,created_at) SELECT ?,?,'enlaces.documents_deleted','enlaces',?,? WHERE ${session.sql}`).bind(crypto.randomUUID(), user.email, application.id, now, ...session.values)]);
       if (!recorded.meta.changes) return fail("Tu sesión cambió. Vuelve a entrar.", 403);
-      const removal = await removeEnlacesDocuments(user.accountId, user.email);
-      return membershipJson({ ...await view(user.accountId, name), message: removal.failed ? "Algunos archivos no se pudieron borrar. Inténtalo de nuevo." : "Tus documentos se borraron." }, { status: removal.failed ? 502 : 200 });
+      await removeEnlacesDocuments(user.accountId, user.email);
+      return membershipJson({ ...await view(user.accountId, name), message: "Tus documentos se borraron." });
     }
     return fail("Esta acción no está disponible.", 404);
   } catch { return fail("No pudimos guardar. Inténtalo de nuevo.", 503); }

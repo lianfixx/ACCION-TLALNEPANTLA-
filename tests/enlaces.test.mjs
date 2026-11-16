@@ -57,12 +57,15 @@ test('the window opens and closes at the official minute',async()=>{const f=awai
 test('once open the page shows the full convocatoria and leads to the application',async()=>{const f=await fixture(during);try{
  const {html}=await page(f,'/enlaces');const body=main(html);
  for(const text of ['Objeto','Modalidades','Comisiones y plazas','Requisitos y documentos','Registro','Selección','Calendario','Funciones','Reconocimientos','Toma de protesta','Disposiciones finales','Sí, protesto.','Yohualli Emiliano García Milla','Tlalnepantla de Baz, Estado de México, 23 de noviembre de 2026.'])assert.ok(body.includes(text),text);
- assert.match(body,/href="\/cuenta\/enlaces"[^>]*>Postularme/);assert.match(body,/href="\/archivos\/convocatoria-enlaces-apj-2027\.pdf"/);
+ assert.match(body,/href="\/cuenta\/enlaces"[^>]*>Postularme/);assert.doesNotMatch(body,/convocatoria-enlaces-apj-2027\.pdf/,'no link to a PDF that has not been uploaded');
+ f.db.prepare("INSERT INTO site_documents(slug,object_key,file_name,size_bytes,sha256,uploaded_at,uploaded_by) VALUES('convocatoria-enlaces-apj-2027','site-documents/convocatoria-enlaces-apj-2027/abc.pdf','Convocatoria.pdf',10,'abc',1,?)").run(owner);
+ assert.match(main((await page(f,'/enlaces')).html),/href="\/archivos\/convocatoria-enlaces-apj-2027\.pdf"/);
  assert.match(body,/hasta el domingo 6 de diciembre a las 23:59 horas/);
  assert.match((await page(f,'/')).html,/href="\/enlaces"/,'entry in the menu and the home page');
  assert.match(await(await f.call('/sitemap.xml','GET',undefined,null)).text(),/\/enlaces/);
  const guest=await page(f,'/cuenta/enlaces');assert.equal(guest.status,307);assert.match(guest.location,/\/ingresar\?returnTo=%2Fcuenta%2Fenlaces/);
- assert.equal((await f.call('/api/enlaces','GET',undefined,null)).status,401);
+ const anonymous=await f.call('/api/enlaces','GET',undefined,null);assert.equal(anonymous.status,401);assert.equal(anonymous.headers.get('cache-control'),'private, no-store');
+ assert.equal(guest.status,307);assert.equal((await f.call('/cuenta/enlaces','GET',undefined,null)).headers.get('cache-control'),'private, no-store');
 }finally{done(f);}});
 
 test('a person applies in one screen, gets a folio and can edit until the close',async()=>{const f=await fixture(during);try{
@@ -87,7 +90,7 @@ test('a person applies in one screen, gets a folio and can edit until the close'
  assert.equal((await upload(f,ana,'motivation_letter')).status,201,'the letter of motives may be a PDF');
  r=await api(f,ana,{action:'submit',fields:fields({motivesText:''}),expectedUpdatedAt:app.updatedAt});assert.equal(r.status,200,await r.clone().text());
  const sent=await r.json();app=sent.application;assert.equal(app.status,'submitted');assert.equal(sent.message,'Postulación enviada.');assert.ok(app.submittedAt);
- assert.equal(sent.documents.length,4);
+ assert.equal(sent.documents.length,4);assert.ok(!('retentionUntil' in app),'the retention date never leaves the server');
  // Editing after sending keeps it complete.
  r=await api(f,ana,{action:'save',fields:fields({proposal:''}),expectedUpdatedAt:app.updatedAt});assert.equal(r.status,400);
  r=await api(f,ana,{action:'submit',fields:fields({motivesText:'',proposal:'Organizaría un cafecito en mi escuela cada mes del semestre.'}),expectedUpdatedAt:app.updatedAt});assert.equal(r.status,200);
@@ -98,6 +101,10 @@ test('a person applies in one screen, gets a folio and can edit until the close'
  assert.equal((await upload(f,ana,'recommendation_letter')).status,201);
  assert.equal(f.db.prepare("SELECT count(*) n FROM commission_documents WHERE owner_id=? AND category='recommendation_letter'").get(id).n,1);
  assert.equal(f.bucket.files.size,4);
+ // A sent application keeps its documents: they are changed or withdrawn from Mi postulación.
+ const letter=f.db.prepare("SELECT id,updated_at FROM commission_documents WHERE owner_id=? AND category='recommendation_letter'").get(id);
+ r=await f.call('/api/espacio/documentos/'+letter.id,'PATCH',{action:'remove',expectedUpdatedAt:letter.updated_at},ana);assert.equal(r.status,409);assert.match((await r.json()).error,/forma parte de tu postulación/);
+ assert.match(main((await page(f,'/cuenta',ana)).html),/href="\/cuenta\/enlaces"/,'the account page leads back to the application');
 }finally{done(f);}});
 
 test('limits: age, files, another account and the other upload door',async()=>{const f=await fixture(during);try{
@@ -128,6 +135,8 @@ test('an identification already in the account is reused',async()=>{const f=awai
  const id=account(f,ana);const docs=await seedReviewedIdentityDocuments(f,id);
  const app=await start(f,ana);
  assert.deepEqual((await view(f,ana)).documents.map(d=>d.category).sort(),['ine_back','ine_front']);
+ const replaced=await upload(f,ana,'ine_front',png,'image/png');assert.equal(replaced.status,409,'a reviewed identification is not replaced from here');assert.match((await replaced.json()).error,/ya fue revisada/);
+ assert.equal(f.db.prepare("SELECT status FROM commission_documents WHERE id=?").get(docs.ine_front).status,'checked');
  assert.equal((await upload(f,ana,'recommendation_letter')).status,201);
  const r=await api(f,ana,{action:'submit',fields:fields(),expectedUpdatedAt:app.updatedAt});assert.equal(r.status,200,await r.clone().text());
  const retention=f.db.prepare('SELECT retention_until r FROM enlaces_applications WHERE account_id=?').get(id).r;
@@ -148,8 +157,8 @@ test('after the close nothing is received, and a person can still withdraw',asyn
  assert.match(main((await page(f,'/cuenta/enlaces',ana)).html),/Recibimos tu postulación\. Nos pondremos en contacto contigo para acordar tu entrevista/);
  assert.match(main((await page(f,'/cuenta/enlaces',beto)).html),/no se envió antes del cierre/);
  const r=await api(f,ana,{action:'withdraw',expectedUpdatedAt:app.updatedAt});assert.equal(r.status,200,await r.clone().text());assert.equal((await r.json()).application,null);
- const row=f.db.prepare('SELECT status,motives_text,proposal,birth_date FROM enlaces_applications WHERE account_id=?').get(id);
- assert.deepEqual({...row},{status:'withdrawn',motives_text:'',proposal:'',birth_date:''});
+ const row=f.db.prepare('SELECT status,track,commission,community_name,motives_text,proposal,birth_date FROM enlaces_applications WHERE account_id=?').get(id);
+ assert.deepEqual({...row},{status:'withdrawn',track:'',commission:'',community_name:'',motives_text:'',proposal:'',birth_date:''});
  assert.equal(f.db.prepare('SELECT count(*) n FROM commission_documents WHERE owner_id=?').get(id).n,0,'letters and identification are deleted');
  assert.equal(f.bucket.files.size,0);
 }finally{done(f);}});
@@ -198,6 +207,8 @@ test('only administration reaches the panel, the list hides drafts and filters w
 
 test('one agreed score per application, with the four criteria of the convocatoria',async()=>{const f=await fixture(during);try{
  account(f,ana);await submitted(f,ana);
+ for(const body of [{action:'score',...full},{action:'status',status:'in_review'},{action:'note',note:'Antes de tiempo'}]){const early=await act(f,ana,body);assert.equal(early.status,409,body.action);assert.match((await early.json()).error,/se abre al cierre/);}
+ advance(f,after);
  for(const [values,pattern] of [[{...full,motives:31},/Carta de motivos va de 0 a 30/],[{...full,proposal:26},/de 0 a 25/],[{...full,participation:-1},/de 0 a 25/],[{...full,recommendation:20.5},/de 0 a 20/],[{motives:10},/de 0 a 25/]]){
   const r=await score(f,ana,values);assert.equal(r.status,400);assert.match((await r.json()).error,pattern);
  }
@@ -214,7 +225,10 @@ test('one agreed score per application, with the four criteria of the convocator
 test('selection follows the places and the minimum of the convocatoria and keeps the file for the year',async()=>{const f=await fixture(during);try{
  const people=['ana','beto','caro'].map(name=>name+'@example.test');const ids=people.map(email=>account(f,email));
  for(const email of people)await submitted(f,email);
- account(f,'dora@example.test');await submitted(f,'dora@example.test',{track:'comunidad',commission:'',communityKind:'colonia',communityName:'San Javier'});
+ const dora=account(f,'dora@example.test');await submitted(f,'dora@example.test',{track:'comunidad',commission:'',communityKind:'colonia',communityName:'San Javier'});
+ account(f,'eva@example.test');await submitted(f,'eva@example.test',{track:'comunidad',commission:'',communityKind:'colonia',communityName:'  san   JAVIÉR '});
+ account(f,'fer@example.test');await submitted(f,'fer@example.test',{track:'comunidad',commission:'',communityKind:'universidad',communityName:'San Javier'});
+ advance(f,after);
  let r=await act(f,ana,{action:'status',status:'selected',seat:'titular'});assert.equal(r.status,409);assert.match((await r.json()).error,/Captura el puntaje/);
  for(const email of people)await ok(await score(f,email,full));
  await ok(await act(f,ana,{action:'status',status:'interview'}));
@@ -228,33 +242,50 @@ test('selection follows the places and the minimum of the convocatoria and keeps
  await ok(await score(f,'dora@example.test',{motives:20,proposal:15,participation:14,recommendation:10}));
  r=await act(f,'dora@example.test',{action:'status',status:'selected'});assert.equal(r.status,409);assert.match((await r.json()).error,/mínimo de 60 puntos\. Esta postulación tiene 59/);
  await ok(await score(f,'dora@example.test',{motives:20,proposal:15,participation:15,recommendation:10}));await ok(await act(f,'dora@example.test',{action:'status',status:'selected'}));
+ // One place per university or colonia, however it is written; a university and a colonia are different places.
+ for(const email of ['eva@example.test','fer@example.test'])await ok(await score(f,email,full));
+ r=await act(f,'eva@example.test',{action:'status',status:'selected'});assert.equal(r.status,409);assert.match((await r.json()).error,/ya tiene su Enlace/);
+ await ok(await act(f,'fer@example.test',{action:'status',status:'selected'}));
+ r=await score(f,'dora@example.test',{motives:20,proposal:15,participation:14,recommendation:10});assert.equal(r.status,409,'a selected community Enlace keeps the minimum');assert.match((await r.json()).error,/mínimo de 60/);
+ // The database itself refuses a second titular in the same commission.
+ assert.throws(()=>f.db.prepare("UPDATE enlaces_applications SET status='selected',seat='titular' WHERE id=?").run(row(f,'caro@example.test').id),/UNIQUE/);
+ // Until the results are public nothing gives the decision away: neither the status, nor the place, nor a longer retention date.
  const year=Date.parse('2028-01-17T06:00:00Z'),standard=Date.parse('2026-12-07T05:59:59Z')+90*86400000;
- assert.equal(row(f,ana).retention_until,year);assert.equal(row(f,'caro@example.test').retention_until,year,'substitutes are kept as well');
+ for(const email of [...people,'dora@example.test'])assert.equal(row(f,email).retention_until,standard,email);
+ assert.equal(f.db.prepare('SELECT count(*) n FROM commission_documents WHERE retention_until<>?').get(standard).n,0,'documents keep the ordinary date');
+ const hidden=await view(f,ana);assert.equal(hidden.application.status,'in_review');assert.equal(hidden.application.seat,'','the place is hidden too');assert.doesNotMatch(JSON.stringify(hidden),/retention/i);
+ advance(f,'2026-12-10T18:00:00Z');await ok(await admin(f,{action:'publish'}));
+ assert.equal(row(f,ana).retention_until,year);assert.equal(row(f,'caro@example.test').retention_until,year,'substitutes are kept as well');assert.equal(row(f,'eva@example.test').retention_until,standard);
  assert.equal(f.db.prepare('SELECT min(retention_until) m FROM commission_documents WHERE owner_id=?').get(ids[0]).m,year,'documents follow the application');
+ assert.equal(f.db.prepare('SELECT max(retention_until) m FROM commission_documents WHERE owner_id=(SELECT id FROM staff_accounts WHERE email=?)').get('eva@example.test').m,standard);
  await ok(await act(f,beto,{action:'status',status:'not_selected'}));
  assert.equal(row(f,beto).seat,'','the place is freed');assert.equal(row(f,'dora@example.test').seat,'','a community Enlace has no titular or apoyo');
- assert.equal(row(f,beto).retention_until,standard);assert.equal(f.db.prepare("SELECT max(retention_until) m FROM commission_documents WHERE owner_id=? AND category='recommendation_letter'").get(ids[1]).m,standard);
+ assert.equal(row(f,beto).retention_until,standard);assert.equal(f.db.prepare("SELECT max(retention_until) m FROM commission_documents WHERE owner_id=?").get(ids[1]).m,standard,'letters and identification go back to the ordinary date');
+ await ok(await act(f,'eva@example.test',{action:'status',status:'substitute'}));assert.equal(row(f,'eva@example.test').retention_until,year);
  assert.equal((await act(f,beto,{action:'status',status:'draft'})).status,400);assert.equal((await act(f,beto,{action:'status',status:'not_selected'})).status,400,'same status');
- // The decision stays hidden from the applicant until the results are published.
- assert.equal((await view(f,ana)).application.status,'in_review');assert.equal((await view(f,ana)).application.seat,'','the place is hidden too');assert.equal((await view(f,beto)).application.status,'in_review');
- assert.match(JSON.stringify(f.db.prepare("SELECT metadata_json FROM audit_logs WHERE action='enlaces.status' ORDER BY created_at DESC,rowid DESC").get()),/not_selected/);
+ await ok(await admin(f,{action:'unpublish'}));
+ assert.equal(row(f,ana).retention_until,standard,'withdrawing the results undoes the longer date');assert.equal(f.db.prepare("SELECT max(retention_until) m FROM commission_documents WHERE owner_id=? AND category='recommendation_letter'").get(dora).m,standard);
+ assert.equal((await view(f,ana)).application.status,'in_review');assert.equal((await view(f,beto)).application.status,'in_review');
+ assert.match(JSON.stringify(f.db.prepare("SELECT metadata_json FROM audit_logs WHERE action='enlaces.status' AND entity_id=? ORDER BY created_at DESC,rowid DESC").get(row(f,beto).id)),/not_selected/);
 }finally{done(f);}});
 
 test('results are published by hand after the close, with authorized names only',async()=>{const f=await fixture(during);try{
  account(f,ana,'Ana Prueba Ruiz');account(f,beto,'Beto Reservado');account(f,'caro@example.test','Caro Suplente');account(f,'dora@example.test','Dora Colonia');
  await submitted(f,ana);await submitted(f,beto,{publishNameOk:false});await submitted(f,'caro@example.test');
  await submitted(f,'dora@example.test',{track:'comunidad',commission:'',communityKind:'colonia',communityName:'San Javier'});
- for(const email of [ana,beto,'caro@example.test','dora@example.test'])await ok(await score(f,email,full));
- await ok(await act(f,ana,{action:'status',status:'selected',seat:'apoyo'}));await ok(await act(f,beto,{action:'status',status:'selected',seat:'titular'}));
- await ok(await act(f,'caro@example.test',{action:'status',status:'substitute'}));await ok(await act(f,'dora@example.test',{action:'status',status:'not_selected'}));
+ account(f,'eva@example.test','Eva Suspendida');await submitted(f,'eva@example.test');
  let r=await admin(f,{action:'publish'});assert.equal(r.status,409);assert.match((await r.json()).error,/después del cierre/);
  advance(f,after);
+ for(const email of [ana,beto,'caro@example.test','dora@example.test','eva@example.test'])await ok(await score(f,email,full));
+ await ok(await act(f,ana,{action:'status',status:'selected',seat:'apoyo'}));await ok(await act(f,beto,{action:'status',status:'selected',seat:'titular'}));
+ await ok(await act(f,'caro@example.test',{action:'status',status:'substitute'}));await ok(await act(f,'dora@example.test',{action:'status',status:'not_selected'}));
+ await ok(await act(f,'eva@example.test',{action:'status',status:'substitute'}));f.db.prepare('UPDATE staff_accounts SET disabled_at=? WHERE email=?').run(Date.now(),'eva@example.test');
  assert.doesNotMatch(main((await page(f,'/enlaces')).html),/Generación 2027|Ana Prueba Ruiz/);
  r=await api(f,'dora@example.test',{action:'delete-documents'});assert.equal(r.status,409,'not before the results');
  await ok(await admin(f,{action:'publish'}));
  const body=main((await page(f,'/enlaces')).html);
  assert.match(body,/Generación 2027/);assert.match(body,/Gobierno/);assert.match(body,/<span>Apoyo<\/span>Ana Prueba Ruiz/);assert.match(body,/<span>Suplentes<\/span>Caro Suplente/);assert.doesNotMatch(body,/<span>Titular<\/span>/,'the titular did not authorize the name');
- assert.doesNotMatch(body,/Beto Reservado|Dora Colonia/,'no name without authorization, and none for people not selected');
+ assert.doesNotMatch(body,/Beto Reservado|Dora Colonia/,'no name without authorization, and none for people not selected');assert.doesNotMatch(body,/Eva Suspendida/,'a suspended account is not published');
  assert.match(body,/Postulaciones cerradas/);assert.match(body,/Objeto/,'the convocatoria stays visible');
  assert.match((await page(f,'/')).html,/href="\/enlaces"/,'the entry returns with the results');
  assert.equal((await view(f,ana)).application.status,'selected');assert.equal((await view(f,'caro@example.test')).application.status,'substitute');
@@ -262,6 +293,11 @@ test('results are published by hand after the close, with authorized names only'
  assert.equal((await view(f,ana)).application.seat,'apoyo');
  assert.match(main((await page(f,'/cuenta/enlaces','dora@example.test')).html),/Borrar mis documentos/);
  r=await api(f,ana,{action:'withdraw',expectedUpdatedAt:row(f,ana).updated_at});assert.equal(r.status,409,'a result is not withdrawn from the account');
+ // The authorization to publish the name can be taken back at any time.
+ assert.match(main((await page(f,'/cuenta/enlaces',ana)).html),/Quitar la autorización para publicar mi nombre/);
+ assert.equal((await api(f,beto,{action:'unpublish-name',expectedUpdatedAt:row(f,beto).updated_at})).status,409,'nothing to take back');
+ assert.match((await ok(await api(f,ana,{action:'unpublish-name',expectedUpdatedAt:row(f,ana).updated_at}))).message,/no aparece en los resultados/);
+ assert.doesNotMatch(main((await page(f,'/enlaces')).html),/Ana Prueba Ruiz/);assert.equal(row(f,ana).status,'selected');
  const dora=f.db.prepare('SELECT id FROM staff_accounts WHERE email=?').get('dora@example.test').id;
  await ok(await api(f,'dora@example.test',{action:'delete-documents'}));
  assert.equal(f.db.prepare('SELECT count(*) n FROM commission_documents WHERE owner_id=?').get(dora).n,0);
@@ -273,7 +309,7 @@ test('results are published by hand after the close, with authorized names only'
 test('the export is a concentrate without documents or letters, and it is recorded',async()=>{const f=await fixture(during);try{
  account(f,ana,'=Ana Fórmula');account(f,beto,'Beto Prueba');
  await submitted(f,ana);await submitted(f,beto,{track:'comunidad',commission:'',communityKind:'universidad',communityName:'EBC',publishNameOk:false});
- await ok(await score(f,ana,full));
+ advance(f,after);await ok(await score(f,ana,full));
  const response=await f.call('/api/admin/enlaces/exportar','POST',{filters:{}},owner);assert.equal(response.status,200,await response.clone().text());
  assert.match(response.headers.get('content-disposition'),/^attachment; filename="enlaces-apj-2027-\d{4}-\d{2}-\d{2}\.csv"$/);
  const bytes=new Uint8Array(await response.arrayBuffer());assert.deepEqual([...bytes.slice(0,3)],[0xef,0xbb,0xbf]);
@@ -287,13 +323,22 @@ test('the export is a concentrate without documents or letters, and it is record
 }finally{done(f);}});
 
 test('a withdrawn application is closed for the panel, and expired ones are purged',async()=>{const f=await fixture(during);try{
- const id=account(f,ana);const app=await submitted(f,ana);await ok(await score(f,ana,full));
+ const id=account(f,ana);const app=await submitted(f,ana);advance(f,after);await ok(await score(f,ana,full));
  await ok(await api(f,ana,{action:'withdraw',expectedUpdatedAt:row(f,ana).updated_at}));
  assert.equal(f.db.prepare('SELECT count(*) n FROM enlaces_scores').get().n,0,'the score leaves with the application');
  const r=await admin(f,{action:'status',status:'in_review',id:app.id,expectedUpdatedAt:row(f,ana).updated_at});assert.equal(r.status,409);assert.match((await r.json()).error,/retirada/);
  advance(f,'2027-04-01T12:00:00Z');
  await f.scheduled(Date.now());
  assert.equal(f.db.prepare('SELECT count(*) n FROM enlaces_applications WHERE account_id=?').get(id).n,0);
+ assert.equal(f.db.prepare("SELECT count(*) n FROM audit_logs WHERE entity_type='enlaces' AND entity_id=?").get(app.id).n,0,'the history leaves with the application');
+}finally{done(f);}});
+
+test('saving while typing never uses up the allowance to send or withdraw',async()=>{const f=await fixture(during);try{
+ account(f,ana);let app=await start(f,ana);
+ for(let i=0;i<70;i++){const r=await api(f,ana,{action:'save',fields:{proposal:'Borrador '+i},expectedUpdatedAt:app.updatedAt});assert.equal(r.status,200,'save '+i);app=(await r.json()).application;}
+ for(let i=0;i<59;i++)assert.equal((await api(f,ana,{action:'withdraw',expectedUpdatedAt:1})).status,409);
+ assert.equal((await api(f,ana,{action:'withdraw',expectedUpdatedAt:1})).status,429,'the start counted too');
+ const r=await api(f,ana,{action:'save',fields:{proposal:'Sigo escribiendo'},expectedUpdatedAt:app.updatedAt});assert.equal(r.status,200,'saving has its own allowance');
 }finally{done(f);}});
 
 test('the PDF of the convocatoria lives only in private storage and opens with the convocatoria',async()=>{const f=await fixture(before);try{

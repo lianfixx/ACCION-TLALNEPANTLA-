@@ -12,7 +12,7 @@ const moment = (value: number) => new Intl.DateTimeFormat("es-MX", { dateStyle: 
 const size = (bytes: number) => bytes >= 1024 * 1024 ? `${(bytes / 1024 / 1024).toFixed(1)} MB` : `${Math.max(1, Math.round(bytes / 1024))} KB`;
 const tone = (status: EnlacesStatus) => status === "selected" ? "ok" : status === "not_selected" || status === "withdrawn" ? "off" : "wait";
 const auditLabels: Record<string, string> = {
-  "enlaces.started": "Empezó su postulación", "enlaces.submitted": "Envió su postulación", "enlaces.updated": "Cambió su postulación", "enlaces.withdrawn": "Retiró su postulación", "enlaces.documents_deleted": "Borró sus documentos",
+  "enlaces.started": "Empezó su postulación", "enlaces.submitted": "Envió su postulación", "enlaces.updated": "Cambió su postulación", "enlaces.withdrawn": "Retiró su postulación", "enlaces.documents_deleted": "Borró sus documentos", "enlaces.name_unpublished": "Quitó la autorización para publicar su nombre",
   "enlaces.scored": "Puntaje capturado", "enlaces.status": "Cambio de estado", "enlaces.interview_note": "Nota de entrevista",
 };
 const options: EnlacesStatus[] = ["submitted", "in_review", "interview", "selected", "substitute", "not_selected"];
@@ -28,7 +28,8 @@ export default function EnlacesReview({ record, ageReference, phase }: { record:
   const [points, setPoints] = useState<Record<ScoreKey, string>>(() => Object.fromEntries(scoreCriteria.map(criterion => [criterion.key, score ? String(score[criterion.key]) : ""])) as Record<ScoreKey, string>);
   const [status, setStatus] = useState<EnlacesStatus>(application.status), [seat, setSeat] = useState<EnlacesSeat | "">(application.seat), [note, setNote] = useState(application.interviewNote);
   const seated = status === "selected" && application.track === "comision";
-  const withdrawn = application.status === "withdrawn";
+  // Nothing is evaluated while the person can still change the application.
+  const withdrawn = application.status === "withdrawn" || phase === "before" || phase === "open";
   const total = scoreCriteria.reduce((sum, criterion) => sum + (Number(points[criterion.key]) || 0), 0);
   const complete = scoreCriteria.every(criterion => points[criterion.key] !== "" && Number.isInteger(Number(points[criterion.key])) && Number(points[criterion.key]) >= 0 && Number(points[criterion.key]) <= criterion.max);
 
@@ -57,7 +58,8 @@ export default function EnlacesReview({ record, ageReference, phase }: { record:
       </div>
     </div>
     <p className="people-feedback" role="status" aria-live="polite">{message}</p>
-    {withdrawn && <p className="admin-empty">La persona retiró esta postulación. Sus respuestas y sus cartas se borraron.</p>}
+    {application.status === "withdrawn" ? <p className="admin-empty">La persona retiró esta postulación. Sus respuestas y sus cartas se borraron.</p>
+      : withdrawn && <p className="admin-empty">La evaluación se abre al cierre de postulaciones. Hasta entonces la persona puede cambiar sus respuestas y sus documentos.</p>}
 
     <div className="people-grid">
       <div className="people-main">
@@ -108,7 +110,7 @@ export default function EnlacesReview({ record, ageReference, phase }: { record:
 
         <Panel title="Estado">
           <form className="people-form" onSubmit={event => { event.preventDefault(); void act({ action: "status", status, ...(seated ? { seat } : {}) }); }}>
-            <label>Estado de la postulación<select value={status} disabled={busy || withdrawn} onChange={event => setStatus(event.target.value as EnlacesStatus)}>{options.map(option => <option key={option} value={option}>{enlacesStatuses[option]}</option>)}{withdrawn && <option value="withdrawn">{enlacesStatuses.withdrawn}</option>}</select></label>
+            <label>Estado de la postulación<select value={status} disabled={busy || withdrawn} onChange={event => setStatus(event.target.value as EnlacesStatus)}>{options.map(option => <option key={option} value={option}>{enlacesStatuses[option]}</option>)}{application.status === "withdrawn" && <option value="withdrawn">{enlacesStatuses.withdrawn}</option>}</select></label>
             {seated && <label>Plaza en la comisión<select value={seat} disabled={busy} required onChange={event => setSeat(event.target.value as EnlacesSeat | "")}><option value="">Elige la plaza</option>{(Object.keys(enlacesSeats) as EnlacesSeat[]).map(option => <option key={option} value={option}>{enlacesSeats[option]}</option>)}</select></label>}
             <button className="button button-secondary" disabled={busy || withdrawn || (seated && !seat) || (status === application.status && (!seated || seat === application.seat))}>Cambiar estado</button>
             <p className="people-note">{phase === "results" ? "Los resultados están publicados. La persona ve este estado en su cuenta." : "La persona verá «Seleccionada», «Suplente» o «No seleccionada» cuando publiques los resultados. Antes ve «En revisión»."}</p>

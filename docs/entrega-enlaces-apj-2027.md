@@ -86,3 +86,19 @@ Enviado a la rama de trabajo. Sin revisión. Sin integrar a `main`. Sin publicar
 - Cómo se avisa a cada persona la hora de su entrevista.
 - Si se distingue titular y apoyo al publicar resultados.
 - La presidencia del Comité no se nombra en ningún lugar del sitio.
+
+## Actualización del 16-nov-2026, después de la auditoría independiente
+
+La entrega anterior describe el commit `51cd4d9`. Después se agregaron dos cambios, y esta sección manda donde contradiga lo de arriba.
+
+- **Titular y apoyo** (`60ecb43`, migración `0018_enlaces_plaza`). Emi lo pidió el 16-nov; ya no es una duda abierta.
+- **Correcciones de la auditoría** (commit siguiente, migración `0019_enlaces_plaza_unica`). Nada crítico; dos hallazgos altos y diez medios, todos corregidos:
+  - El guardado automático compartía límite con enviar y retirar y podía dejar a alguien sin poder enviar. Ahora son límites separados y el guardado espera 4 segundos.
+  - La fecha de conservación delataba la decisión antes de los resultados. Ahora se amplía al publicar, se deshace al retirar los resultados y no sale del servidor.
+  - La evaluación (puntaje, estado, nota) solo se abre al cierre.
+  - Los documentos de una postulación enviada ya no se quitan desde Mi comisión; una identificación revisada no se reemplaza; los archivos se ocultan antes de borrarse; dos cargas simultáneas ya no se borran entre sí.
+  - Una plaza por universidad o colonia aunque se escriba distinto; índice único para titular y apoyo.
+  - La autorización de nombre dice con qué datos se publica y se puede quitar; las cuentas suspendidas no salen en resultados.
+  - El aviso menciona el puntaje, la nota de entrevista y a Resend. El enlace al PDF solo aparece si el PDF está subido. El historial se borra con la postulación.
+- **Verificación sobre el árbol corregido:** typecheck y lint sin avisos; `npm test` → 223 de 223 (17 del módulo); recorrido en Chromium a 375 px con 26 capturas, 0 px de desborde y sin errores de página.
+- **Sigue sin probarse:** el funcionamiento en producción y la apertura real del 23 de noviembre.

@@ -64,12 +64,12 @@ export async function enlacesNotice() {
   const ready = Boolean(notice.controller && notice.address && notice.email);
   const sections = [
     { title: "Responsable", body: ready ? `${notice.controller}, con domicilio en ${notice.address.replace(/[.,;]+\s*$/, "")}, es responsable del uso de tus datos en esta convocatoria. El contacto para privacidad es ${notice.email}.` : "Los datos del responsable están pendientes de publicación." },
-    { title: "Qué datos y para qué", body: "Se usan los datos de tu cuenta, la modalidad y la comisión o comunidad que eliges, tu fecha de nacimiento, tu vínculo con Tlalnepantla, tu carta de motivos, tu carta de recomendación, tu identificación oficial, tu participación previa y tu propuesta. Sirven para revisar tu postulación, entrevistarte, decidir la selección y, si resultas seleccionado o suplente, operar el programa durante el año. Postularte puede revelar una vinculación política y por eso estos datos se tratan como sensibles." },
+    { title: "Qué datos y para qué", body: "Se usan los datos de tu cuenta, la modalidad y la comisión o comunidad que eliges, tu fecha de nacimiento, tu vínculo con Tlalnepantla, tu carta de motivos, tu carta de recomendación, tu identificación oficial, tu participación previa y tu propuesta. El comité registra además el puntaje de tu postulación y, si te entrevista, una nota de la entrevista. Sirven para revisar tu postulación, entrevistarte, decidir la selección y, si resultas seleccionado o suplente, operar el programa durante el año. Postularte puede revelar una vinculación política y por eso estos datos se tratan como sensibles." },
     { title: "Quién los ve", body: "Tus cartas y tu identificación las ve únicamente el comité de selección. En el sitio solo la administración autorizada puede abrirlas. No se entregan a otras organizaciones ni se usan para publicidad." },
-    { title: "Publicación", body: "Tu nombre completo se publica en los resultados solo si lo autorizas y resultas seleccionado o suplente. Puedes postularte sin dar esa autorización." },
-    { title: "Conservación", body: `Tu postulación y tus documentos se conservan hasta el ${longDate(closesAt + enlacesRetentionAfterClose)}. Si resultas seleccionado o suplente se conservan hasta el ${longDate(enlacesSelectedRetention)}, un mes después de que termina el encargo. Puedes retirar tu postulación desde tu cuenta y, si no resultas seleccionado, borrar tus documentos ahí mismo. Lo vencido se elimina en el borrado automático de cada día.` },
+    { title: "Publicación", body: "Tu nombre completo se publica en los resultados solo si lo autorizas y resultas seleccionado o suplente. Aparece junto con la comisión y la plaza, o con la universidad o colonia. Puedes postularte sin dar esa autorización y puedes quitarla después desde tu cuenta." },
+    { title: "Conservación", body: `Tu postulación y tus documentos se conservan hasta el ${longDate(closesAt + enlacesRetentionAfterClose)}. Si resultas seleccionado o suplente, al publicarse los resultados se conservan hasta el ${longDate(enlacesSelectedRetention)}, un mes después de que termina el encargo. Puedes retirar tu postulación desde tu cuenta y, si no resultas seleccionado, borrar tus documentos ahí mismo. Lo vencido se elimina en el borrado automático de cada día.` },
     { title: "Tus derechos", body: `Puedes pedir acceso, rectificación, cancelación u oposición${notice.email ? ` escribiendo a ${notice.email}` : ""}. Indica tu folio y lo que solicitas.${notice.rightsProcedure ? " " + notice.rightsProcedure : ""}` },
-    { title: "Servicios que intervienen", body: "Cloudflare aloja el sitio y guarda los registros y archivos." },
+    { title: "Servicios que intervienen", body: "Cloudflare aloja el sitio y guarda los registros y archivos. Resend entrega los correos de tu cuenta y los que administración te escriba sobre tu postulación." },
   ];
   const snapshot = JSON.stringify({ version: enlacesNoticeVersion, cycle: enlacesCycle, controller: notice.controller, address: notice.address, email: notice.email, consent: enlacesConsent, publishConsent: enlacesPublishConsent, sections });
   const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(snapshot));
@@ -93,8 +93,13 @@ export function enlacesReference() {
   return "ENL27-" + Array.from(crypto.getRandomValues(new Uint8Array(8)), byte => alphabet[byte % alphabet.length]).join("");
 }
 
+/** The official PDF lives only in R2: the link is offered once the file has been uploaded in the panel. */
+export async function enlacesPdfReady() {
+  try { return Boolean(await getRuntimeEnv().DB!.prepare("SELECT 1 FROM site_documents WHERE slug='convocatoria-enlaces-apj-2027'").first()); } catch { return false; }
+}
+
 export type PublishedResult = { name: string; status: "selected" | "substitute"; seat: string; track: string; commission: string; communityKind: string; communityName: string };
-/** Names appear only with the person's authorization. */
+/** Names appear only with the person's authorization and while the account is active. */
 export async function enlacesPublishedResults() {
-  return (await getRuntimeEnv().DB!.prepare("SELECT a.name,e.status,e.seat,e.track,e.commission,e.community_kind AS communityKind,e.community_name AS communityName FROM enlaces_applications e JOIN staff_accounts a ON a.id=e.account_id WHERE e.cycle=? AND e.status IN ('selected','substitute') AND e.publish_name_ok=1 AND e.retention_until>? ORDER BY e.commission,e.community_name,e.status,CASE e.seat WHEN 'titular' THEN 0 ELSE 1 END,a.name").bind(enlacesCycle, Date.now()).all<PublishedResult>()).results;
+  return (await getRuntimeEnv().DB!.prepare("SELECT a.name,e.status,e.seat,e.track,e.commission,e.community_kind AS communityKind,e.community_name AS communityName FROM enlaces_applications e JOIN staff_accounts a ON a.id=e.account_id WHERE e.cycle=? AND e.status IN ('selected','substitute') AND e.publish_name_ok=1 AND e.retention_until>? AND a.disabled_at IS NULL ORDER BY e.commission,e.community_name,e.status,CASE e.seat WHEN 'titular' THEN 0 ELSE 1 END,a.name").bind(enlacesCycle, Date.now()).all<PublishedResult>()).results;
 }

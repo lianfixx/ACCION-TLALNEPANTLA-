@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX `enlaces_seat_unique` ON `enlaces_applications` (`cycle`,`commission`,`seat`) WHERE "enlaces_applications"."status" = 'selected' AND "enlaces_applications"."track" = 'comision';
