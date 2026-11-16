@@ -257,7 +257,7 @@ export default function EnlacesForm({ accountId, initial, commissions }: Props) 
       <legend>Documentos</legend>
       <p>Solo los ve el comité de selección.</p>
       {fileField({ category: "recommendation_letter", label: enlacesDocumentCategories.recommendation_letter, hint: "De una persona docente, empleadora o líder de tu comunidad. PDF, JPG o PNG de hasta 5 MB", accept: "application/pdf,image/jpeg,image/png", removable: true })}
-      {front && <p className="enl-reuse">Ya tenemos tu identificación en tu cuenta. No necesitas subirla de nuevo, pero puedes reemplazarla.</p>}
+      {front && front.createdAt < application.createdAt && <p className="enl-reuse">Ya tenemos tu identificación en tu cuenta. No necesitas subirla de nuevo, pero puedes reemplazarla.</p>}
       {fileField({ category: "ine_front", label: "Identificación oficial, frente", hint: "Foto o PDF de hasta 5 MB. Si tu PDF trae ambos lados, basta con este", accept: "application/pdf,image/jpeg,image/png" })}
       {(front?.mime !== "application/pdf" || hasBack) && fileField({ category: "ine_back", label: "Identificación oficial, reverso", hint: "Foto o PDF de hasta 5 MB", accept: "application/pdf,image/jpeg,image/png" })}
     </fieldset>

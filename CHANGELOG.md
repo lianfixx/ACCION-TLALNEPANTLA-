@@ -2,6 +2,15 @@
 
 Lo más reciente arriba. Formato y reglas: `ia/PROTOCOLO.md`, sección 3. Cada entrada lleva la línea `Agente:`.
 
+## 2026-11-16 · Enlaces APJ 2027: ensayo en celular, documentación y ajustes
+
+- Agente: Claude Code (sesión en la nube)
+- Solicitud: Emi, 16/11/2026: petición «Apartado Enlaces APJ 2027», sección 4 (auditoría con evidencia).
+- Cambios: «Postularme» y los enlaces a la postulación son enlaces directos, para que quien no tiene sesión llegue limpio al ingreso; el aviso «Ya tenemos tu identificación» solo aparece si la identificación ya estaba en la cuenta; documentos del panel en orden fijo; `docs/enlaces-apj.md` reescrito y `docs/panel-administracion.md` al día; bases en PDF regeneradas por el cambio de una frase.
+- Archivos: `app/enlaces/page.tsx`, `app/cuenta/enlaces/EnlacesForm.tsx`, `lib/enlaces-admin.ts`, `docs/enlaces-apj.md`, `docs/panel-administracion.md`, `public/documentos/bases-y-anexos.pdf`, este registro.
+- Verificación: `npm run typecheck`, `npm run lint` y `npm test` → aprobado (222 pruebas). Recorrido en Chromium a 375 px contra el Worker compilado, con base en memoria y reloj simulado: antes de la apertura, ventana abierta (aviso, formulario, tres archivos, envío con folio), después del cierre y con resultados publicados; 26 capturas, 0 px de desborde y sin errores de página.
+- Pendiente: autorización de Emi para publicar; subir el PDF oficial al almacenamiento privado; activar Workers Paid antes del 23-nov (el plan gratuito corta el ingreso y el alta de cuentas); comprobación en producción.
+
 ## 2026-11-16 · Enlaces APJ 2027 (en curso): panel, avisos y conservación
 
 - Agente: Claude Code (sesión en la nube)

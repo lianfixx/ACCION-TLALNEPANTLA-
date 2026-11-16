@@ -1,4 +1,3 @@
-import Link from "next/link";
 import type { Metadata } from "next";
 import { currentAuthorizedUser } from "@/lib/authz";
 import { commissions } from "@/lib/commissions";
@@ -71,7 +70,7 @@ export default async function EnlacesPage() {
 
   const results = state.phase === "results" ? await enlacesPublishedResults() : [];
   const actions = state.phase === "open" || state.phase === "before"
-    ? <Link className="button button-primary" href="/cuenta/enlaces">Postularme</Link>
+    ? <a className="button button-primary" href="/cuenta/enlaces">Postularme</a>
     : <span className="button enl-closed" aria-disabled="true">Postulaciones cerradas</span>;
 
   return <main className="enl" id="main-content">
@@ -85,7 +84,7 @@ export default async function EnlacesPage() {
         {actions}
         <a className="text-link" href={siteDocumentHref("convocatoria-enlaces-apj-2027")}>Descargar la convocatoria en PDF</a>
       </div>
-      <p className="enl-deadline">{state.phase === "results" ? "Los resultados están publicados más abajo." : state.phase === "closed" ? <>Las postulaciones cerraron el {closing}. Si te postulaste, <Link href="/cuenta/enlaces">consulta tu estado con tu folio</Link>.</> : `Recibimos postulaciones hasta el ${closing} a las 23:59 horas.`}</p>
+      <p className="enl-deadline">{state.phase === "results" ? "Los resultados están publicados más abajo." : state.phase === "closed" ? <>Las postulaciones cerraron el {closing}. Si te postulaste, <a href="/cuenta/enlaces">consulta tu estado con tu folio</a>.</> : `Recibimos postulaciones hasta el ${closing} a las 23:59 horas.`}</p>
     </header>
 
     {state.phase === "results" && <Results results={results} />}
@@ -106,7 +105,7 @@ export default async function EnlacesPage() {
 
     <div className="enl-actions enl-actions-end">
       {actions}
-      {state.phase !== "open" && state.phase !== "before" ? <Link className="text-link" href="/cuenta/enlaces">Consultar mi postulación</Link> : <Link className="text-link" href="/cuenta/enlaces">Ya empecé mi postulación</Link>}
+      {state.phase !== "open" && state.phase !== "before" ? <a className="text-link" href="/cuenta/enlaces">Consultar mi postulación</a> : <a className="text-link" href="/cuenta/enlaces">Ya empecé mi postulación</a>}
     </div>
   </main>;
 }

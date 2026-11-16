@@ -70,7 +70,8 @@ export async function enlacesRecord(id: string): Promise<EnlacesRecord | null> {
   ]);
   const latest = new Map<string, EnlacesDocument>();
   for (const document of documents.results) if (!latest.has(document.category)) latest.set(document.category, document);
-  return { application: readEnlacesRow(row) as EnlacesRecord["application"], score: score ?? null, documents: [...latest.values()], audit: audit.results };
+  const order = ["motivation_letter", "recommendation_letter", "ine_front", "ine_back"];
+  return { application: readEnlacesRow(row) as EnlacesRecord["application"], score: score ?? null, documents: [...latest.values()].sort((a, b) => order.indexOf(a.category) - order.indexOf(b.category)), audit: audit.results };
 }
 
 const day = (value: number | null) => value ? new Intl.DateTimeFormat("en-CA", { timeZone: "America/Mexico_City", year: "numeric", month: "2-digit", day: "2-digit" }).format(value) : "";
