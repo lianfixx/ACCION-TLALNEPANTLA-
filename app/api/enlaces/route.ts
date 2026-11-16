@@ -95,7 +95,7 @@ export async function POST(request: Request) {
       if (state.phase === "results" && ["selected", "substitute", "not_selected"].includes(application.status)) return fail("Tu postulación ya tiene resultado y no puede retirarse desde aquí.", 409);
       if (expected !== application.updatedAt) return fail(changed, 409);
       const [withdrawn] = await db.batch([
-        db.prepare(`UPDATE enlaces_applications SET status='withdrawn',motives_text='',previous_participation='',proposal='',city_tie_detail='',birth_date='',publish_name_ok=0,interview_note='',updated_at=?,retention_until=MIN(retention_until,?) WHERE id=? AND account_id=? AND updated_at=? AND ${session.sql}`).bind(at, at + 30 * 86_400_000, application.id, user.accountId, application.updatedAt, ...session.values),
+        db.prepare(`UPDATE enlaces_applications SET status='withdrawn',seat='',motives_text='',previous_participation='',proposal='',city_tie_detail='',birth_date='',publish_name_ok=0,interview_note='',updated_at=?,retention_until=MIN(retention_until,?) WHERE id=? AND account_id=? AND updated_at=? AND ${session.sql}`).bind(at, at + 30 * 86_400_000, application.id, user.accountId, application.updatedAt, ...session.values),
         audit("enlaces.withdrawn", application.id),
         db.prepare("DELETE FROM enlaces_scores WHERE application_id=? AND EXISTS (SELECT 1 FROM enlaces_applications WHERE id=? AND status='withdrawn')").bind(application.id, application.id),
       ]);

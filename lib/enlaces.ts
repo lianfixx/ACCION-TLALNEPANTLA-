@@ -77,7 +77,7 @@ export async function enlacesNotice() {
   return { ready, sections, snapshot, token, version: enlacesNoticeVersion };
 }
 
-export const enlacesColumns = "e.id,e.track,e.commission,e.community_kind AS communityKind,e.community_name AS communityName,e.birth_date AS birthDate,e.city_tie AS cityTie,e.city_tie_detail AS cityTieDetail,e.motives_text AS motivesText,e.previous_participation AS previousParticipation,e.proposal,e.publish_name_ok AS publishNameOk,e.status,e.reference_code AS referenceCode,e.submitted_at AS submittedAt,e.created_at AS createdAt,e.updated_at AS updatedAt,e.retention_until AS retentionUntil";
+export const enlacesColumns = "e.id,e.track,e.commission,e.community_kind AS communityKind,e.community_name AS communityName,e.birth_date AS birthDate,e.city_tie AS cityTie,e.city_tie_detail AS cityTieDetail,e.motives_text AS motivesText,e.previous_participation AS previousParticipation,e.proposal,e.publish_name_ok AS publishNameOk,e.status,e.seat,e.reference_code AS referenceCode,e.submitted_at AS submittedAt,e.created_at AS createdAt,e.updated_at AS updatedAt,e.retention_until AS retentionUntil";
 type Row = Omit<EnlacesApplication, "publishNameOk"> & { publishNameOk: number };
 export const readEnlacesRow = <T extends Row>(row: T) => ({ ...row, publishNameOk: Boolean(row.publishNameOk) });
 
@@ -93,8 +93,8 @@ export function enlacesReference() {
   return "ENL27-" + Array.from(crypto.getRandomValues(new Uint8Array(8)), byte => alphabet[byte % alphabet.length]).join("");
 }
 
-export type PublishedResult = { name: string; status: "selected" | "substitute"; track: string; commission: string; communityKind: string; communityName: string };
+export type PublishedResult = { name: string; status: "selected" | "substitute"; seat: string; track: string; commission: string; communityKind: string; communityName: string };
 /** Names appear only with the person's authorization. */
 export async function enlacesPublishedResults() {
-  return (await getRuntimeEnv().DB!.prepare("SELECT a.name,e.status,e.track,e.commission,e.community_kind AS communityKind,e.community_name AS communityName FROM enlaces_applications e JOIN staff_accounts a ON a.id=e.account_id WHERE e.cycle=? AND e.status IN ('selected','substitute') AND e.publish_name_ok=1 AND e.retention_until>? ORDER BY e.commission,e.community_name,e.status,a.name").bind(enlacesCycle, Date.now()).all<PublishedResult>()).results;
+  return (await getRuntimeEnv().DB!.prepare("SELECT a.name,e.status,e.seat,e.track,e.commission,e.community_kind AS communityKind,e.community_name AS communityName FROM enlaces_applications e JOIN staff_accounts a ON a.id=e.account_id WHERE e.cycle=? AND e.status IN ('selected','substitute') AND e.publish_name_ok=1 AND e.retention_until>? ORDER BY e.commission,e.community_name,e.status,CASE e.seat WHEN 'titular' THEN 0 ELSE 1 END,a.name").bind(enlacesCycle, Date.now()).all<PublishedResult>()).results;
 }

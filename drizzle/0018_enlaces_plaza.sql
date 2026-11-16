@@ -1,0 +1,1 @@
+ALTER TABLE `enlaces_applications` ADD `seat` text DEFAULT '' NOT NULL;

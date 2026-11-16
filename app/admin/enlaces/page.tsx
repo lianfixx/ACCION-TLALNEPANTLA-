@@ -9,7 +9,7 @@ import { currentAuthorizedUser } from "@/lib/authz";
 import { commissions, commissionName } from "@/lib/commissions";
 import { enlacesState } from "@/lib/enlaces";
 import { enlacesCommunities, enlacesCounts, enlacesSearchParams, listEnlaces, listedStatuses, parseEnlacesFilters, type EnlacesListRow } from "@/lib/enlaces-admin";
-import { enlacesDate, enlacesStatuses, enlacesTracks, type EnlacesStatus } from "@/lib/enlaces-shared";
+import { enlacesDate, enlacesSeats, enlacesStatuses, enlacesTracks, type EnlacesStatus } from "@/lib/enlaces-shared";
 import { getRuntimeEnv } from "@/lib/runtime-env";
 
 export const dynamic = "force-dynamic";
@@ -64,7 +64,7 @@ export default async function EnlacesAdminPage({ searchParams }: { searchParams:
           <ul className="people-list">{result.rows.map(row => <li key={row.id}><Link className="people-row" href={`/admin/enlaces/${row.id}`}>
             <span className="people-row-name"><strong>{row.name}</strong><small>{row.referenceCode} · {row.track ? enlacesTracks[row.track] : "Sin modalidad"}{place(row) ? ` · ${place(row)}` : ""}</small></span>
             <span className="people-chips">
-              <span className="people-chip" data-tone={tone(row.status)}>{enlacesStatuses[row.status]}</span>
+              <span className="people-chip" data-tone={tone(row.status)}>{enlacesStatuses[row.status]}{row.seat ? ` · ${enlacesSeats[row.seat]}` : ""}</span>
               <span className="people-chip" data-tone={row.total === null ? "off" : "ok"}>{row.total === null ? "Sin puntaje" : `${row.total} de 100`}</span>
               {!row.publishNameOk && <span className="people-chip" data-tone="off">No publicar nombre</span>}
             </span>

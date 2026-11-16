@@ -2,6 +2,15 @@
 
 Lo más reciente arriba. Formato y reglas: `ia/PROTOCOLO.md`, sección 3. Cada entrada lleva la línea `Agente:`.
 
+## 2026-11-16 · Enlaces APJ 2027: titular y apoyo, y aviso de contacto
+
+- Agente: Claude Code (sesión en la nube)
+- Solicitud: Emi, 16/11/2026: aprobó publicar tras una auditoría completa; universidades «las siete más otras»; para la entrevista, «pon algo de que nos pondremos en contacto con ellos»; sí distinguir titular y apoyo.
+- Cambios: migración `0018_enlaces_plaza` (columna `seat`); al seleccionar a un Enlace de Comisión se indica titular o apoyo, una persona por plaza; resultados, lista, detalle, historial y CSV muestran la plaza; la persona ve su plaza solo con resultados publicados; los textos de la cuenta dicen «Nos pondremos en contacto contigo» para la entrevista y para confirmar el lugar.
+- Archivos: `db/schema.ts`, `drizzle/0018_enlaces_plaza.sql`, `drizzle/meta/`, `lib/enlaces.ts`, `lib/enlaces-shared.ts`, `lib/enlaces-view.ts`, `lib/enlaces-admin.ts`, `app/api/admin/enlaces/route.ts`, `app/api/enlaces/route.ts`, `app/admin/enlaces/`, `app/enlaces/page.tsx`, `app/cuenta/enlaces/EnlacesForm.tsx`, `tests/enlaces.test.mjs`, este registro.
+- Verificación: typecheck y lint sin avisos; `npm test` → 222 aprobadas.
+- Pendiente: auditoría independiente y publicación.
+
 ## 2026-11-16 · entrega de Enlaces APJ 2027
 
 - Agente: Claude Code (sesión en la nube)

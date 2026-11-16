@@ -1,6 +1,6 @@
 import { commissionName, isCommission } from "./commissions";
 import { enlacesColumns, readEnlacesRow } from "./enlaces";
-import { cityTies, communityKinds, enlacesCycle, enlacesStatuses, enlacesTracks, ageOn, type EnlacesApplication, type EnlacesStatus } from "./enlaces-shared";
+import { cityTies, communityKinds, enlacesCycle, enlacesSeats, enlacesStatuses, enlacesTracks, ageOn, type EnlacesApplication, type EnlacesStatus } from "./enlaces-shared";
 import type { EnlacesDocument } from "./enlaces-documents";
 import { csvCell } from "./people";
 import { getRuntimeEnv } from "./runtime-env";
@@ -77,9 +77,9 @@ export async function enlacesRecord(id: string): Promise<EnlacesRecord | null> {
 const day = (value: number | null) => value ? new Intl.DateTimeFormat("en-CA", { timeZone: "America/Mexico_City", year: "numeric", month: "2-digit", day: "2-digit" }).format(value) : "";
 /** The concentrate for the committee: one row per application, without letters, texts or identification. */
 export function enlacesCsv(rows: EnlacesListRow[], ageReference: string) {
-  const header = ["Folio", "Nombre", "Usuario", "Correo", "Modalidad", "Comisión", "Comunidad", "Nombre de la comunidad", "Edad al cierre", "Vínculo con Tlalnepantla", "Estado", "Carta de motivos (30)", "Propuesta (25)", "Participación previa (25)", "Carta de recomendación (20)", "Total (100)", "Autoriza publicar su nombre", "Enviada"];
+  const header = ["Folio", "Nombre", "Usuario", "Correo", "Modalidad", "Comisión", "Comunidad", "Nombre de la comunidad", "Edad al cierre", "Vínculo con Tlalnepantla", "Estado", "Plaza", "Carta de motivos (30)", "Propuesta (25)", "Participación previa (25)", "Carta de recomendación (20)", "Total (100)", "Autoriza publicar su nombre", "Enviada"];
   const lines = rows.map(row => [row.referenceCode, row.name, row.username ?? "", row.email, row.track ? enlacesTracks[row.track] : "", row.commission ? commissionName(row.commission) : "", row.communityKind ? communityKinds[row.communityKind] : "", row.communityName,
-    row.birthDate ? ageOn(row.birthDate, ageReference) : "", row.cityTie ? `${cityTies[row.cityTie]}${row.cityTieDetail ? " · " + row.cityTieDetail : ""}` : "", enlacesStatuses[row.status] ?? row.status,
+    row.birthDate ? ageOn(row.birthDate, ageReference) : "", row.cityTie ? `${cityTies[row.cityTie]}${row.cityTieDetail ? " · " + row.cityTieDetail : ""}` : "", enlacesStatuses[row.status] ?? row.status, row.seat ? enlacesSeats[row.seat] : "",
     row.motives ?? "", row.proposalScore ?? "", row.participation ?? "", row.recommendation ?? "", row.total ?? "",
     row.publishNameOk ? "Sí" : "No", day(row.submittedAt)]);
   return "﻿" + [header, ...lines].map(line => line.map(csvCell).join(",")).join("\r\n") + "\r\n";

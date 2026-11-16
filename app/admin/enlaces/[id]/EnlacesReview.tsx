@@ -6,7 +6,7 @@ import { useRef, useState, type ReactNode } from "react";
 import { useAdminFetch } from "../../AdminSessionBoundary";
 import { commissionName } from "@/lib/commissions";
 import type { EnlacesRecord } from "@/lib/enlaces-admin";
-import { ageOn, cityTies, communityKinds, communityMinimumScore, enlacesDocumentCategories, enlacesLimits, enlacesStatuses, enlacesTracks, scoreCriteria, type EnlacesPhase, type EnlacesStatus, type ScoreKey } from "@/lib/enlaces-shared";
+import { ageOn, cityTies, communityKinds, communityMinimumScore, enlacesDocumentCategories, enlacesLimits, enlacesSeats, enlacesStatuses, enlacesTracks, scoreCriteria, type EnlacesPhase, type EnlacesSeat, type EnlacesStatus, type ScoreKey } from "@/lib/enlaces-shared";
 
 const moment = (value: number) => new Intl.DateTimeFormat("es-MX", { dateStyle: "medium", timeStyle: "short", timeZone: "America/Mexico_City" }).format(value);
 const size = (bytes: number) => bytes >= 1024 * 1024 ? `${(bytes / 1024 / 1024).toFixed(1)} MB` : `${Math.max(1, Math.round(bytes / 1024))} KB`;
@@ -26,7 +26,8 @@ export default function EnlacesReview({ record, ageReference, phase }: { record:
   const request = useAdminFetch(), router = useRouter(), lock = useRef(false);
   const [busy, setBusy] = useState(false), [message, setMessage] = useState("");
   const [points, setPoints] = useState<Record<ScoreKey, string>>(() => Object.fromEntries(scoreCriteria.map(criterion => [criterion.key, score ? String(score[criterion.key]) : ""])) as Record<ScoreKey, string>);
-  const [status, setStatus] = useState<EnlacesStatus>(application.status), [note, setNote] = useState(application.interviewNote);
+  const [status, setStatus] = useState<EnlacesStatus>(application.status), [seat, setSeat] = useState<EnlacesSeat | "">(application.seat), [note, setNote] = useState(application.interviewNote);
+  const seated = status === "selected" && application.track === "comision";
   const withdrawn = application.status === "withdrawn";
   const total = scoreCriteria.reduce((sum, criterion) => sum + (Number(points[criterion.key]) || 0), 0);
   const complete = scoreCriteria.every(criterion => points[criterion.key] !== "" && Number.isInteger(Number(points[criterion.key])) && Number(points[criterion.key]) >= 0 && Number(points[criterion.key]) <= criterion.max);
@@ -50,7 +51,7 @@ export default function EnlacesReview({ record, ageReference, phase }: { record:
         <p className="people-identity">{application.username ? `@${application.username}` : "Sin usuario"} · <span>{application.email}</span> · <Link className="text-link" href={`/admin/personas/${application.accountId}`}>Abrir su ficha</Link></p>
       </div>
       <div className="people-chips">
-        <span className="people-chip" data-tone={tone(application.status)}>{enlacesStatuses[application.status]}</span>
+        <span className="people-chip" data-tone={tone(application.status)}>{enlacesStatuses[application.status]}{application.seat ? ` · ${enlacesSeats[application.seat]}` : ""}</span>
         <span className="people-chip" data-tone={score ? "ok" : "off"}>{score ? `${score.total} de 100` : "Sin puntaje"}</span>
         <span className="people-chip" data-tone={application.publishNameOk ? "ok" : "off"}>{application.publishNameOk ? "Autoriza publicar su nombre" : "No autoriza publicar su nombre"}</span>
       </div>
@@ -87,7 +88,7 @@ export default function EnlacesReview({ record, ageReference, phase }: { record:
           {audit.length === 0 ? <p className="people-empty">Sin movimientos.</p> :
             <ol className="people-log">{audit.map((entry, index) => {
               let detail = "";
-              try { const meta = JSON.parse(entry.metadata ?? "{}") as { to?: EnlacesStatus; total?: number }; detail = meta.to ? ` a «${enlacesStatuses[meta.to] ?? meta.to}»` : typeof meta.total === "number" ? ` · ${meta.total} de 100` : ""; } catch { /* Plain entry. */ }
+              try { const meta = JSON.parse(entry.metadata ?? "{}") as { to?: EnlacesStatus; seat?: EnlacesSeat; total?: number }; detail = meta.to ? ` a «${enlacesStatuses[meta.to] ?? meta.to}${meta.seat ? ", " + (enlacesSeats[meta.seat]?.toLowerCase() ?? meta.seat) : ""}»` : typeof meta.total === "number" ? ` · ${meta.total} de 100` : ""; } catch { /* Plain entry. */ }
               return <li key={index}><strong>{auditLabels[entry.action] ?? entry.action}{detail}</strong><small>{entry.actorEmail} · <time dateTime={new Date(entry.createdAt).toISOString()}>{moment(entry.createdAt)}</time></small></li>;
             })}</ol>}
         </Panel>
@@ -106,9 +107,10 @@ export default function EnlacesReview({ record, ageReference, phase }: { record:
         </Panel>
 
         <Panel title="Estado">
-          <form className="people-form" onSubmit={event => { event.preventDefault(); void act({ action: "status", status }); }}>
+          <form className="people-form" onSubmit={event => { event.preventDefault(); void act({ action: "status", status, ...(seated ? { seat } : {}) }); }}>
             <label>Estado de la postulación<select value={status} disabled={busy || withdrawn} onChange={event => setStatus(event.target.value as EnlacesStatus)}>{options.map(option => <option key={option} value={option}>{enlacesStatuses[option]}</option>)}{withdrawn && <option value="withdrawn">{enlacesStatuses.withdrawn}</option>}</select></label>
-            <button className="button button-secondary" disabled={busy || withdrawn || status === application.status}>Cambiar estado</button>
+            {seated && <label>Plaza en la comisión<select value={seat} disabled={busy} required onChange={event => setSeat(event.target.value as EnlacesSeat | "")}><option value="">Elige la plaza</option>{(Object.keys(enlacesSeats) as EnlacesSeat[]).map(option => <option key={option} value={option}>{enlacesSeats[option]}</option>)}</select></label>}
+            <button className="button button-secondary" disabled={busy || withdrawn || (seated && !seat) || (status === application.status && (!seated || seat === application.seat))}>Cambiar estado</button>
             <p className="people-note">{phase === "results" ? "Los resultados están publicados. La persona ve este estado en su cuenta." : "La persona verá «Seleccionada», «Suplente» o «No seleccionada» cuando publiques los resultados. Antes ve «En revisión»."}</p>
           </form>
         </Panel>

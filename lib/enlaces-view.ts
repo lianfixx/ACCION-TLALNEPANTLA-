@@ -15,7 +15,7 @@ export type EnlacesView = {
 export async function enlacesView(accountId: string, accountName: string): Promise<EnlacesView> {
   const [state, notice, own, documents] = await Promise.all([enlacesState(), enlacesNotice(), ownEnlacesApplication(accountId), enlacesDocuments(accountId)]);
   const decided = own && ["selected", "substitute", "not_selected"].includes(own.status);
-  const application = own && decided && state.phase !== "results" ? { ...own, status: "in_review" as const } : own;
+  const application = own && decided && state.phase !== "results" ? { ...own, status: "in_review" as const, seat: "" as const } : own;
   // Only what the form needs from the notice: the stored snapshot stays on the server.
   const { ready, token, sections } = notice;
   return { state: { phase: state.phase, opensAt: state.opensAt, closesAt: state.closesAt }, application, documents, accountName, ageReference: enlacesAgeReference(), notice: { ready, token, sections } };

@@ -28,6 +28,10 @@ export const editableStatuses: readonly EnlacesStatus[] = ["draft", "submitted"]
 /** Statuses that count as a received application for the committee. */
 export const receivedStatuses: readonly EnlacesStatus[] = ["submitted", "in_review", "interview", "selected", "substitute", "not_selected"];
 
+/** Each commission has two places. */
+export const enlacesSeats = { titular: "Titular", apoyo: "Apoyo" } as const;
+export type EnlacesSeat = keyof typeof enlacesSeats;
+
 export const scoreCriteria = [
   { key: "motives", label: "Carta de motivos", max: 30 },
   { key: "proposal", label: "Propuesta para su comisión o comunidad", max: 25 },
@@ -62,6 +66,7 @@ export type EnlacesFields = {
 export type EnlacesApplication = EnlacesFields & {
   id: string;
   status: EnlacesStatus;
+  seat: EnlacesSeat | "";
   referenceCode: string;
   submittedAt: number | null;
   createdAt: number;

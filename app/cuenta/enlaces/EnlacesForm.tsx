@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import type { EnlacesView } from "@/lib/enlaces-view";
-import { cityTies, communityKinds, enlacesConsent, enlacesDate, enlacesDocumentCategories, enlacesLimits, enlacesPublishConsent, enlacesStatuses, enlacesTracks, enlacesUniversities, type EnlacesApplication, type EnlacesDocumentCategory, type EnlacesFields } from "@/lib/enlaces-shared";
+import { cityTies, communityKinds, enlacesConsent, enlacesDate, enlacesDocumentCategories, enlacesLimits, enlacesPublishConsent, enlacesSeats, enlacesStatuses, enlacesTracks, enlacesUniversities, type EnlacesApplication, type EnlacesDocumentCategory, type EnlacesFields } from "@/lib/enlaces-shared";
 
 type Props = { accountId: string; initial: EnlacesView; commissions: { id: string; name: string }[] };
 type SaveState = "idle" | "saving" | "saved" | "error";
@@ -180,11 +180,11 @@ export default function EnlacesForm({ accountId, initial, commissions }: Props) 
   if (!editable) {
     const status = application.status;
     const next = status === "draft" ? `Tu borrador no se envió antes del cierre del ${closing} y ya no puede enviarse.`
-      : status === "selected" ? "Fuiste seleccionado como Enlace APJ 2027. Confirma tu lugar en las siguientes 48 horas con la coordinación general. La toma de protesta es el jueves 17 de diciembre."
-      : status === "substitute" ? "Quedaste en la lista de suplentes. Si se libera una plaza, la coordinación general te buscará."
+      : status === "selected" ? `Fuiste seleccionado como Enlace APJ 2027${application.seat ? `, ${enlacesSeats[application.seat].toLowerCase()} de tu comisión` : ""}. Nos pondremos en contacto contigo para confirmar tu lugar en las siguientes 48 horas. La toma de protesta es el jueves 17 de diciembre.`
+      : status === "substitute" ? "Quedaste en la lista de suplentes. Si se libera una plaza, nos pondremos en contacto contigo."
       : status === "not_selected" ? "En esta convocatoria no fuiste seleccionado. Gracias por postularte. Si quieres, puedes borrar tus documentos desde aquí."
-      : status === "interview" ? "Pasaste a entrevista. Son de diez minutos, en línea, el 7, 8 y 9 de diciembre. Los resultados se publican el jueves 10 de diciembre."
-      : "Recibimos tu postulación. Las entrevistas son el 7, 8 y 9 de diciembre, en línea, y los resultados se publican el jueves 10 de diciembre. Vuelve aquí con tu cuenta para ver tu estado.";
+      : status === "interview" ? "Pasaste a entrevista. Nos pondremos en contacto contigo para acordar la hora. Son de diez minutos, en línea, el 7, 8 y 9 de diciembre. Los resultados se publican el jueves 10 de diciembre."
+      : "Recibimos tu postulación. Nos pondremos en contacto contigo para acordar tu entrevista, que será en línea el 7, 8 o 9 de diciembre. Los resultados se publican el jueves 10 de diciembre. Vuelve aquí con tu cuenta para ver tu estado.";
     const decided = ["selected", "substitute", "not_selected"].includes(status);
     return <section className="enl-card">
       {feedback}
@@ -205,7 +205,7 @@ export default function EnlacesForm({ accountId, initial, commissions }: Props) 
     <section className="enl-card enl-status" aria-live="polite">
       {draft
         ? <><h2>Borrador</h2><p>Se guarda sola mientras escribes. Cuando esté completa, envíala antes del {closing}.</p></>
-        : <><h2>Postulación enviada</h2>{summary}<p>Guarda tu folio. Puedes cambiar tus respuestas y tus documentos hasta el {closing}.</p></>}
+        : <><h2>Postulación enviada</h2>{summary}<p>Guarda tu folio. Puedes cambiar tus respuestas y tus documentos hasta el {closing}. Después del cierre nos pondremos en contacto contigo para acordar tu entrevista.</p></>}
       <p className="enl-save" data-state={saveState}>{saveState === "saving" ? "Guardando…" : saveState === "saved" ? "Guardado" : saveState === "error" ? "Sin guardar" : draft ? "" : unsaved ? "Tienes cambios sin guardar" : ""}</p>
     </section>
     {feedback}

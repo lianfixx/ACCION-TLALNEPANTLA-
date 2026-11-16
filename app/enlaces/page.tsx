@@ -41,7 +41,8 @@ function Results({ results }: { results: PublishedResult[] }) {
   const byCommunity = communities.map(name => ({ title: name, list: results.filter(item => item.track === "comunidad" && item.communityName === name) }));
   const Group = ({ title, list }: { title: string; list: PublishedResult[] }) => <article className="enl-result">
     <h4>{title}</h4>
-    {names(list, "selected").length > 0 && <p><span>Enlaces</span>{names(list, "selected").join(", ")}</p>}
+    {(["titular", "apoyo"] as const).map(seat => { const seated = list.filter(item => item.status === "selected" && item.seat === seat).map(item => item.name); return seated.length > 0 ? <p key={seat}><span>{seat === "titular" ? "Titular" : "Apoyo"}</span>{seated.join(", ")}</p> : null; })}
+    {list.some(item => item.status === "selected" && !item.seat) && <p><span>{list.some(item => item.track === "comunidad") ? "Enlace" : "Enlaces"}</span>{list.filter(item => item.status === "selected" && !item.seat).map(item => item.name).join(", ")}</p>}
     {names(list, "substitute").length > 0 && <p><span>Suplentes</span>{names(list, "substitute").join(", ")}</p>}
   </article>;
   return <section className="enl-results" id="resultados" aria-labelledby="enl-results-title">

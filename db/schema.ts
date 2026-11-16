@@ -349,6 +349,8 @@ export const enlacesApplications = sqliteTable("enlaces_applications", {
   consentAt: integer("consent_at").notNull(),
   submittedAt: integer("submitted_at"),
   interviewNote: text("interview_note").notNull().default(""),
+  /** Only for a selected Enlace de Comisión: "titular" or "apoyo". */
+  seat: text("seat").notNull().default(""),
   createdAt: integer("created_at").notNull(),
   updatedAt: integer("updated_at").notNull(),
   retentionUntil: integer("retention_until").notNull(),

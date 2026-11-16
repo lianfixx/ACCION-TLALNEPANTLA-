@@ -145,7 +145,7 @@ test('after the close nothing is received, and a person can still withdraw',asyn
  assert.equal((await upload(f,ana,'recommendation_letter')).status,409);
  assert.equal((await api(f,beto,{action:'submit',fields:fields(),expectedUpdatedAt:draft.updatedAt})).status,409,'a draft cannot be sent late');
  const v=await view(f,beto);assert.equal((await api(f,'nuevo@example.test',{action:'start',consent:true,noticeToken:v.notice.token})).status,409);
- assert.match(main((await page(f,'/cuenta/enlaces',ana)).html),/Recibimos tu postulación/);
+ assert.match(main((await page(f,'/cuenta/enlaces',ana)).html),/Recibimos tu postulación\. Nos pondremos en contacto contigo para acordar tu entrevista/);
  assert.match(main((await page(f,'/cuenta/enlaces',beto)).html),/no se envió antes del cierre/);
  const r=await api(f,ana,{action:'withdraw',expectedUpdatedAt:app.updatedAt});assert.equal(r.status,200,await r.clone().text());assert.equal((await r.json()).application,null);
  const row=f.db.prepare('SELECT status,motives_text,proposal,birth_date FROM enlaces_applications WHERE account_id=?').get(id);
@@ -215,11 +215,15 @@ test('selection follows the places and the minimum of the convocatoria and keeps
  const people=['ana','beto','caro'].map(name=>name+'@example.test');const ids=people.map(email=>account(f,email));
  for(const email of people)await submitted(f,email);
  account(f,'dora@example.test');await submitted(f,'dora@example.test',{track:'comunidad',commission:'',communityKind:'colonia',communityName:'San Javier'});
- let r=await act(f,ana,{action:'status',status:'selected'});assert.equal(r.status,409);assert.match((await r.json()).error,/Captura el puntaje/);
+ let r=await act(f,ana,{action:'status',status:'selected',seat:'titular'});assert.equal(r.status,409);assert.match((await r.json()).error,/Captura el puntaje/);
  for(const email of people)await ok(await score(f,email,full));
  await ok(await act(f,ana,{action:'status',status:'interview'}));
- await ok(await act(f,ana,{action:'status',status:'selected'}));await ok(await act(f,beto,{action:'status',status:'selected'}));
- r=await act(f,'caro@example.test',{action:'status',status:'selected'});assert.equal(r.status,409);assert.match((await r.json()).error,/ya tiene sus dos Enlaces/);
+ r=await act(f,ana,{action:'status',status:'selected'});assert.equal(r.status,400);assert.match((await r.json()).error,/titular o como apoyo/);
+ assert.match((await ok(await act(f,ana,{action:'status',status:'selected',seat:'titular'}))).message,/Seleccionada, titular/);
+ r=await act(f,beto,{action:'status',status:'selected',seat:'titular'});assert.equal(r.status,409);assert.match((await r.json()).error,/ya tiene titular/);
+ await ok(await act(f,beto,{action:'status',status:'selected',seat:'apoyo'}));
+ for(const seat of ['titular','apoyo']){r=await act(f,'caro@example.test',{action:'status',status:'selected',seat});assert.equal(r.status,409,'a third person has no place');}
+ assert.deepEqual(f.db.prepare("SELECT seat FROM enlaces_applications WHERE status='selected' ORDER BY seat").all().map(x=>x.seat),['apoyo','titular']);
  await ok(await act(f,'caro@example.test',{action:'status',status:'substitute'}));
  await ok(await score(f,'dora@example.test',{motives:20,proposal:15,participation:14,recommendation:10}));
  r=await act(f,'dora@example.test',{action:'status',status:'selected'});assert.equal(r.status,409);assert.match((await r.json()).error,/mínimo de 60 puntos\. Esta postulación tiene 59/);
@@ -228,10 +232,11 @@ test('selection follows the places and the minimum of the convocatoria and keeps
  assert.equal(row(f,ana).retention_until,year);assert.equal(row(f,'caro@example.test').retention_until,year,'substitutes are kept as well');
  assert.equal(f.db.prepare('SELECT min(retention_until) m FROM commission_documents WHERE owner_id=?').get(ids[0]).m,year,'documents follow the application');
  await ok(await act(f,beto,{action:'status',status:'not_selected'}));
+ assert.equal(row(f,beto).seat,'','the place is freed');assert.equal(row(f,'dora@example.test').seat,'','a community Enlace has no titular or apoyo');
  assert.equal(row(f,beto).retention_until,standard);assert.equal(f.db.prepare("SELECT max(retention_until) m FROM commission_documents WHERE owner_id=? AND category='recommendation_letter'").get(ids[1]).m,standard);
  assert.equal((await act(f,beto,{action:'status',status:'draft'})).status,400);assert.equal((await act(f,beto,{action:'status',status:'not_selected'})).status,400,'same status');
  // The decision stays hidden from the applicant until the results are published.
- assert.equal((await view(f,ana)).application.status,'in_review');assert.equal((await view(f,beto)).application.status,'in_review');
+ assert.equal((await view(f,ana)).application.status,'in_review');assert.equal((await view(f,ana)).application.seat,'','the place is hidden too');assert.equal((await view(f,beto)).application.status,'in_review');
  assert.match(JSON.stringify(f.db.prepare("SELECT metadata_json FROM audit_logs WHERE action='enlaces.status' ORDER BY created_at DESC,rowid DESC").get()),/not_selected/);
 }finally{done(f);}});
 
@@ -240,7 +245,7 @@ test('results are published by hand after the close, with authorized names only'
  await submitted(f,ana);await submitted(f,beto,{publishNameOk:false});await submitted(f,'caro@example.test');
  await submitted(f,'dora@example.test',{track:'comunidad',commission:'',communityKind:'colonia',communityName:'San Javier'});
  for(const email of [ana,beto,'caro@example.test','dora@example.test'])await ok(await score(f,email,full));
- await ok(await act(f,ana,{action:'status',status:'selected'}));await ok(await act(f,beto,{action:'status',status:'selected'}));
+ await ok(await act(f,ana,{action:'status',status:'selected',seat:'apoyo'}));await ok(await act(f,beto,{action:'status',status:'selected',seat:'titular'}));
  await ok(await act(f,'caro@example.test',{action:'status',status:'substitute'}));await ok(await act(f,'dora@example.test',{action:'status',status:'not_selected'}));
  let r=await admin(f,{action:'publish'});assert.equal(r.status,409);assert.match((await r.json()).error,/después del cierre/);
  advance(f,after);
@@ -248,12 +253,13 @@ test('results are published by hand after the close, with authorized names only'
  r=await api(f,'dora@example.test',{action:'delete-documents'});assert.equal(r.status,409,'not before the results');
  await ok(await admin(f,{action:'publish'}));
  const body=main((await page(f,'/enlaces')).html);
- assert.match(body,/Generación 2027/);assert.match(body,/Gobierno/);assert.match(body,/Ana Prueba Ruiz/);assert.match(body,/Caro Suplente/);
+ assert.match(body,/Generación 2027/);assert.match(body,/Gobierno/);assert.match(body,/<span>Apoyo<\/span>Ana Prueba Ruiz/);assert.match(body,/<span>Suplentes<\/span>Caro Suplente/);assert.doesNotMatch(body,/<span>Titular<\/span>/,'the titular did not authorize the name');
  assert.doesNotMatch(body,/Beto Reservado|Dora Colonia/,'no name without authorization, and none for people not selected');
  assert.match(body,/Postulaciones cerradas/);assert.match(body,/Objeto/,'the convocatoria stays visible');
  assert.match((await page(f,'/')).html,/href="\/enlaces"/,'the entry returns with the results');
  assert.equal((await view(f,ana)).application.status,'selected');assert.equal((await view(f,'caro@example.test')).application.status,'substitute');
- assert.match(main((await page(f,'/cuenta/enlaces',ana)).html),/Fuiste seleccionado como Enlace APJ 2027/);
+ assert.match(main((await page(f,'/cuenta/enlaces',ana)).html),/Fuiste seleccionado como Enlace APJ 2027, apoyo de tu comisión\. Nos pondremos en contacto contigo/);
+ assert.equal((await view(f,ana)).application.seat,'apoyo');
  assert.match(main((await page(f,'/cuenta/enlaces','dora@example.test')).html),/Borrar mis documentos/);
  r=await api(f,ana,{action:'withdraw',expectedUpdatedAt:row(f,ana).updated_at});assert.equal(r.status,409,'a result is not withdrawn from the account');
  const dora=f.db.prepare('SELECT id FROM staff_accounts WHERE email=?').get('dora@example.test').id;
@@ -273,7 +279,7 @@ test('the export is a concentrate without documents or letters, and it is record
  const bytes=new Uint8Array(await response.arrayBuffer());assert.deepEqual([...bytes.slice(0,3)],[0xef,0xbb,0xbf]);
  const text=new TextDecoder().decode(bytes.slice(3)),lines=text.trimEnd().split('\r\n');assert.equal(lines.length,3);
  assert.match(lines[0],/^"Folio","Nombre","Usuario","Correo","Modalidad","Comisión"/);
- assert.ok(text.includes('"\'=Ana Fórmula"'),'formulas are neutralized');assert.ok(text.includes('"Enlace de Comisión","Gobierno"'));assert.ok(text.includes('"28","22","20","18","88","Sí"'));
+ assert.ok(text.includes('"\'=Ana Fórmula"'),'formulas are neutralized');assert.ok(text.includes('"Enlace de Comisión","Gobierno"'));assert.ok(text.includes('"Enviada","","28","22","20","18","88","Sí"'));assert.match(lines[0],/"Estado","Plaza","Carta de motivos \(30\)"/);
  assert.ok(text.includes('"Enlace de Comunidad","","Universidad","EBC","22"'));assert.ok(text.includes('"","","","","","No"'),'no score yet');
  assert.doesNotMatch(text,/Quiero ser Enlace|Organicé dos foros|2004-05-10|private\/commission/,'no letters, texts, birth dates or files');
  const only=await f.call('/api/admin/enlaces/exportar','POST',{filters:{track:'comunidad'}},owner);assert.equal(new TextDecoder().decode(await only.arrayBuffer()).trimEnd().split('\r\n').length,2);
