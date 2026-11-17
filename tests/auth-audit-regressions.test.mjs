@@ -26,7 +26,9 @@ test('empty signups exhaust only their network allowance, never the global capac
 test('duplicate accounts and stale notices do not consume successful signup capacity',async()=>{
  const f=await createWorkerFixture(config);try{
   const body=await signupBody(f);assert.equal((await signup(f,body)).status,201);
-  for(let n=0;n<3;n++)assert.equal((await signup(f,body)).status,409);
+  // A repeated email gets the same answer as a new one; the owner of the address is told by email instead.
+  for(let n=0;n<3;n++)assert.equal((await signup(f,body)).status,201);
+  assert.equal((await signup(f,{...body,email:'other@example.test'})).status,409,'a taken username is still reported');
   assert.equal((await signup(f,{...body,email:'second@example.test',username:'second.person',noticeToken:'expired'})).status,409);
   assert.equal(quota(f),1);assert.equal(f.db.prepare('SELECT count(*) n FROM staff_accounts').get().n,1);
  }finally{f.close();}

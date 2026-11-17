@@ -1,7 +1,7 @@
 import {cleanEmail,cleanText,requestIsSameOrigin,requestHasJsonContentType,readJsonBody,jsonBodyErrorResponse} from '@/lib/security';
 import {cleanUsername,passwordValid,hashPassword,StaffCapacityError,secretHash} from '@/lib/staff-auth';
 import {accountFailure,accountJsonRequired} from '@/lib/account-feedback';
-import {registrationServices,verifyRegistrationChallenge,sendRegistrationConfirmation,RegistrationServiceError} from '@/lib/registration-verification';
+import {registrationServices,verifyRegistrationChallenge,sendRegistrationConfirmation,sendExistingAccountNotice,RegistrationServiceError} from '@/lib/registration-verification';
 import {getRuntimeEnv} from '@/lib/runtime-env';
 import {isCommission} from '@/lib/commissions';
 import {isConfiguredOwner} from '@/lib/authz';
@@ -20,9 +20,12 @@ export async function POST(r:Request){const error=(s:string,n=400)=>membershipJs
  if(!await consumeRateLimit('self-register-email',email,5,3600000)||!await consumeRateLimit('self-register-username',username,5,3600000))return error('Espera unos minutos antes de volver a registrar esos datos.',429);
  if(x.noticeToken!==cfg.noticeToken)return error('El aviso cambió. Recarga la página para leerlo.',409);
  if(!await verifyRegistrationChallenge(x['cf-turnstile-response'],requestNetworkIdentity(r)))return error('Completa de nuevo la verificación antiabuso.');
- const unavailable=()=>error('No pudimos registrar esos datos. Si ya creaste tu cuenta, entra o solicita otro correo de confirmación.',409);
- if(isConfiguredOwner(email))return unavailable();
- if(await db.prepare('SELECT 1 WHERE EXISTS (SELECT 1 FROM staff_accounts WHERE email=? OR username=?) OR EXISTS (SELECT 1 FROM user_roles WHERE email=?) OR EXISTS (SELECT 1 FROM membership_applications WHERE owner_email=?)').bind(email,username,email,email).first())return unavailable();
+ // The same answer whether or not the email already has an account: the form must not reveal who is in APJ.
+ const pending=()=>membershipJson({redirect:'/confirmar-correo',requiresEmailConfirmation:true,message:'Tu cuenta está pendiente de confirmar el correo. Revisa tu bandeja de entrada.'},{status:201});
+ const emailTaken=async()=>isConfiguredOwner(email)||Boolean(await db.prepare('SELECT 1 WHERE EXISTS (SELECT 1 FROM staff_accounts WHERE email=?) OR EXISTS (SELECT 1 FROM user_roles WHERE email=?) OR EXISTS (SELECT 1 FROM membership_applications WHERE owner_email=?)').bind(email,email,email).first());
+ const usernameTaken=()=>error('Ese usuario no está disponible. Elige otro.',409);
+ if(await emailTaken()){await sendExistingAccountNotice(email);return pending();}
+ if(await db.prepare('SELECT 1 FROM staff_accounts WHERE username=?').bind(username).first())return usernameTaken();
  const id=crypto.randomUUID(),now=Date.now(),hash=await hashPassword(x.password);
  const windowStartedAt=Math.floor(Date.now()/3600000)*3600000,quotaId=`self-register-created:site:${windowStartedAt}`;
  // Both statements commit together. Only an inserted account consumes capacity,
@@ -33,9 +36,11 @@ export async function POST(r:Request){const error=(s:string,n=400)=>membershipJs
  ]);
  if(!result.meta.changes){
   const quota=await db.prepare('SELECT count FROM rate_limits WHERE id=?').bind(quotaId).first<{count:number}>();
-  return quota&&quota.count>=100?error('La recepción de cuentas alcanzó su límite temporal. Inténtalo más tarde.',429):unavailable();
+  if(quota&&quota.count>=100)return error('La recepción de cuentas alcanzó su límite temporal. Inténtalo más tarde.',429);
+  if(await emailTaken()){await sendExistingAccountNotice(email);return pending();}
+  return usernameTaken();
  }
  await sendRegistrationConfirmation(id,x.destination==='enlaces'?'/cuenta/enlaces':isCommission(x.commission)?`/participacion?comision=${x.commission}#registro`:'/participacion#registro');
- return membershipJson({redirect:'/confirmar-correo',requiresEmailConfirmation:true,message:'Tu cuenta está pendiente de confirmar el correo. Revisa tu bandeja de entrada.'},{status:201});
+ return pending();
  }catch(e){if(e instanceof StaffCapacityError)return error('Espera unos segundos e inténtalo de nuevo.',429);if(e instanceof RegistrationServiceError&&e.stage==='email')return accountFailure('registration','email','Tu cuenta quedó pendiente. No pudimos enviar el correo. Usa Solicitar otro correo de confirmación para intentarlo de nuevo.');return accountFailure('registration',e instanceof RegistrationServiceError?e.stage:'account-creation');}
 }

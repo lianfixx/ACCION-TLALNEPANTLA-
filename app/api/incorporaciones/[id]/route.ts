@@ -53,7 +53,11 @@ export async function PATCH(request:Request,{params}:Context) {
       update=db.prepare(`UPDATE membership_applications SET name=?,commission=?,note=?,profile_json=?,updated_at=? WHERE id=? AND owner_email=? AND updated_at=? AND retention_until>? AND status IN ('submitted','in_review') AND ${guard.sql}`).bind(fields.name,fields.commission,fields.note,fields.profileJson,now,id,email,current.updatedAt,now,...guard.values);
     }
     const kind=body.action==='withdraw'?'withdrawn':'updated', message=body.action==='withdraw'?'Solicitud retirada por su titular.':'Datos corregidos por su titular.';
-    const [result]=await db.batch([update,db.prepare("INSERT INTO membership_events (id,application_id,kind,body,actor_type,actor_email,created_at) SELECT ?,?,?,?,'applicant',?,? WHERE changes()>0").bind(crypto.randomUUID(),id,kind,message,email,now)]);
+    const statements=[update,db.prepare("INSERT INTO membership_events (id,application_id,kind,body,actor_type,actor_email,created_at) SELECT ?,?,?,?,'applicant',?,? WHERE changes()>0").bind(crypto.randomUUID(),id,kind,message,email,now)];
+    // Withdrawing an accepted application ends the participation it opened: access to that commission closes too.
+    // Administration can enable the person again from Equipo.
+    if(body.action==='withdraw'&&current.status==='accepted')statements.push(db.prepare("UPDATE commission_members SET active=0,updated_at=?,updated_by=? WHERE active=1 AND commission=? AND account_id=(SELECT id FROM staff_accounts WHERE email=?) AND EXISTS (SELECT 1 FROM membership_applications WHERE id=? AND status='withdrawn' AND updated_at=?)").bind(now,user.accountId,current.commission,email,id,now));
+    const [result]=await db.batch(statements);
     if(!result.meta.changes)return membershipJson({error:"La solicitud cambió o venció. Actualiza antes de continuar."},{status:409});
     return membershipJson({application:await ownedMembership(id,email),message});
   }catch{return membershipJson({error:"No pudimos guardar el cambio. Consulta el estado antes de repetirlo."},{status:503});}

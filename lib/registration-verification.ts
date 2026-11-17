@@ -37,6 +37,23 @@ export async function verifyRegistrationChallenge(value: unknown, ip: string) {
   } catch { throw new RegistrationServiceError('captcha'); }
 }
 
+/**
+ * Someone tried to create an account with an email that already has one. The form answers the same as for a new
+ * account, so it never reveals who has an account; the owner of the address gets this message instead.
+ * Delivery is best effort: a failure is not shown to whoever filled the form.
+ */
+export async function sendExistingAccountNotice(email: string) {
+  const env = getRuntimeEnv(), config = registrationServices(), to = cleanEmail(email);
+  if (!config.emailReady || !to) return;
+  try {
+    await fetch('https://api.resend.com/emails', {
+      method: 'POST', signal: AbortSignal.timeout(10_000),
+      headers: { Authorization: `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json', 'Idempotency-Key': `apj-existing-${await secretHash(to + ':' + Math.floor(Date.now() / 3_600_000))}` },
+      body: JSON.stringify({ from: cleanEmail(env.REGISTRATION_EMAIL_FROM), to: [to], subject: 'Ya tienes una cuenta en Acción Política Juvenil Tlalnepantla', text: `Alguien intentó crear una cuenta en Acción Política Juvenil Tlalnepantla con este correo, que ya tiene una.\n\nSi fuiste tú, entra en ${config.origin}/ingresar con tu usuario y contraseña. Si tu cuenta aún no está confirmada, pide otro enlace en ${config.origin}/confirmar-correo. Si no recuerdas tu contraseña, consulta ${config.origin}/admin/recuperar.\n\nSi no fuiste tú, ignora este mensaje: no se creó nada y tu cuenta sigue igual. Nunca te pediremos enviar tu contraseña por correo.` }),
+    });
+  } catch { /* Best effort. */ }
+}
+
 /** Stores only a hash; delivery failure leaves the account pending for resend. */
 export async function sendRegistrationConfirmation(accountId: string, destination: string) {
   const env = getRuntimeEnv(), config = registrationServices(), db = env.DB!;

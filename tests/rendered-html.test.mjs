@@ -259,7 +259,7 @@ test("scheduled retention queues a D1 purge through waitUntil", async () => {
       return { bind: (...params) => ({ query, params, all: async()=>({results:[]}) }) };
     },
     async batch(statements) {
-      assert.ok([2,7].includes(statements.length));
+      assert.ok([2,9].includes(statements.length));
       return statements.map(() => ({ success: true, results: [], meta: {} }));
     },
   };

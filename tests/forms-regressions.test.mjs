@@ -29,7 +29,7 @@ test('partial event dates save as drafts and a complete zero-budget event can be
 
 test('six distinct accounts can register from one shared network while identifier quotas remain enforced',async()=>{const f=await createWorkerFixture(config);try{const noticeToken=await token(f);const body={name:'Persona de prueba',password:'una frase privada para pruebas aisladas',adult:true,consent:true,noticeToken,'cf-turnstile-response':'isolated-challenge'};
  for(let n=0;n<6;n++){const r=await f.call('/api/registro-cuenta','POST',{...body,email:`member${n}@example.test`,username:`member${n}`},null,{'CF-Connecting-IP':'192.0.2.10'});assert.equal(r.status,201,await r.clone().text());}
- for(let n=1;n<=5;n++){const r=await f.call('/api/registro-cuenta','POST',{...body,email:'member0@example.test',username:'member0'},null,{'CF-Connecting-IP':'192.0.2.10'});assert.equal(r.status,n<5?409:429);}
+ for(let n=1;n<=5;n++){const r=await f.call('/api/registro-cuenta','POST',{...body,email:'member0@example.test',username:'member0'},null,{'CF-Connecting-IP':'192.0.2.10'});assert.equal(r.status,n<5?201:429);}
  assert.equal(f.db.prepare('SELECT count(*) n FROM staff_accounts').get().n,6);
  }finally{f.close();}});
 

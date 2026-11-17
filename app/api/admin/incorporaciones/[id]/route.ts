@@ -47,9 +47,12 @@ export async function PATCH(request:Request,{params}:Context){
     if(status!==current.status)addEvent('status',membershipStatuses[status]);
     if(response)addEvent('response',response);
     if(note)addEvent('note',note);
+    // Closing an accepted application ends the access it opened; it can be enabled again from Equipo.
+    const closesAccess=current.status==='accepted'&&status==='closed';
+    if(closesAccess)statements.push(db.prepare("UPDATE commission_members SET active=0,updated_at=?,updated_by=? WHERE active=1 AND commission=? AND account_id=(SELECT id FROM staff_accounts WHERE email=?) AND EXISTS (SELECT 1 FROM membership_applications WHERE id=? AND status='closed' AND updated_at=?)").bind(now,actor.accountId,current.commission,current.ownerEmail,id,now));
     // D1 batch is atomic; chained changes() keeps every event dependent on the successful update.
     const [result]=await db.batch(statements);
     if(!result.meta.changes)return membershipJson({error:"La solicitud cambió o venció. No se guardaron tus cambios."},{status:409});
-    return membershipJson({message:"Seguimiento guardado. Las respuestas ya pueden consultarse desde la cuenta solicitante."});
+    return membershipJson({message:closesAccess?"Solicitud cerrada. La persona dejó de tener acceso a esa comisión; puedes habilitarla de nuevo en Equipo.":"Seguimiento guardado. Las respuestas ya pueden consultarse desde la cuenta solicitante."});
   }catch{return membershipJson({error:"No pudimos guardar el seguimiento."},{status:503});}
 }

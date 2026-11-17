@@ -2,6 +2,14 @@
 
 Lo más reciente arriba. Formato y reglas: `ia/PROTOCOLO.md`, sección 3. Cada entrada lleva la línea `Agente:`.
 
+## 2026-11-17 · Decisiones de Emi sobre cuentas, retiros y evidencias
+
+- Agente: Claude Code (sesión en la nube)
+- Solicitud: Emi, 17/11/2026: «1.- Me parece bien 2.- Razónalo y decide tu perfectamente 3.- Si».
+- Cambios: (1) el borrado diario elimina las cuentas creadas desde el sitio que no confirman su correo en siete días, y crear una cuenta con un correo ya registrado responde igual que con uno nuevo y avisa por correo a quien lo usa (un usuario ocupado se sigue indicando); el aviso de privacidad del sitio lo explica. (2) Decisión tomada: retirar o cerrar una solicitud aceptada quita el acceso a esa comisión, porque el acceso nace de la solicitud y el texto ya decía que se detiene el seguimiento; administración puede volver a habilitar a la persona en Equipo, y los textos de confirmación lo dicen. (3) Administración adjunta evidencias a las actividades sin aceptar el aviso de documentos personales.
+- Archivos: `app/api/registro-cuenta/route.ts`, `lib/registration-verification.ts`, `lib/retention.ts`, `app/privacidad/page.tsx`, `app/api/incorporaciones/[id]/route.ts`, `app/api/admin/incorporaciones/[id]/route.ts`, `app/participacion/InternalRegistration.tsx`, `app/api/espacio/documentos/route.ts`, `app/mi-comision/Workspace.tsx`, pruebas, este registro.
+- Verificación: typecheck y lint sin avisos; `npm test` → 229 aprobadas.
+
 ## 2026-11-16 · Panel más rápido y auditoría de interfaz y funcionamiento
 
 - Agente: Claude Code (sesión en la nube)

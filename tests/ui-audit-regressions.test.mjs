@@ -53,3 +53,29 @@ test('the Enlaces convocatoria cannot be "restored" to an original that does not
   assert.equal(f.db.prepare('SELECT count(*) n FROM site_documents').get().n,1);
  }finally{f.close();}
 });
+
+test('accounts that never confirm their email are deleted after seven days; confirmed ones stay',async()=>{
+ const f=await createWorkerFixture(base);
+ try{
+  const now=Date.parse('2026-12-01T12:00:00Z'),old=now-8*86400000,recent=now-2*86400000;
+  const add=(id,email,created,verified)=>f.db.prepare("INSERT INTO staff_accounts(id,email,name,username,password_hash,credential_version,self_registered,email_verification_required,email_verified_at,created_at,updated_at) VALUES(?,?,?,?,?,1,1,1,?,?,?)").run(id,email,email,id,'scrypt-v1$x',verified,created,created);
+  add('old-unconfirmed','old@example.test',old,null);add('recent-unconfirmed','recent@example.test',recent,null);add('old-confirmed','confirmed@example.test',old,old+1000);
+  f.db.prepare("INSERT INTO staff_email_verifications(account_id,token_hash,email,credential_version,return_to,expires_at) VALUES('old-unconfirmed','h','old@example.test',1,'/',?)").run(old+86400000);
+  await f.scheduled(now);
+  assert.deepEqual(f.db.prepare('SELECT id FROM staff_accounts ORDER BY id').all().map(r=>r.id),['old-confirmed','recent-unconfirmed']);
+  assert.equal(f.db.prepare('SELECT count(*) n FROM staff_email_verifications').get().n,0);
+ }finally{f.close();}
+});
+
+test('withdrawing an accepted application closes access to that commission',async()=>{
+ const f=await createWorkerFixture({...base,MEMBERSHIP_ENABLED:'1'});
+ try{
+  f.seedAccount('ana@example.test');const id=f.db.prepare("SELECT id FROM staff_accounts WHERE email='ana@example.test'").get().id;
+  const now=Date.now();
+  f.db.prepare("INSERT INTO membership_applications(id,owner_email,name,commission,note,profile_json,reference_code,status,notice_version,notice_snapshot,consent_text,consent_at,adult_self_declared,retention_until,created_at,updated_at) VALUES('app1','ana@example.test','Ana Prueba','gobierno','','{}','APJ-1','accepted','v','{}','c',?,1,?,?,?)").run(now,now+90*86400000,now,now);
+  f.db.prepare("INSERT INTO commission_members(id,account_id,commission,role,active,updated_at,updated_by) VALUES('m1',?,'gobierno','member',1,1,'owner')").run(id);
+  const r=await f.call('/api/incorporaciones/app1','PATCH',{action:'withdraw',expectedUpdatedAt:now},'ana@example.test',{'x-expected-account-id':id});
+  assert.equal(r.status,200,await r.clone().text());
+  assert.equal(f.db.prepare("SELECT active FROM commission_members WHERE id='m1'").get().active,0);
+ }finally{f.close();}
+});

@@ -52,10 +52,11 @@ test('an in-flight private download loses revoked administrative and commission 
 });
 
 test('self registration reserves privileged identities, retains consent and creates an unprivileged password account',async()=>{const f=await fixture();try{
- for(const email of ['owner@example.test','reserved@example.test']){if(email.startsWith('reserved'))f.db.prepare("INSERT INTO user_roles(email,role,created_at,created_by,revoked_at) VALUES(?,'admin',1,'owner',2)").run(email);const r=await f.call('/api/registro-cuenta','POST',await registerPayload(f,{email}),null);assert.equal(r.status,409);}
+ for(const email of ['owner@example.test','reserved@example.test']){if(email.startsWith('reserved'))f.db.prepare("INSERT INTO user_roles(email,role,created_at,created_by,revoked_at) VALUES(?,'admin',1,'owner',2)").run(email);const r=await f.call('/api/registro-cuenta','POST',await registerPayload(f,{email}),null);assert.equal(r.status,201,'reserved emails get the generic answer');assert.equal(f.db.prepare('SELECT count(*) n FROM staff_accounts WHERE email=?').get(email).n,0,'and no account is created');}
  const payload=await registerPayload(f),r=await f.call('/api/registro-cuenta','POST',payload,null);assert.equal(r.status,201,await r.clone().text());assert.equal(r.headers.get('set-cookie'),null);const signed=await f.confirmAndLogin(payload);assert.match(signed.headers.get('set-cookie'),/HttpOnly; Secure; SameSite=Lax/);
  const a=f.db.prepare('SELECT * FROM staff_accounts WHERE email=?').get(payload.email);assert.equal(a.self_registered,1);assert.match(a.registration_notice,/nombre/);assert.ok(a.registration_consent_at);assert.notEqual(a.password_hash,payload.password);assert.equal(f.db.prepare('SELECT count(*) n FROM user_roles WHERE email=?').get(payload.email).n,0);
- assert.equal((await f.call('/api/registro-cuenta','POST',payload,null)).status,409);
+ assert.equal((await f.call('/api/registro-cuenta','POST',payload,null)).status,201,'no hint that the email already has an account');
+ assert.ok(f.mail.some(m=>m.subject.startsWith('Ya tienes una cuenta')&&m.to.includes(payload.email)),'the owner of the address is told');
  const cookie=signed.headers.get('set-cookie').split(';')[0];const view=await f.call('/api/espacio','GET',undefined,null,{cookie});assert.equal((await view.json()).actor.admin,false);
  const login=await f.call('/api/admin/access/login','POST',{username:payload.username,password:payload.password},null);assert.equal(login.status,200);assert.equal((await login.json()).redirect,'/mi-comision');
  }finally{f.close();}});
