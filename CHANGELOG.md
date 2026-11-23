@@ -2,6 +2,14 @@
 
 Lo más reciente arriba. Formato y reglas: `ia/PROTOCOLO.md`, sección 3. Cada entrada lleva la línea `Agente:`.
 
+## 2026-11-23 · Apertura de Enlaces APJ 2027 comprobada
+
+- Agente: Claude Code (sesión en la nube, tarea programada)
+- Solicitud: comprobación programada de la apertura del 23/11/2026, 00:00 de Ciudad de México.
+- Cambios: ninguno en el código; solo verificación y registro.
+- Verificación: en `https://acciontlalnepantla.site`, el 23/11/2026 a las 09:29 de Ciudad de México: `/enlaces` responde 200 con las bases completas (de Objeto a Disposiciones finales y la protesta), «Postularme» lleva a `/cuenta/enlaces` y dice que se reciben postulaciones hasta el domingo 6 de diciembre; el enlace al PDF aparece y `/archivos/convocatoria-enlaces-apj-2027.pdf` responde 200 con `application/pdf` (4.2 MB); la portada y el sitemap enlazan a `/enlaces`; `/cuenta/enlaces` sin sesión lleva a `/ingresar`; `/privacidad` incluye la sección de Enlaces APJ 2027; Workers Paid está activo en la cuenta. Postulaciones registradas a esa hora: 0.
+- Pendiente: ninguna prueba con una cuenta real todavía; la primera postulación lo acreditará.
+
 ## 2026-11-17 · Decisiones de Emi sobre cuentas, retiros y evidencias
 
 - Agente: Claude Code (sesión en la nube)
